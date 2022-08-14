@@ -150,4 +150,42 @@ git sync
 * the entities can be synced with a github repo as YAML
 * the entities can be synced via CLI for read/write
   * offer virtual views that optimize for e.g. editing in-entity code blocks
-*
+
+task store/revive
+* when working in a task (e.g. text editor), can close the view
+* task kept in tray and can be reopened with the previous state
+* task can also be stored as a file and organized into folders
+* stored tasks can include extra info for archival purposes
+
+dist.app FTUE
+* on a fresh pageload, the client runtime launches a bundled welcome app
+* welcome app can explain where the user is and what features are inside
+* unauthed sessions are local in-memory
+* possibility to sync the inmemory session to the server after creating an account
+
+# kubernetes multitenant arch
+* catalogs are a distributable unit and version control
+* catalogs may belong to a user, or be a library/app catalog that the user mounts
+* catalogs have namespaces
+* namespaces can contain CRD resources
+* namespaces can list CRDs that they contain resources of
+* namespaces may be imported from another catalog
+  * usually 'default' imported into something like 'github-api'
+* the "default" namespace is what gets exported and resurfaced elsewhere
+* a runtime catalog can be instantiated using long-term catalogs as configuration
+* a RecordStorage or whatever registration in a namespace defines where the data comes from
+
+# distribution
+* allow s2s connections between unrelated servers
+* every server must have a root OIDC issuer that will protect s2s
+* catalogs may also have an Internet/OIDC identity
+  * probably subfolder of server identity
+  * own signing key
+  * namespace/kind.group/name is then the subject in the tokens
+
+# build into meteor app
+* run container with git and meteor buildchain
+* reactive codegen into tempdir running meteor
+* expose meteor maybe on alt port? wildcard subdomain seems complex
+* expose API to compile and emit a meteor distributable
+* update container code based on github webhook

@@ -7,8 +7,8 @@ body {
 #react-target {
   display: grid;
   height: 100vh;
-  grid-template-areas: "nav activity";
-  grid-template-rows: 1fr;
+  grid-template-areas: "powerbar powerbar" "nav activity";
+  grid-template-rows: 2em 1fr;
   grid-template-columns: min-content 1fr;
   /* gap: 1em; */
 }
@@ -37,11 +37,59 @@ body {
   text-overflow: ellipsis;
   overflow: hidden;
 }
-.activity-outer {
+.activity-contents-wrap {
   grid-area: activity;
 }
-iframe.activity-outer {
+iframe.activity-contents-wrap {
   justify-self: stretch;
   align-self: stretch;
   border: 0;
+  min-height: 0;
+  min-width: 0;
+}
+.shell-floating-layer {
+  grid-area: activity;
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+}
+.shell-backdrop {
+  background: url("/bliss-optimized.svg") 50% 50%;
+  background-size: cover;
+  grid-area: activity;
+  z-index: -10;
+}
+.shell-window {
+  position: absolute;
+  /* left: 50px;
+  top: 50px;
+  width: 200px;
+  height: 150px; */
+  overflow: hidden;
+  background-color: #fff;
+  border: 2px solid gray;
+  display: grid;
+  grid-template-areas: "handle powerbar" "handle activity";
+  grid-template-rows: 1.5em 1fr;
+  grid-template-columns: 1.5em 1fr;
+  resize: both;
+  min-width: 100px;
+  min-height: 100px;
+}
+.shell-window-handle {
+  grid-area: handle;
+  background-color: #33f;
+}
+.shell-powerbar {
+  grid-area: powerbar;
+  display: flex;
+  margin: 0;
+  background-color: #333;
+  color: #eee;
+  overflow: hidden;
+}
+.shell-powerbar select {
+  background-color: #333;
+  color: #eee;
+  padding: 0 1em;
 }

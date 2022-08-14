@@ -9,11 +9,15 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.17.9",
+    "@react-hook/debounce": "^4.0.0",
+    "@react-hook/resize-observer": "^1.2.6",
+    "common-tags": "^1.8.2",
     "meteor-node-stubs": "^1.2.1",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },
   "devDependencies": {
+    "@types/common-tags": "^1.8.1",
     "@types/meteor": "^1.4.87",
     "@types/mocha": "^8.2.3",
     "@types/react": "^17.0.43",

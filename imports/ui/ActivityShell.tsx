@@ -1,7 +1,13 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useMemo, useState } from 'react';
 import { useFind, useTracker } from 'meteor/react-meteor-data';
-import { ActivityEntity, EntitiesCollection } from '../db/entities';
+import { EntitiesCollection } from '../db/entities';
 import { Mongo } from 'meteor/mongo';
+import { ActivityEntity, Entity, IframeImplementationSpec, ImplementationSpec, TaskEntity } from '../api/entities';
+import { html } from 'common-tags';
+import { ActivityEmbed } from './ActivityEmbed';
+import { SessionCatalog } from '../runtime/SessionCatalog';
+import { Random } from 'meteor/random';
+import { ShellWindow } from './ShellWindow';
 
 export const ActivityShell = () => {
   const activities = useFind(() => {
@@ -11,29 +17,79 @@ export const ActivityShell = () => {
     }) as Mongo.Cursor<ActivityEntity>;
   });
 
-  const [activityCoord, setActivityCoord] = useState<{
-    namespace: string;
-    name: string;
-  } | null>(null);
+  const [sessionCatalog] = useState(new SessionCatalog());
+  // const sessionCatalog = useMemo(() => new SessionCatalog(), []);
 
-  const activity = activities.find(x =>
-    x.metadata.namespace == activityCoord?.namespace &&
-    x.metadata.name == activityCoord?.name);
+  const tasks = useFind(() => sessionCatalog
+    .findEntities<TaskEntity>('dist.app/v1alpha1', 'Task'));
+
+  // const [activityCoord, setActivityCoord] = useState<{
+  //   catalogId: string;
+  //   namespace: string;
+  //   name: string;
+  // } | null>(null);
+
+  // const activity = activities.find(x =>
+  //   x.metadata.catalogId == activityCoord?.catalogId &&
+  //   x.metadata.namespace == activityCoord?.namespace &&
+  //   x.metadata.name == activityCoord?.name);
+
+  function launchActivityTask(activity: ActivityEntity) {
+    sessionCatalog.insertEntity({
+      apiVersion: 'dist.app/v1alpha1',
+      kind: 'Task',
+      metadata: {
+        name: Random.id(),
+      },
+      spec: {
+        placement: {
+          type: 'floating',
+          left: 100 + Math.floor(Math.random() * 200),
+          top: 100 + Math.floor(Math.random() * 200),
+          width: 400,
+          height: 300,
+        },
+        stack: [{
+          activity: {
+            catalogId: activity.metadata.catalogId,
+            namespace: activity.metadata.namespace,
+            name: activity.metadata.name,
+          },
+        }],
+      },
+    })
+  }
 
   return (
     <Fragment>
+      <section className="shell-powerbar">
+        <select>
+          <optgroup label="Signed in">
+            <option selected>danopia@dist.app</option>
+          </optgroup>
+          <option>unnamed guest user</option>
+          <option>add user...</option>
+        </select>
+        <select><option>[untitled scratch]</option></select>
+        <select><option>floating windows</option></select>
+      </section>
       <nav className="activities-tray">
-        <ul>{activities.map(activity => activity.spec.type == 'frame' ? (
+        <ul>{activities.map(activity => activity.spec
+            .intentFilters?.some(x =>
+              x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher') ? (
           <li key={activity._id}>
-            <button onClick={() => setActivityCoord({namespace: activity.metadata.namespace!, name: activity.metadata.name})}>
+            <button onClick={() => launchActivityTask(activity)}>
               {activity.metadata.namespace} {activity.metadata.name}
             </button>
           </li>
         ) : [])}</ul>
       </nav>
-      {activity?.spec.type == 'frame' ? (
-        <iframe className="activity-outer" src={activity.spec.frame.sourceUrl} sandbox="allow-scripts allow-forms allow-modals" />
-      ) : []}
+      <div className="shell-backdrop" />
+      <div className="shell-floating-layer">
+        {tasks.map(task => (
+          <ShellWindow key={task._id} task={task} sessionCatalog={sessionCatalog} />
+        ))}
+      </div>
     </Fragment>
   );
 };
