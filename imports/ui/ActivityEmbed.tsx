@@ -1,30 +1,52 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityEntity, IframeImplementationSpec } from '../api/entities';
 import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
 
 export const ActivityEmbed = (props: {
-  activity: ActivityEntity,
+  activity: ActivityEntity;
+  onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [contentWindow, setContentWindow] = useState<Window | null>(null);
+  const [iframeKey, setIframeKey] = useState(() => Math.random());
 
-  const messageHost = useMemo(() => new MessageHost(), []);
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (iframe) {
-      iframe.addEventListener("load", () => {
-        if (iframe.contentWindow) {
-          console.log('Initiating connection to iframe content');
-          messageHost.connectTo(iframe.contentWindow);
-        }
-      });
+    props.onLifecycle('loading');
+  }, []);
+
+  const messageHost = useMemo(() => new MessageHost(), [contentWindow]);
+  useEffect(() => {
+    if (contentWindow) {
+      console.log('Initiating connection to iframe content');
+      messageHost.connectTo(contentWindow);
+      props.onLifecycle('connecting');
     }
-  }, [iframeRef]);
+  }, [contentWindow]);
+  useEffect(() => {
+    messageHost.addRpcListener('reportReady', rpc => {
+      console.log('handling', rpc);
+      props.onLifecycle('ready');
+    });
+    messageHost.addRpcListener('recycle-frame', rpc => {
+      console.log('handling', rpc);
+      setIframeKey(Math.random());
+    });
+  }, [messageHost]);
 
   const { implementation } = props.activity.spec;
-
   if (implementation.type == 'iframe') return (
-    <iframe ref={iframeRef} className="activity-contents-wrap" src={compileFrameSrc(implementation)} sandbox={implementation.sandboxing?.join(' ') ?? ""} csp="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com" />
+    <iframe ref={iframeRef} key={iframeKey}
+        className="activity-contents-wrap"
+        src={compileFrameSrc(implementation)}
+        sandbox={implementation.sandboxing?.join(' ') ?? ""}
+        /* @ts-expect-error: csp is not typed */
+        csp="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com"
+        onLoad={evt => {
+          console.log('onLoad', evt.currentTarget.contentWindow);
+          setContentWindow(evt.currentTarget.contentWindow);
+        }}
+      />
   );
 
   throw new Error(`TODO: unimpl`);
@@ -89,6 +111,20 @@ globalThis.DistApp = class DistApp {
         if (typeof event.data.protocol !== 'string') return;
 
         window.removeEventListener("message", handleEvent);
+        window.addEventListener("message", () => {
+          console.error("Received a second protocol initiation?? Reloading");
+          try {
+            event.ports?.map(port => port.postMessage({
+              rpc: 'recycle-frame',
+            })) ?? [];
+            if (port) reject(
+              new Error("Received protocol packet without a port"));
+            ok(port);
+          } finally {
+            window.location.reload();
+          }
+        });
+
         if (event.data.protocol !== 'dist.app/v1alpha1') reject(
           new Error("Received unexpected protocol "+event.data.protocol));
         const [port] = event.ports ?? [];

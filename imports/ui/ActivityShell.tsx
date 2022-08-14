@@ -63,15 +63,25 @@ export const ActivityShell = () => {
   return (
     <Fragment>
       <section className="shell-powerbar">
-        <select>
+        <select defaultValue="dan@danopia.net">
           <optgroup label="Signed in">
-            <option selected>danopia@dist.app</option>
+            <option>dan@danopia.net</option>
           </optgroup>
-          <option>unnamed guest user</option>
-          <option>add user...</option>
+          <option disabled>unnamed guest user</option>
+          <option disabled>add user...</option>
         </select>
-        <select><option>[untitled scratch]</option></select>
-        <select><option>floating windows</option></select>
+        <select>
+          <option>[untitled scratch]</option>
+          <optgroup label="change location...">
+            <option disabled>local browser storage</option>
+            <option disabled>server: dist.app</option>
+          </optgroup>
+        </select>
+        <select>
+          <option>floating</option>
+          <option disabled>fullscreen</option>
+          <option disabled>grid</option>
+        </select>
       </section>
       <nav className="activities-tray">
         <ul>{activities.map(activity => activity.spec

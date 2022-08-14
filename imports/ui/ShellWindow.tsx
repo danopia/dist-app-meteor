@@ -1,11 +1,10 @@
 import { useTracker } from "meteor/react-meteor-data";
-import React, { RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { ActivityEntity, TaskEntity } from "../api/entities";
 import { EntitiesCollection } from "../db/entities";
 import { ActivityEmbed } from "./ActivityEmbed";
-import useResizeObserver from '@react-hook/resize-observer'
-import { useDebounceCallback } from "@react-hook/debounce";
 import { SessionCatalog } from "../runtime/SessionCatalog";
+import { WindowFrame } from "./widgets/WindowFrame";
 
 export const ShellWindow = (props: {
   task: TaskEntity,
@@ -22,62 +21,25 @@ export const ShellWindow = (props: {
     }) as ActivityEntity | null;
   });
 
-  const windowRef = useRef<HTMLDivElement>(null);
-  const windowSize = useSize(windowRef);
-  // console.log({windowSize});
-
-  // const [seenSize, setSeenSize] = useState(windowSize);
-  const observeWindowSize = useDebounceCallback((seenSize: DOMRect) => {
-    const { placement } = props.task.spec;
-    if (placement.type !== 'floating') return;
-    console.log("Storing new window size", seenSize, 'for', props.task._id);
-    props.sessionCatalog.updateEntity<TaskEntity>(props.task.apiVersion, props.task.kind, props.task.metadata.namespace, props.task.metadata.name, taskSnap => taskSnap.spec.placement = {...placement, width: seenSize!.width, height: seenSize!.height});
-  }, 1000, false);
-  useEffect(() => windowSize ? observeWindowSize(windowSize) : undefined  , [windowSize]);
-
-// const resizeObserver = new ResizeObserver((entries) => {
-//   for (let entry of entries) {
-//     if (entry.contentBoxSize) {
-//       // Firefox implements `contentBoxSize` as a single content rect, rather than an array
-//       const contentBoxSize = Array.isArray(entry.contentBoxSize) ? entry.contentBoxSize[0] : entry.contentBoxSize;
-
-//       h1Elem.style.fontSize = `${Math.max(1.5, contentBoxSize.inlineSize / 200)}rem`;
-//       pElem.style.fontSize = `${Math.max(1, contentBoxSize.inlineSize / 600)}rem`;
-//     } else {
-//       h1Elem.style.fontSize = `${Math.max(1.5, entry.contentRect.width / 200)}rem`;
-//       pElem.style.fontSize = `${Math.max(1, entry.contentRect.width / 600)}rem`;
-//     }
-//   }
-
-//   console.log('Size changed');
-// });
-
-// resizeObserver.observe(divElem);
-
+  const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
   return (
-    <div key={props.task._id} ref={windowRef} className="shell-window" style={props.task.spec.placement.type == 'floating' ? {left: props.task.spec.placement.left, top: props.task.spec.placement.top, width: props.task.spec.placement.width, height: props.task.spec.placement.height} : {}}>
-      <section className="shell-window-handle" />
-      <section className="shell-powerbar">
-        <div>{props.task._id}</div>
-      </section>
+    <WindowFrame
+        title={`Task ${props.task.metadata.name}`}
+        floatingRect={props.task.spec.placement.type == 'floating' ? props.task.spec.placement : {}}
+        layoutMode={'floating'}
+        resizable={true}
+        showLoader={lifeCycle !== 'ready'}
+        onResized={newSize => {
+          const { placement } = props.task.spec;
+          if (placement.type !== 'floating') return;
+          console.log("Storing new window size", newSize, 'for', props.task._id);
+          props.sessionCatalog.updateEntity<TaskEntity>(props.task.apiVersion, props.task.kind, props.task.metadata.namespace, props.task.metadata.name, taskSnap => taskSnap.spec.placement = {...placement, width: newSize!.width, height: newSize!.height});
+        }}
+      >
       {activity ? (
-        <ActivityEmbed key={activity._id} activity={activity} />
+        <ActivityEmbed key={activity._id} activity={activity} onLifecycle={setLifecycle} />
       ) : []}
-    </div>
+    </WindowFrame>
   );
-}
-
-// via https://www.npmjs.com/package/@react-hook/resize-observer
-const useSize = (target: RefObject<HTMLDivElement>) => {
-  const [size, setSize] = useState<DOMRect>()
-
-  useLayoutEffect(() => {
-    setSize(target.current?.getBoundingClientRect())
-  }, [target])
-
-  // Where the magic happens
-  useResizeObserver(target, (entry) => setSize(entry.contentRect));
-
-  return size;
 }

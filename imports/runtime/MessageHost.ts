@@ -1,3 +1,5 @@
+export type RpcListener = (rpc: Record<string,unknown>) => void | Promise<void>;
+
 export class MessageHost {
   constructor() {
     const { port1, port2 } = new MessageChannel();
@@ -10,9 +12,22 @@ export class MessageHost {
 
   private localPort: MessagePort;
   private remotePort: MessagePort | null;
+  private rpcListeners: Array<[string, RpcListener]> = [];
 
   handleMessage(event: MessageEvent) {
-    console.log('MessageHost got message', event.data);
+    const {rpc} = event.data;
+    let hits = 0;
+    for (const listener of this.rpcListeners) {
+      if (listener[0] == rpc) {
+        listener[1](event.data);
+        hits++;
+      }
+    }
+    console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+  }
+
+  addRpcListener(rpcId: string, listener: RpcListener) {
+    this.rpcListeners.push([rpcId, listener]);
   }
 
   connectTo(otherWindow: Window) {
