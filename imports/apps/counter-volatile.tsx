@@ -37,7 +37,7 @@ export const CounterVolatileCatalog = new StaticCatalog([{
   metadata: {
     name: 'main',
     // namespace: 'default',
-    title: 'counter',
+    title: 'Counter (volatile)',
   },
   spec: {
     intentFilters: [{
@@ -93,6 +93,9 @@ export const CounterVolatileCatalog = new StaticCatalog([{
           });
 
           app.mount('#app');
+
+          const distApp = await DistApp.connect();
+          await distApp.reportReady();
         `,
       },
     },

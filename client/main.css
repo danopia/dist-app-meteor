@@ -12,14 +12,14 @@ body {
   grid-template-columns: min-content 1fr;
   /* gap: 1em; */
 }
-.activities-tray {
+.launcher-window {
   grid-area: nav;
   padding: 0.5em;
   box-sizing: border-box;
   overflow-y: scroll;
   border-right: 2px solid gray;
 }
-.activities-tray ul {
+.launcher-window ul {
   display: flex;
   gap: 0.5em;
   flex-direction: column;
@@ -27,12 +27,11 @@ body {
   margin: 0;
   padding: 0;
 }
-.activities-tray li {
+.launcher-window li {
   display: grid;
-  width: 5em;
-  height: 5em;
+  height: 2em;
 }
-.activities-tray button {
+.launcher-window button {
   display: block;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -101,4 +100,12 @@ iframe.activity-contents-wrap {
   background-color: #333;
   color: #eee;
   padding: 0 1em;
+}
+
+.react-draggable-transparent-selection,
+.react-draggable-transparent-selection .shell-window-handle {
+  cursor: grabbing;
+}
+.react-draggable-transparent-selection iframe {
+  pointer-events: none;
 }

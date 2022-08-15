@@ -40,7 +40,7 @@ export const CounterTaskCatalog = new StaticCatalog([{
   metadata: {
     name: 'main',
     // namespace: 'default',
-    title: 'counter',
+    title: 'Counter (task)',
   },
   spec: {
     intentFilters: [{

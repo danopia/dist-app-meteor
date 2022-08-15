@@ -5,6 +5,7 @@ import { MessageHost } from '../runtime/MessageHost';
 
 export const ActivityEmbed = (props: {
   activity: ActivityEntity;
+  className?: string;
   onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -37,11 +38,15 @@ export const ActivityEmbed = (props: {
   const { implementation } = props.activity.spec;
   if (implementation.type == 'iframe') return (
     <iframe ref={iframeRef} key={iframeKey}
-        className="activity-contents-wrap"
+        className={props.className}
         src={compileFrameSrc(implementation)}
         sandbox={implementation.sandboxing?.join(' ') ?? ""}
         /* @ts-expect-error: csp is not typed */
-        csp="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com"
+        csp={[
+          `default-src 'self'`,
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://widget.time.is`,
+          `style-src 'self' 'unsafe-inline'`
+        ].join('; ')}
         onLoad={evt => {
           console.log('onLoad', evt.currentTarget.contentWindow);
           setContentWindow(evt.currentTarget.contentWindow);
@@ -62,7 +67,10 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
     const docHtml = [
       `<!doctype html>`,
       ...(implementation.source.htmlLang ? [
-        html`<html lang="${implementation.source.htmlLang ?? 'en'}">`,
+        html`<html lang="${implementation.source.htmlLang}">`,
+      ] : []),
+      ...(implementation.source.metaCharset ? [
+        html`<meta charset="${implementation.source.metaCharset}" />`,
       ] : []),
       html`<title>${implementation.source.headTitle ?? 'Embedded dist.app'}</title>`,
       ...(implementation.source.scriptUrls?.flatMap(url => [
@@ -80,7 +88,7 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
       ] : []),
       `</body>`,
     ].join('\n');
-    return `data:text/html;base64,${btoa(docHtml)}`;
+    return `data:text/html;base64,${btoa(toBinary(docHtml))}`;
   }
   throw new Error('Function not implemented.');
 }
@@ -102,6 +110,9 @@ globalThis.DistApp = class DistApp {
   }
   reportReady() {
     this.port.postMessage({rpc: 'reportReady'})
+  }
+  sendRpc(data) {
+    this.port.postMessage(data);
   }
   static async connect() {
     const port = await new Promise((ok, reject) => {
@@ -137,3 +148,12 @@ globalThis.DistApp = class DistApp {
     return new DistApp(port);
   }
 }`;
+
+function toBinary(string: string) {
+  const charCodes = new TextEncoder().encode(string);
+  let result = '';
+  for (let i = 0; i < charCodes.byteLength; i++) {
+    result += String.fromCharCode(charCodes[i]);
+  }
+  return result;
+}

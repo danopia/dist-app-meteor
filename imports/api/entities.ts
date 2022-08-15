@@ -2,6 +2,7 @@ export interface EntityMetadata {
   name: string;
   namespace?: string;
   catalogId?: string;
+  generation?: number;
   title?: string;
   description?: string;
   labels?: Record<string,string|undefined>;
@@ -115,6 +116,14 @@ export interface ActivityEntity {
       category: 'app.dist.Launcher',
     }>;
     implementation: ImplementationSpec;
+    windowSizing?: {
+      initialWidth: number;
+      initialHeight: number;
+      minWidth?: number;
+      maxWidth?: number;
+      minHeight?: number;
+      maxHeight?: number;
+    }
     // launchMode:
     //   | "Standard"
     //   | "SingleTop"

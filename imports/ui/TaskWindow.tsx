@@ -6,7 +6,7 @@ import { ActivityEmbed } from "./ActivityEmbed";
 import { SessionCatalog } from "../runtime/SessionCatalog";
 import { WindowFrame } from "./widgets/WindowFrame";
 
-export const ShellWindow = (props: {
+export const TaskWindow = (props: {
   task: TaskEntity,
   sessionCatalog: SessionCatalog,
 }) => {
@@ -34,11 +34,17 @@ export const ShellWindow = (props: {
           const { placement } = props.task.spec;
           if (placement.type !== 'floating') return;
           console.log("Storing new window size", newSize, 'for', props.task._id);
-          props.sessionCatalog.updateEntity<TaskEntity>(props.task.apiVersion, props.task.kind, props.task.metadata.namespace, props.task.metadata.name, taskSnap => taskSnap.spec.placement = {...placement, width: newSize!.width, height: newSize!.height});
+          props.sessionCatalog.mutateEntity<TaskEntity>(props.task.apiVersion, props.task.kind, props.task.metadata.namespace, props.task.metadata.name, taskSnap => taskSnap.spec.placement = {...placement, width: newSize!.width, height: newSize!.height});
+        }}
+        onMoved={newPos => {
+          const { placement } = props.task.spec;
+          if (placement.type !== 'floating') return;
+          console.log("Storing new window position", newPos, 'for', props.task._id);
+          props.sessionCatalog.mutateEntity<TaskEntity>(props.task.apiVersion, props.task.kind, props.task.metadata.namespace, props.task.metadata.name, taskSnap => taskSnap.spec.placement = {...placement, left: newPos.left, top: newPos.top});
         }}
       >
       {activity ? (
-        <ActivityEmbed key={activity._id} activity={activity} onLifecycle={setLifecycle} />
+        <ActivityEmbed key={activity._id} className="activity-contents-wrap" activity={activity} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
   );

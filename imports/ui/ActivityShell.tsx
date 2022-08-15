@@ -1,13 +1,12 @@
-import React, { Fragment, useMemo, useState } from 'react';
-import { useFind, useTracker } from 'meteor/react-meteor-data';
+import React, { Fragment, useEffect, useState } from 'react';
+import { useFind } from 'meteor/react-meteor-data';
 import { EntitiesCollection } from '../db/entities';
 import { Mongo } from 'meteor/mongo';
-import { ActivityEntity, Entity, IframeImplementationSpec, ImplementationSpec, TaskEntity } from '../api/entities';
-import { html } from 'common-tags';
-import { ActivityEmbed } from './ActivityEmbed';
+import { ActivityEntity, TaskEntity } from '../api/entities';
 import { SessionCatalog } from '../runtime/SessionCatalog';
 import { Random } from 'meteor/random';
-import { ShellWindow } from './ShellWindow';
+import { TaskWindow } from './TaskWindow';
+import { LauncherWindow } from './LauncherWindow';
 
 export const ActivityShell = () => {
   const activities = useFind(() => {
@@ -16,23 +15,23 @@ export const ActivityShell = () => {
       kind: 'Activity',
     }) as Mongo.Cursor<ActivityEntity>;
   });
+  // console.log(activities)
 
   const [sessionCatalog] = useState(new SessionCatalog());
   // const sessionCatalog = useMemo(() => new SessionCatalog(), []);
 
+  const [didWelcome, setDidWelcome] = useState(false);
+  const welcomeAct = activities.find(x => x.metadata.catalogId == 'builtin:welcome');
+  useEffect(() => {
+    if (!welcomeAct || didWelcome) return;
+    launchActivityTask(welcomeAct);
+    setDidWelcome(true);
+  }, [sessionCatalog, welcomeAct]);
+
+  const [floatingLayerKey, setFloatingLayerKey] = useState(Math.random());
+
   const tasks = useFind(() => sessionCatalog
     .findEntities<TaskEntity>('dist.app/v1alpha1', 'Task'));
-
-  // const [activityCoord, setActivityCoord] = useState<{
-  //   catalogId: string;
-  //   namespace: string;
-  //   name: string;
-  // } | null>(null);
-
-  // const activity = activities.find(x =>
-  //   x.metadata.catalogId == activityCoord?.catalogId &&
-  //   x.metadata.namespace == activityCoord?.namespace &&
-  //   x.metadata.name == activityCoord?.name);
 
   function launchActivityTask(activity: ActivityEntity) {
     sessionCatalog.insertEntity({
@@ -46,8 +45,8 @@ export const ActivityShell = () => {
           type: 'floating',
           left: 100 + Math.floor(Math.random() * 200),
           top: 100 + Math.floor(Math.random() * 200),
-          width: 400,
-          height: 300,
+          width: activity.spec.windowSizing?.initialWidth ?? 400,
+          height: activity.spec.windowSizing?.initialHeight ?? 300,
         },
         stack: [{
           activity: {
@@ -79,25 +78,16 @@ export const ActivityShell = () => {
         </select>
         <select>
           <option>floating</option>
-          <option disabled>fullscreen</option>
+          <option disabled>tabbed</option>
           <option disabled>grid</option>
         </select>
+        <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
       </section>
-      <nav className="activities-tray">
-        <ul>{activities.map(activity => activity.spec
-            .intentFilters?.some(x =>
-              x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher') ? (
-          <li key={activity._id}>
-            <button onClick={() => launchActivityTask(activity)}>
-              {activity.metadata.namespace} {activity.metadata.name}
-            </button>
-          </li>
-        ) : [])}</ul>
-      </nav>
       <div className="shell-backdrop" />
-      <div className="shell-floating-layer">
+      <div className="shell-floating-layer" key={floatingLayerKey}>
+        <LauncherWindow sessionCatalog={sessionCatalog} />
         {tasks.map(task => (
-          <ShellWindow key={task._id} task={task} sessionCatalog={sessionCatalog} />
+          <TaskWindow key={task._id} task={task} sessionCatalog={sessionCatalog} />
         ))}
       </div>
     </Fragment>
