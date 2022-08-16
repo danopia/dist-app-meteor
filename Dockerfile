@@ -14,6 +14,7 @@ COPY client ./client
 COPY imports ./imports
 COPY server ./server
 COPY tests ./tests
+COPY public ./public
 COPY tsconfig.json ./tsconfig.json
 RUN meteor build --directory /opt/bundle --server-only
 
