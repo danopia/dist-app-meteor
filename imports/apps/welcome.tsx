@@ -41,7 +41,7 @@ export const WelcomeCatalog = new StaticCatalog([{
       category: 'app.dist.Launcher',
     }],
     windowSizing: {
-      initialWidth: 500,
+      initialWidth: 600,
       minWidth: 200,
       // maxWidth: 1000,
       initialHeight: 300,
@@ -66,6 +66,10 @@ export const WelcomeCatalog = new StaticCatalog([{
             <p>
               To try out some demo applications, please look through the on-screen app tray.
             </p>
+            <p>
+              <strong>To enable session restore, use an account:</strong>
+              <button @click="signIn">Sign in to dist.app</button>
+            </p>
           </div>
           <style type="text/css">
             body {
@@ -74,6 +78,8 @@ export const WelcomeCatalog = new StaticCatalog([{
           </style>
         `,
         inlineScript: stripIndent(html)`
+          const distApp = await DistApp.connect();
+
           import { createApp } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
           const app = createApp({
             data: () => ({
@@ -84,26 +90,20 @@ export const WelcomeCatalog = new StaticCatalog([{
             //     this.total += 1
             //   }
             // }
+            methods: {
+              signIn: function () {
+                distApp.sendRpc({ rpc: 'launchIntent', intent: {
+                  action: 'settings.AddAccount',
+                  // flag new_task
+                  extras: {
+                    'AccountTypes': 'platform.dist.app',
+                  },
+                }});
+              }
+            }
           });
-
-          // app.component('ButtonCounter', {
-          //   template: \`<button @click="incrementCounter">{{counter}}</button>\`,
-          //   data: function () {
-          //     return {
-          //       counter: 0
-          //     }
-          //   },
-          //   methods: {
-          //     incrementCounter: function() {
-          //       this.counter += 1
-          //       this.$emit('increment')
-          //     }
-          //   }
-          // });
-
           app.mount('#app');
 
-          const distApp = await DistApp.connect();
           await distApp.reportReady();
         `,
       },

@@ -102,9 +102,14 @@ export const WorldClockCatalog = new StaticCatalog([{
             }
             .grid {
               display: flex;
-              justify-content: space-around;
+              height: 100vh;
             }
-            .clock { padding: 0.5em; }
+            .clock {
+              padding: 0.5em; flex: 1;
+              display: flex;
+              flex-direction: column;
+              justify-content: space-evenly;
+            }
             .clock:hover { background-color: rgba(120,120,120,0.1); }
             .grid > div { text-align: center; }
             .location { font-size: 1.25em; color: #666; }
