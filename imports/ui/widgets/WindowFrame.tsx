@@ -14,6 +14,7 @@ export const WindowFrame = (props: {
     minWidth?: number; maxWidth?: number;
     minHeight?: number; maxHeight?: number;
   };
+  zIndex?: number;
   layoutMode: "floating" | "grid";
   resizable: boolean;
   showLoader: boolean;
@@ -59,6 +60,7 @@ export const WindowFrame = (props: {
         className="shell-window"
         style={props.layoutMode == 'floating' ? {
           ...rects,
+          zIndex: props.zIndex,
           resize: props.resizable ? 'both' : 'none',
           // transform: `translate(${left}px, ${top}px)`,
         } : {}}>

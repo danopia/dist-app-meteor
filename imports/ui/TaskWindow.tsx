@@ -1,13 +1,15 @@
 import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext, useState } from "react";
-import { ActivityEntity, TaskEntity } from "../api/entities";
 import { EntitiesCollection } from "../db/entities";
 import { ActivityEmbed } from "./ActivityEmbed";
 import { WindowFrame } from "./widgets/WindowFrame";
 import { RuntimeContext } from "./context";
+import { TaskEntity } from "../entities/runtime";
+import { ActivityEntity } from "../entities/manifest";
 
 export const TaskWindow = (props: {
   task: TaskEntity,
+  zIndex?: number;
   // sessionCatalog: SessionCatalog,
 }) => {
 
@@ -40,6 +42,7 @@ export const TaskWindow = (props: {
         floatingRect={props.task.spec.placement.floating}
         layoutMode={props.task.spec.placement.current}
         resizable={true}
+        zIndex={props.zIndex}
         showLoader={lifeCycle !== 'ready'}
         onInteraction={() => bringToTop()}
         onResized={newSize => {

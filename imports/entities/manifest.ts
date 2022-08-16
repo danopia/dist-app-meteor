@@ -1,99 +1,4 @@
-export interface EntityMetadata {
-  name: string;
-  namespace?: string;
-  catalogId?: string;
-  uid?: string;
-  generation?: number;
-  title?: string;
-  description?: string;
-  labels?: Record<string,string|undefined>;
-  annotations?: Record<string,string|undefined>;
-  tags?: Array<string>;
-  links?: Array<{
-    url: string;
-    title?: string;
-    icon?: string;
-    type?: string;
-  }>;
-  ownerReferences?: Array<{
-    apiVersion: string;
-    kind: string;
-    name: string;
-    uid?: string; // this is required in kubernetes
-    blockOwnerDeletion?: boolean;
-    controller?: boolean;
-  }>;
-}
-
-export interface NamespaceEntity {
-  _id?: string;
-  apiVersion: "core/v1";
-  kind: "Namespace";
-  metadata: EntityMetadata;
-  // spec: {};
-}
-
-export interface WorkspaceEntity {
-  _id?: string;
-  apiVersion: "runtime.dist.app/v1alpha1";
-  kind: "Workspace";
-  metadata: EntityMetadata;
-  spec: {
-    windowOrder: Array<string>;
-  };
-}
-
-export interface CommandEntity {
-  apiVersion: "runtime.dist.app/v1alpha1";
-  kind: "Command";
-  metadata: EntityMetadata;
-  spec: {
-    type: 'launch-intent';
-    intent: {
-      action: string;
-      activityRef?: string;
-      flags?: Array<'new-task'>;
-    };
-  } | {
-    type: 'bring-to-top' | 'close-task' | 'delete-task';
-    taskName: string;
-  } | {
-    type: 'resize-window' | 'move-window';
-    taskName: string;
-    xAxis: number;
-    yAxis: number;
-  };
-}
-
-export interface TaskEntity {
-  _id?: string;
-  apiVersion: "runtime.dist.app/v1alpha1";
-  kind: "Task";
-  metadata: EntityMetadata;
-  spec: {
-    placement: {
-      current: 'floating' | 'grid';
-      floating: {
-        left: number;
-        top: number;
-        width: number;
-        height: number;
-      };
-      grid: {
-        area: 'fullscreen';
-      };
-    };
-    stack: Array<{
-      activity: {
-        // group?: string; // "dist.app"
-        // kind: string; // "Asset"
-        catalogId?: string;
-        namespace?: string;
-        name: string;
-      };
-    }>;
-  };
-}
+import { EntityMetadata } from "./core";
 
 export interface ApplicationEntity {
   _id?: string;
@@ -219,13 +124,7 @@ export interface ActivityEntity {
 //   ;
 // }
 
-export type Entity = (
-  | NamespaceEntity
-
-  | WorkspaceEntity
-  | TaskEntity
-  | CommandEntity
-
+export type ManifestEntity = (
   | ApplicationEntity
   | ActivityEntity
 

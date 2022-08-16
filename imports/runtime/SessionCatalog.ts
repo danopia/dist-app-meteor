@@ -1,7 +1,6 @@
 import { Mongo } from "meteor/mongo";
-import { Random } from "meteor/random";
-import { Entity } from "../api/entities";
 import { EntitiesCollection } from "../db/entities";
+import { ArbitraryEntity } from "../entities/core";
 
 export class SessionCatalog {
   constructor(syncedCatalogId?: string) {
@@ -17,7 +16,7 @@ export class SessionCatalog {
   private readonly catalogId: string | undefined;
   private readonly coll: typeof EntitiesCollection;
 
-  insertEntity(entity: Entity) {
+  insertEntity<T extends ArbitraryEntity>(entity: T) {
     this.coll.insert({
       ...entity,
       metadata: {
@@ -28,7 +27,7 @@ export class SessionCatalog {
     });
   }
 
-  findEntities<T extends Entity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
+  findEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
     return this.coll.find({
       apiVersion: apiVersion as any,
       kind: kind as any,
@@ -36,7 +35,7 @@ export class SessionCatalog {
     }) as Mongo.Cursor<T & { _id: string }>;
   }
 
-  getEntity<T extends Entity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string) {
+  getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string) {
     return this.coll.findOne({
       apiVersion: apiVersion as any,
       kind: kind as any,
@@ -46,7 +45,7 @@ export class SessionCatalog {
     }) as T & { _id: string };
   }
 
-  updateEntity<T extends Entity>(newEntity: T) {
+  updateEntity<T extends ArbitraryEntity>(newEntity: T) {
     if (!newEntity.metadata.generation) throw new Error(`BUG: no generation in update`);
     const count = this.coll.update({
       apiVersion: newEntity.apiVersion as any,
@@ -56,7 +55,7 @@ export class SessionCatalog {
       'metadata.name': newEntity.metadata.name,
       'metadata.generation': newEntity.metadata.generation,
     }, {
-      ...(newEntity as (Entity & {_id: string})),
+      ...(newEntity as (ArbitraryEntity & {_id: string})),
       metadata: {
         ...newEntity.metadata,
         generation: (newEntity.metadata.generation ?? 0) + 1,
@@ -66,7 +65,7 @@ export class SessionCatalog {
   }
 
   // Mutation helper
-  mutateEntity<T extends Entity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string, mutationCb: (x: T) => void) {
+  mutateEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string, mutationCb: (x: T) => void) {
     const entity = this.getEntity(apiVersion, kind, namespace, name);
     if (!entity) throw new Error(`Entity doesn't exist`);
     mutationCb(entity);

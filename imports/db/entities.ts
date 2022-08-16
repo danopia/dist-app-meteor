@@ -1,8 +1,8 @@
 import { Mongo } from 'meteor/mongo';
-import { Entity } from '/imports/api/entities';
+import { ArbitraryEntity } from '../entities/core';
 
 export const EntitiesCollection = new Mongo.Collection<{
   _id: string;
   // catalogId: string;
-} & Entity>('Entities');
-export { Entity };
+} & ArbitraryEntity>('Entities');
+export { ArbitraryEntity };

@@ -44,9 +44,9 @@ export const WorldClockCatalog = new StaticCatalog([{
       initialWidth: 500,
       minWidth: 200,
       // maxWidth: 1000,
-      initialHeight: 300,
+      initialHeight: 150,
       minHeight: 100,
-      // maxHeight: 1000,
+      maxHeight: 200,
     },
     implementation: {
       type: 'iframe',

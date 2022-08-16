@@ -1,5 +1,6 @@
 import { Random } from "meteor/random";
-import { ActivityEntity, CommandEntity, TaskEntity, WorkspaceEntity } from "../api/entities";
+import { ActivityEntity } from "../entities/manifest";
+import { WorkspaceEntity, CommandEntity, TaskEntity } from "../entities/runtime";
 import { SessionCatalog } from "./SessionCatalog";
 
 export class Runtime {
@@ -45,11 +46,13 @@ export class Runtime {
   }
 
   createTask(firstActivity: ActivityEntity) {
+    const taskId = Random.id();
+
     this.sessionCatalog.insertEntity({
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Task',
       metadata: {
-        name: Random.id(),
+        name: taskId,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
           kind: 'Workspace',
@@ -78,7 +81,9 @@ export class Runtime {
           },
         }],
       },
-    })
+    });
+
+    this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSNap => spaceSNap.spec.windowOrder.unshift(taskId));
   }
 
   runTaskCommand(task: TaskEntity, commandSpec: CommandEntity["spec"]) {

@@ -1,8 +1,8 @@
 import { Mongo } from "meteor/mongo";
 import { useFind } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
-import { ActivityEntity } from "../api/entities";
 import { EntitiesCollection } from "../db/entities";
+import { ActivityEntity } from "../entities/manifest";
 import { RuntimeContext } from "./context";
 import { WindowFrame } from "./widgets/WindowFrame";
 

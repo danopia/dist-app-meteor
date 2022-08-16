@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityEntity, IframeImplementationSpec } from '../api/entities';
+import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './context';

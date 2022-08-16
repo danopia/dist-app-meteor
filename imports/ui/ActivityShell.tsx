@@ -1,14 +1,15 @@
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFind, useTracker } from 'meteor/react-meteor-data';
 import { EntitiesCollection } from '../db/entities';
 import { Mongo } from 'meteor/mongo';
-import { ActivityEntity, TaskEntity, WorkspaceEntity } from '../api/entities';
 import { SessionCatalog } from '../runtime/SessionCatalog';
 import { Random } from 'meteor/random';
 import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
 import { Runtime } from '../runtime/Runtime';
 import { RuntimeContext } from './context';
+import { ActivityEntity } from '../entities/manifest';
+import { WorkspaceEntity } from '../entities/runtime';
 
 export const ActivityShell = () => {
   const activities = useFind(() => {
@@ -22,7 +23,7 @@ export const ActivityShell = () => {
   const [runtime] = useState(() => {
     const catalog = new SessionCatalog();
     const workspaceName = Random.id();
-    catalog.insertEntity({
+    catalog.insertEntity<WorkspaceEntity>({
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Workspace',
       metadata: {
@@ -53,10 +54,10 @@ export const ActivityShell = () => {
 
   const [floatingLayerKey, setFloatingLayerKey] = useState(Math.random());
 
-  const tasks = useFind(() => runtime.getTaskList()).slice(0);
+  const tasks = useFind(() => runtime.getTaskList());
   const workspace = useTracker(() => runtime.getWorkspace());
 
-  tasks.sort((a,b) => workspace.spec.windowOrder.indexOf(b.metadata.name) - workspace.spec.windowOrder.indexOf(a.metadata.name));
+  // const taskOrder = tasks.map(x => x.metadata.name).sort((a,b) => workspace.spec.windowOrder.indexOf(b) - workspace.spec.windowOrder.indexOf(a));
 
   // console.log(workspace.spec.windowOrder)
 
@@ -114,7 +115,7 @@ export const ActivityShell = () => {
       <div className="shell-floating-layer" key={floatingLayerKey}>
         <LauncherWindow />
         {tasks.map(task => (
-          <TaskWindow key={task.metadata.name} task={task} />
+          <TaskWindow key={task.metadata.name} task={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} />
         ))}
       </div>
     </RuntimeContext.Provider>
