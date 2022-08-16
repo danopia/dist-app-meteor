@@ -2,6 +2,7 @@ export interface EntityMetadata {
   name: string;
   namespace?: string;
   catalogId?: string;
+  uid?: string;
   generation?: number;
   title?: string;
   description?: string;
@@ -14,6 +15,14 @@ export interface EntityMetadata {
     icon?: string;
     type?: string;
   }>;
+  ownerReferences?: Array<{
+    apiVersion: string;
+    kind: string;
+    name: string;
+    uid?: string; // this is required in kubernetes
+    blockOwnerDeletion?: boolean;
+    controller?: boolean;
+  }>;
 }
 
 export interface NamespaceEntity {
@@ -24,21 +33,55 @@ export interface NamespaceEntity {
   // spec: {};
 }
 
+export interface WorkspaceEntity {
+  _id?: string;
+  apiVersion: "runtime.dist.app/v1alpha1";
+  kind: "Workspace";
+  metadata: EntityMetadata;
+  spec: {
+    windowOrder: Array<string>;
+  };
+}
+
+export interface CommandEntity {
+  apiVersion: "runtime.dist.app/v1alpha1";
+  kind: "Command";
+  metadata: EntityMetadata;
+  spec: {
+    type: 'launch-intent';
+    intent: {
+      action: string;
+      activityRef?: string;
+      flags?: Array<'new-task'>;
+    };
+  } | {
+    type: 'bring-to-top' | 'close-task' | 'delete-task';
+    taskName: string;
+  } | {
+    type: 'resize-window' | 'move-window';
+    taskName: string;
+    xAxis: number;
+    yAxis: number;
+  };
+}
+
 export interface TaskEntity {
   _id?: string;
-  apiVersion: "dist.app/v1alpha1";
+  apiVersion: "runtime.dist.app/v1alpha1";
   kind: "Task";
   metadata: EntityMetadata;
   spec: {
     placement: {
-      type: 'floating';
-      left: number;
-      top: number;
-      width: number;
-      height: number;
-    } | {
-      type: 'grid';
-      area: 'fullscreen';
+      current: 'floating' | 'grid';
+      floating: {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+      };
+      grid: {
+        area: 'fullscreen';
+      };
     };
     stack: Array<{
       activity: {
@@ -54,7 +97,7 @@ export interface TaskEntity {
 
 export interface ApplicationEntity {
   _id?: string;
-  apiVersion: "dist.app/v1alpha1";
+  apiVersion: "manifest.dist.app/v1alpha1";
   kind: "Application";
   metadata: EntityMetadata;
   spec: {
@@ -106,7 +149,7 @@ export type ImplementationSpec =
 
 export interface ActivityEntity {
   _id?: string;
-  apiVersion: "dist.app/v1alpha1";
+  apiVersion: "manifest.dist.app/v1alpha1";
   kind: "Activity";
   metadata: EntityMetadata;
   spec: {
@@ -178,9 +221,14 @@ export interface ActivityEntity {
 
 export type Entity = (
   | NamespaceEntity
+
+  | WorkspaceEntity
   | TaskEntity
+  | CommandEntity
+
   | ApplicationEntity
   | ActivityEntity
+
   // | EndpointEntity
   // | ServiceEntity
   // | DatabaseEntity

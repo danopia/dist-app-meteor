@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityEntity, IframeImplementationSpec } from '../api/entities';
 import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
+import { RuntimeContext } from './context';
 
 export const ActivityEmbed = (props: {
   activity: ActivityEntity;
@@ -16,6 +17,7 @@ export const ActivityEmbed = (props: {
     props.onLifecycle('loading');
   }, []);
 
+  const runtime = useContext(RuntimeContext);
   const messageHost = useMemo(() => new MessageHost(), [contentWindow]);
   useEffect(() => {
     if (contentWindow) {
@@ -26,12 +28,27 @@ export const ActivityEmbed = (props: {
   }, [contentWindow]);
   useEffect(() => {
     messageHost.addRpcListener('reportReady', rpc => {
-      console.log('handling', rpc);
+      // console.log('handling', rpc);
       props.onLifecycle('ready');
     });
     messageHost.addRpcListener('recycle-frame', rpc => {
-      console.log('handling', rpc);
+      // console.log('handling', rpc);
       setIframeKey(Math.random());
+    });
+    messageHost.addRpcListener('launchIntent', rpc => {
+      // console.log('handling', rpc);
+      runtime?.handleCommand({
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Command',
+        metadata: {name: 'launch'},
+        spec: {
+          type: 'launch-intent',
+          intent: {
+            activityRef: (rpc as any).intent?.activity?.name as string | undefined,
+            action: (rpc as any).intent?.action as string ?? 'launch',
+          },
+        },
+      });
     });
   }, [messageHost]);
 
@@ -48,7 +65,7 @@ export const ActivityEmbed = (props: {
           `style-src 'self' 'unsafe-inline'`
         ].join('; ')}
         onLoad={evt => {
-          console.log('onLoad', evt.currentTarget.contentWindow);
+          // console.log('onLoad', evt.currentTarget.contentWindow);
           setContentWindow(evt.currentTarget.contentWindow);
         }}
       />
@@ -136,7 +153,7 @@ globalThis.DistApp = class DistApp {
           }
         });
 
-        if (event.data.protocol !== 'dist.app/v1alpha1') reject(
+        if (event.data.protocol !== 'protocol.dist.app/v1alpha1') reject(
           new Error("Received unexpected protocol "+event.data.protocol));
         const [port] = event.ports ?? [];
         if (!port) reject(

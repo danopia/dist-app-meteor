@@ -9,7 +9,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
     tags: ['exported'],
   },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
@@ -28,7 +28,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
     },
   },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'launcher',
@@ -162,7 +162,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
     },
   },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'base64',

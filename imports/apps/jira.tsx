@@ -15,7 +15,7 @@ export const CounterCatalog = new StaticCatalog([{
   //   export: 'true',
   // },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
@@ -37,7 +37,7 @@ export const CounterCatalog = new StaticCatalog([{
     },
   },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Endpoint',
   metadata: {
     name: 'main',
@@ -46,7 +46,7 @@ export const CounterCatalog = new StaticCatalog([{
   spec: {
   },
 }, {
-  apiVersion: 'dist.app/v1alpha1',
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'main',

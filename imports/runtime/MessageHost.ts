@@ -33,7 +33,7 @@ export class MessageHost {
   connectTo(otherWindow: Window) {
     if (!this.remotePort) throw new Error(`BUG: Host was already connected somewhere`);
     otherWindow.postMessage({
-      protocol: 'dist.app/v1alpha1',
+      protocol: 'protocol.dist.app/v1alpha1',
     }, '*', [this.remotePort]);
     this.remotePort = null;
   }

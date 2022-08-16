@@ -1,46 +1,23 @@
 import { Mongo } from "meteor/mongo";
-import { Random } from "meteor/random";
 import { useFind } from "meteor/react-meteor-data";
-import React from "react";
+import React, { useContext } from "react";
 import { ActivityEntity } from "../api/entities";
 import { EntitiesCollection } from "../db/entities";
-import { SessionCatalog } from "../runtime/SessionCatalog";
+import { RuntimeContext } from "./context";
 import { WindowFrame } from "./widgets/WindowFrame";
 
-export const LauncherWindow = (props: {
-  sessionCatalog: SessionCatalog,
-}) => {
+export const LauncherWindow = () => {
   const activities = useFind(() => {
     return EntitiesCollection.find({
-      apiVersion: 'dist.app/v1alpha1',
+      apiVersion: 'manifest.dist.app/v1alpha1',
       kind: 'Activity',
     }) as Mongo.Cursor<ActivityEntity>;
   });
 
+  const runtime = useContext(RuntimeContext);
+
   function launchActivityTask(activity: ActivityEntity) {
-    props.sessionCatalog.insertEntity({
-      apiVersion: 'dist.app/v1alpha1',
-      kind: 'Task',
-      metadata: {
-        name: Random.id(),
-      },
-      spec: {
-        placement: {
-          type: 'floating',
-          left: 100 + Math.floor(Math.random() * 200),
-          top: 100 + Math.floor(Math.random() * 200),
-          width: activity.spec.windowSizing?.initialWidth ?? 400,
-          height: activity.spec.windowSizing?.initialHeight ?? 300,
-        },
-        stack: [{
-          activity: {
-            catalogId: activity.metadata.catalogId,
-            namespace: activity.metadata.namespace,
-            name: activity.metadata.name,
-          },
-        }],
-      },
-    })
+    runtime?.createTask(activity);
   }
 
   return (
