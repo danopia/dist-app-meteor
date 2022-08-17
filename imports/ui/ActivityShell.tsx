@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useFind, useTracker } from 'meteor/react-meteor-data';
-import { EntitiesCollection } from '../db/entities';
-import { Mongo } from 'meteor/mongo';
 import { SessionCatalog } from '../runtime/SessionCatalog';
 import { Random } from 'meteor/random';
 import { TaskWindow } from './TaskWindow';
@@ -12,14 +10,6 @@ import { ActivityEntity } from '../entities/manifest';
 import { WorkspaceEntity } from '../entities/runtime';
 
 export const ActivityShell = () => {
-  const activities = useFind(() => {
-    return EntitiesCollection.find({
-      apiVersion: 'manifest.dist.app/v1alpha1',
-      kind: 'Activity',
-    }) as Mongo.Cursor<ActivityEntity>;
-  });
-  // console.log(activities)
-
   const [runtime] = useState(() => {
     const catalog = new SessionCatalog();
     const workspaceName = Random.id();
@@ -45,7 +35,7 @@ export const ActivityShell = () => {
   // }, [sessionCatalog]);
 
   const [didWelcome, setDidWelcome] = useState(false);
-  const welcomeAct = activities.find(x => x.metadata.catalogId == 'builtin:welcome');
+  const welcomeAct = useTracker(() => runtime.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', 'welcome', 'main'));
   useEffect(() => {
     if (!welcomeAct || didWelcome) return;
     runtime.createTask(welcomeAct);

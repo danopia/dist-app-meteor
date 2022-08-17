@@ -101,6 +101,9 @@ export const ToolbeltCatalog = new StaticCatalog([{
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
 
+          // TODO: use distApp instance to fetch the available activities
+          // TODO: categorize activities by encoding, networking, calculating (codec)
+
           // const toolListP = fetch('/~~export', {
           //   method: 'POST',
           //   body: JSON.stringify({
@@ -148,7 +151,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
 
           toolList.addEventListener('click', evt => {
             evt.preventDefault();
-            const href = evt.target.getAttribute('href');
+            const href = evt.target.closest('a').getAttribute('href');
             distApp.sendRpc({ rpc: 'launchIntent', intent: {
               activity: {
                 name: href,
@@ -172,7 +175,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
   spec: {
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts'],
+      sandboxing: ['allow-scripts', 'allow-forms'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',

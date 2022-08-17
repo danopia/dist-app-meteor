@@ -3,8 +3,10 @@ import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './context';
+import { TaskEntity } from '../entities/runtime';
 
 export const ActivityEmbed = (props: {
+  task: TaskEntity;
   activity: ActivityEntity;
   className?: string;
   onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;
@@ -27,26 +29,19 @@ export const ActivityEmbed = (props: {
     }
   }, [contentWindow]);
   useEffect(() => {
-    messageHost.addRpcListener('reportReady', rpc => {
-      // console.log('handling', rpc);
+    messageHost.addRpcListener('reportReady', () => {
       props.onLifecycle('ready');
     });
-    messageHost.addRpcListener('recycle-frame', rpc => {
-      // console.log('handling', rpc);
+    messageHost.addRpcListener('recycle-frame', () => {
       setIframeKey(Math.random());
     });
     messageHost.addRpcListener('launchIntent', rpc => {
-      // console.log('handling', rpc);
-      runtime?.handleCommand({
-        apiVersion: 'runtime.dist.app/v1alpha1',
-        kind: 'Command',
-        metadata: {name: 'launch'},
-        spec: {
-          type: 'launch-intent',
-          intent: {
-            activityRef: (rpc as any).intent?.activity?.name as string | undefined,
-            action: (rpc as any).intent?.action as string ?? 'launch',
-          },
+      console.log('handling', rpc);
+      runtime?.runTaskCommand(props.task, props.activity, {
+        type: 'launch-intent',
+        intent: {
+          activityRef: (rpc as any).intent?.activity?.name as string | undefined,
+          action: (rpc as any).intent?.action as string ?? 'launch',
         },
       });
     });

@@ -1,24 +1,18 @@
-import { Mongo } from "meteor/mongo";
 import { useFind } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
-import { EntitiesCollection } from "../db/entities";
 import { ActivityEntity } from "../entities/manifest";
 import { RuntimeContext } from "./context";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 export const LauncherWindow = () => {
-  const activities = useFind(() => {
-    return EntitiesCollection.find({
-      apiVersion: 'manifest.dist.app/v1alpha1',
-      kind: 'Activity',
-    }) as Mongo.Cursor<ActivityEntity>;
-  });
-
   const runtime = useContext(RuntimeContext);
 
-  function launchActivityTask(activity: ActivityEntity) {
-    runtime?.createTask(activity);
-  }
+  const activities = useFind(() => {
+    return runtime?.manifestCatalog.findEntities<ActivityEntity>(
+      /*apiVersion:*/ 'manifest.dist.app/v1alpha1',
+      /*kind:*/ 'Activity',
+    );
+  }) ?? [];
 
   return (
     <WindowFrame
@@ -35,7 +29,7 @@ export const LauncherWindow = () => {
             .intentFilters?.some(x =>
               x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher') ? (
           <li key={activity._id}>
-            <button onClick={() => launchActivityTask(activity)}>
+            <button onClick={() => runtime?.createTask(activity)}>
               {activity.metadata.title}
             </button>
           </li>

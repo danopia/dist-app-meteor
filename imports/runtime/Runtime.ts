@@ -9,16 +9,18 @@ export class Runtime {
     public readonly sessionCatalog: SessionCatalog,
     public readonly workspaceEntity: WorkspaceEntity,
   ) {}
+  public readonly manifestCatalog = new SessionCatalog('system:bundled-apps');
 
   handleCommand(command: CommandEntity) {
     switch (command.spec.type) {
       case 'launch-intent': {
+        console.log('Launching intent', command.spec.intent, 'from', command.metadata);
         if (command.spec.intent.activityRef) {
-          const activity = this.sessionCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', command.metadata.namespace, command.spec.intent.activityRef);
+          const activity = this.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', command.metadata.namespace, command.spec.intent.activityRef);
           if (!activity) throw new Error(`activity 404 from intent`);
           this.createTask(activity);
         } else {
-          console.log('TODO: Generic intents');
+          console.log('TODO: Generic intents', command.spec.intent);
         }
         break;
       }
@@ -86,18 +88,24 @@ export class Runtime {
     this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSNap => spaceSNap.spec.windowOrder.unshift(taskId));
   }
 
-  runTaskCommand(task: TaskEntity, commandSpec: CommandEntity["spec"]) {
+  runTaskCommand(task: TaskEntity, activity: ActivityEntity | null, commandSpec: CommandEntity["spec"]) {
     this.handleCommand({
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Command',
       metadata: {
         name: 'task-cmd',
+        namespace: activity?.metadata.namespace,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
           kind: 'Task',
           name: task.metadata.name,
           uid: task.metadata.uid,
-        }],
+        }, ...(activity ? [{
+          apiVersion: 'runtime.dist.app/v1alpha1',
+          kind: 'Activity',
+          name: activity.metadata.name,
+          uid: activity.metadata.uid,
+        }] : [])],
       },
       spec: commandSpec,
     });

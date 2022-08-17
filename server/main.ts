@@ -6,37 +6,42 @@ import { WelcomeCatalog } from '/imports/apps/welcome';
 import { ToolbeltCatalog } from '/imports/apps/toolbelt';
 import { WorldClockCatalog } from '/imports/apps/world-clock';
 
-async function upsertEntity(catalogId: string, entity: Entity) {
-  const _id = `${catalogId}/${entity.kind}.${entity.apiVersion}:${entity.metadata.namespace ?? ''}/${entity.metadata.name}`;
+async function applyManifests(catalogId: string, namespace: string, entities: Entity[]) {
+  const allIds = new Array<string>();
+  for (const entity of entities) {
+    allIds.push(await upsertEntity(catalogId, namespace, entity));
+  }
+  const removed = EntitiesCollection.remove({
+    _id: { $nin: allIds },
+    'metadata.catalogId': catalogId,
+    'metadata.namespace': namespace,
+  });
+}
+
+async function upsertEntity(catalogId: string, namespaceOverride: string | null, entity: Entity) {
+  const namespace = namespaceOverride ?? entity.metadata.namespace ?? '';
+  const _id = `${catalogId}/${entity.kind}.${entity.apiVersion}:${namespace}/${entity.metadata.name}`;
   EntitiesCollection.upsert({
     _id,
   }, {
     _id,
     ...entity,
     metadata: {
-      catalogId,
+      catalogId, // TODO: remove from public API
+      namespace,
       ...entity.metadata,
     },
   });
+  return _id;
 }
 
 Meteor.startup(async () => {
 
   EntitiesCollection.remove({});
-  for (const entity of CounterTaskCatalog.entries) {
-    await upsertEntity('builtin:counter-task', entity);
-  }
-  for (const entity of CounterVolatileCatalog.entries) {
-    await upsertEntity('builtin:counter-volatile', entity);
-  }
-  for (const entity of WelcomeCatalog.entries) {
-    await upsertEntity('builtin:welcome', entity);
-  }
-  for (const entity of ToolbeltCatalog.entries) {
-    await upsertEntity('builtin:toolbelt', entity);
-  }
-  for (const entity of WorldClockCatalog.entries) {
-    await upsertEntity('builtin:world-clock', entity);
-  }
+  await applyManifests('system:bundled-apps', 'counter-task', CounterTaskCatalog.entries);
+  await applyManifests('system:bundled-apps', 'counter-volatile', CounterVolatileCatalog.entries);
+  await applyManifests('system:bundled-apps', 'welcome', WelcomeCatalog.entries);
+  await applyManifests('system:bundled-apps', 'toolbelt', ToolbeltCatalog.entries);
+  await applyManifests('system:bundled-apps', 'world-clock', WorldClockCatalog.entries);
 
 });

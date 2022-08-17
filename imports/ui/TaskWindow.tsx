@@ -1,6 +1,5 @@
 import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext, useState } from "react";
-import { EntitiesCollection } from "../db/entities";
 import { ActivityEmbed } from "./ActivityEmbed";
 import { WindowFrame } from "./widgets/WindowFrame";
 import { RuntimeContext } from "./context";
@@ -17,20 +16,12 @@ export const TaskWindow = (props: {
 
   // const task = runtime.getTask()
 
-  const activity = useTracker(() => {
-    return EntitiesCollection.findOne({
-      apiVersion: 'manifest.dist.app/v1alpha1',
-      kind: 'Activity',
-      'metadata.catalogId': props.task.spec.stack[0].activity.catalogId,
-      'metadata.namespace': props.task.spec.stack[0].activity.namespace,
-      'metadata.name': props.task.spec.stack[0].activity.name,
-    }) as ActivityEntity | null;
-  });
+  const activity = useTracker(() => runtime?.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
   function bringToTop() {
-    runtime?.runTaskCommand(props.task, {
+    runtime?.runTaskCommand(props.task, activity, {
       type: 'bring-to-top',
       taskName: props.task.metadata.name,
     });
@@ -48,7 +39,7 @@ export const TaskWindow = (props: {
         onResized={newSize => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime?.runTaskCommand(props.task, {
+          runtime?.runTaskCommand(props.task, activity, {
             type: 'resize-window',
             taskName: props.task.metadata.name,
             xAxis: newSize.width,
@@ -58,7 +49,7 @@ export const TaskWindow = (props: {
         onMoved={newPos => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime?.runTaskCommand(props.task, {
+          runtime?.runTaskCommand(props.task, activity, {
             type: 'move-window',
             taskName: props.task.metadata.name,
             xAxis: newPos.left,
@@ -67,7 +58,7 @@ export const TaskWindow = (props: {
         }}
       >
       {activity ? (
-        <ActivityEmbed key={activity._id} className="activity-contents-wrap" activity={activity} onLifecycle={setLifecycle} />
+        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activity={activity} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
   );
