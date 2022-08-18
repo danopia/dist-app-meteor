@@ -35,6 +35,10 @@ export type IconSpec =
 export interface IframeImplementationSpec {
   type: 'iframe',
   sandboxing?: Array<'allow-scripts'>;
+  securityPolicy?: {
+    scriptSrc?: Array<string>;
+    connectSrc?: Array<string>;
+  };
   source: {
     type: 'internet-url';
     url: string;

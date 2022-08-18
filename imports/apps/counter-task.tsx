@@ -51,6 +51,9 @@ export const CounterTaskCatalog = new StaticCatalog([{
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts'],
+      securityPolicy: {
+        scriptSrc: ['https://unpkg.com'],
+      },
       source: {
         type: 'piecemeal',
         htmlLang: 'en',

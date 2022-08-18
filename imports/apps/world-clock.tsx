@@ -51,6 +51,9 @@ export const WorldClockCatalog = new StaticCatalog([{
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts'],
+      securityPolicy: {
+        scriptSrc: ['https://widget.time.is'],
+      },
       source: {
         type: 'piecemeal',
         htmlLang: 'en',

@@ -56,8 +56,9 @@ export const ActivityEmbed = (props: {
         /* @ts-expect-error: csp is not typed */
         csp={[
           `default-src 'self'`,
-          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://widget.time.is`,
-          `style-src 'self' 'unsafe-inline'`
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${(implementation.securityPolicy?.scriptSrc ?? []).join(' ')}`,
+          `style-src 'self' 'unsafe-inline'`,
+          `connect-src 'self' ${(implementation.securityPolicy?.connectSrc ?? []).join(' ')}`,
         ].join('; ')}
         onLoad={evt => {
           // console.log('onLoad', evt.currentTarget.contentWindow);
@@ -112,7 +113,7 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
 
 const embedInnerScript = `
 const originalFetch = globalThis.fetch;
-globalThis.fetch = () => Promise.reject('TODO: fetch during bootstrap');
+// globalThis.fetch = () => Promise.reject('TODO: fetch during bootstrap');
 globalThis.DistApp = class DistApp {
   constructor(port) {
     this.port = port;
