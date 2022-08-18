@@ -55,53 +55,53 @@ export const ToolbeltCatalog = new StaticCatalog([{
         bodyHtml: stripIndent(html)`
           <h1>&#128104;&#8205;&#128187; devmode.cloud developer toolbelt</h1>
           <ul id="tool-list"></ul>
-          <style type="text/css">
-            body {
-              background-color: #333;
-              color: #fff;
-              margin: 0;
-              display: flex;
-              flex-direction: column;
-              height: 100vh;
-              padding: 0.5em;
-              box-sizing: border-box;
-              font-family: monospace;
-            }
-            h1 {
-              margin: 0.3em 1em;
-              color: #999;
-            }
+        `,
+        inlineStyle: stripIndent`
+          body {
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 0.5em;
+            box-sizing: border-box;
+            font-family: monospace;
+          }
+          h1 {
+            margin: 0.3em 1em;
+            color: #999;
+          }
 
-            #tool-list {
-              /* margin: 1em 0; */
-              margin: 0;
-              display: flex;
-              flex-wrap: wrap;
-              list-style: none;
-              gap: 2em;
-            }
-            #tool-list li {
-              /*margin: 1em;*/
-              flex-basis: 15em;
-            }
-            #tool-list a {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              padding: 1em;
-              height: 3em;
+          #tool-list {
+            /* margin: 1em 0; */
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            list-style: none;
+            gap: 2em;
+          }
+          #tool-list li {
+            /*margin: 1em;*/
+            flex-basis: 15em;
+          }
+          #tool-list a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1em;
+            height: 3em;
 
-              font-size: 1.6em;
-              background-color: rgba(200, 200, 200, 0.5);
-              color: #fff;
+            font-size: 1.6em;
+            background-color: rgba(200, 200, 200, 0.5);
+            color: #fff;
 
-              transition: background-color 0.2s linear;
-            }
-            #tool-list a:not(:hover) {
-              text-decoration: none;
-              background-color: rgba(200, 200, 200, 0.3);
-            }
-          </style>
+            transition: background-color 0.2s linear;
+          }
+          #tool-list a:not(:hover) {
+            text-decoration: none;
+            background-color: rgba(200, 200, 200, 0.3);
+          }
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
@@ -201,52 +201,52 @@ export const ToolbeltCatalog = new StaticCatalog([{
             <textarea class="right" name="encoded" placeholder="encoded"></textarea>
             <textarea class="right" name="bytes" placeholder="hex bytes"></textarea>
           </form>
-          <style type="text/css">
-            body {
-              background-color: #333;
-              color: #fff;
-              margin: 0;
-              display: flex;
-              flex-direction: column;
-              height: 100vh;
-              padding: 2em;
-              box-sizing: border-box;
-              min-width: 40em;
-              font-family: monospace;
-            }
-            h1 {
-              margin: 0.3em 1em;
-              color: #999;
-            }
-            form {
-              display: grid;
-              grid-template-columns: 1fr 8em 1fr;
-              grid-gap: 1em;
-              grid-auto-rows: minmax(3em, auto);
+        `,
+        inlineStyle: stripIndent`
+          body {
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 2em;
+            box-sizing: border-box;
+            min-width: 40em;
+            font-family: monospace;
+          }
+          h1 {
+            margin: 0.3em 1em;
+            color: #999;
+          }
+          form {
+            display: grid;
+            grid-template-columns: 1fr 8em 1fr;
+            grid-gap: 1em;
+            grid-auto-rows: minmax(3em, auto);
 
-              margin: 1em;
-              flex: 1;
-            }
-            textarea {
-              background-color: #111;
-              color: #fff;
-              padding: 0.2em 0.5em;
-            }
-            textarea.left {
-              grid-column: 1;
-              grid-row: span 2;
-            }
-            textarea.right {
-              grid-column: 3;
-            }
-            button {
-              grid-column: 2;
-              grid-row: span 2;
-              background-color: #555;
-              font-family: inherit;
-              color: #fff;
-            }
-          </style>
+            margin: 1em;
+            flex: 1;
+          }
+          textarea {
+            background-color: #111;
+            color: #fff;
+            padding: 0.2em 0.5em;
+          }
+          textarea.left {
+            grid-column: 1;
+            grid-row: span 2;
+          }
+          textarea.right {
+            grid-column: 3;
+          }
+          button {
+            grid-column: 2;
+            grid-row: span 2;
+            background-color: #555;
+            font-family: inherit;
+            color: #fff;
+          }
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();

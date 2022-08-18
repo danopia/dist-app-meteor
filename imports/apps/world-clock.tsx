@@ -55,7 +55,7 @@ export const WorldClockCatalog = new StaticCatalog([{
         type: 'piecemeal',
         htmlLang: 'en',
         metaCharset: 'utf-8',
-        headTitle: 'Welcome Splash',
+        headTitle: 'time.is squares',
         scriptUrls: [
           // 'https://widget.time.is/en.js',
         ],
@@ -78,13 +78,11 @@ export const WorldClockCatalog = new StaticCatalog([{
               <div id="Berlin_z704"></div>
             </div>
 
-
             <div class="clock">
               <a class="location" target="_blank" rel="nofollow"
                   href="https://time.is/Los_Angeles">Los Angeles</a>
               <div id="Los_Angeles_z14e"></div>
             </div>
-
 
             <div class="clock">
               <a class="location" target="_blank" rel="nofollow"
@@ -93,45 +91,6 @@ export const WorldClockCatalog = new StaticCatalog([{
             </div>
 
           </div>
-          <style type="text/css">
-            body {
-              background-color: #fff;
-              color: #444;
-              margin: 0;
-              font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
-            }
-            .grid {
-              display: flex;
-              height: 100vh;
-            }
-            .clock {
-              padding: 0.5em; flex: 1;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-evenly;
-            }
-            .clock:hover { background-color: rgba(120,120,120,0.1); }
-            .grid > div { text-align: center; }
-            .location { font-size: 1.25em; color: #666; }
-            .time { font-size: 3em; }
-            .sun { font-size: 1.5em; }
-            .sunrise { color: #696; }
-            .sunset { color: #966; }
-            .divider { color: #999; padding: 0 0.2em; font-size: 0.8em; }
-            a { color: inherit; }
-
-            @media (prefers-color-scheme: dark) {
-              body {
-                background-color: rgb(25, 25, 25);
-                color: rgba(255, 255, 255, 0.87);
-              }
-              .clock:hover { background-color: rgba(170,170,170,0.1); }
-              .location { color: #ccc; }
-              .sunrise { color: #9c9; }
-              .sunset { color: #c99; }
-              .divider { color: #999; }
-            }
-          </style>
           <script>
           time_is_widget=new time_is_widget()
           function time_is_widget(){var ca=0,tD=0,tout=0,updint=1000,tl="",U="undefined",i,j,rd
@@ -206,6 +165,45 @@ export const WorldClockCatalog = new StaticCatalog([{
           tout=setTimeout('time_is_widget.tick("")',updint-tU%updint)}
           function l0(n){return n>9?n:"0"+n}}
           </script>
+        `,
+        inlineStyle: stripIndent`
+          body {
+            background-color: #fff;
+            color: #444;
+            margin: 0;
+            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+          }
+          .grid {
+            display: flex;
+            height: 100vh;
+          }
+          .clock {
+            padding: 0.5em; flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+          }
+          .clock:hover { background-color: rgba(120,120,120,0.1); }
+          .grid > div { text-align: center; }
+          .location { font-size: 1.25em; color: #666; }
+          .time { font-size: 3em; }
+          .sun { font-size: 1.5em; }
+          .sunrise { color: #696; }
+          .sunset { color: #966; }
+          .divider { color: #999; padding: 0 0.2em; font-size: 0.8em; }
+          a { color: inherit; }
+
+          @media (prefers-color-scheme: dark) {
+            body {
+              background-color: rgb(25, 25, 25);
+              color: rgba(255, 255, 255, 0.87);
+            }
+            .clock:hover { background-color: rgba(170,170,170,0.1); }
+            .location { color: #ccc; }
+            .sunrise { color: #9c9; }
+            .sunset { color: #c99; }
+            .divider { color: #999; }
+          }
         `,
         inlineScript: stripIndent(html)`
           const commonConfig = {

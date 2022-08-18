@@ -45,6 +45,7 @@ export interface IframeImplementationSpec {
     headTitle?: string;
     scriptUrls?: Array<string>;
     inlineScript?: string;
+    inlineStyle?: string;
     bodyHtml?: string;
   };
 }

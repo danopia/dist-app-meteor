@@ -85,6 +85,11 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
         html`<meta charset="${implementation.source.metaCharset}" />`,
       ] : []),
       html`<title>${implementation.source.headTitle ?? 'Embedded dist.app'}</title>`,
+      ...(implementation.source.inlineStyle ? [
+        `  <style type="text/css">`,
+        implementation.source.inlineStyle,
+        `  </style>`,
+      ] : []),
       ...(implementation.source.scriptUrls?.flatMap(url => [
         html`<script src="${url}"></script>`,
       ]) ?? []),

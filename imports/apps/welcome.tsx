@@ -71,11 +71,11 @@ export const WelcomeCatalog = new StaticCatalog([{
               <button @click="signIn">Sign in to dist.app</button>
             </p>
           </div>
-          <style type="text/css">
-            body {
-              font-family: sans-serif;
-            }
-          </style>
+        `,
+        inlineStyle: stripIndent`
+          body {
+            font-family: sans-serif;
+          }
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
