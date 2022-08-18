@@ -40,6 +40,10 @@ export const ToolbeltCatalog = new StaticCatalog([{
       action: 'app.dist.Main',
       category: 'app.dist.Launcher',
     }],
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts'],
@@ -59,9 +63,8 @@ export const ToolbeltCatalog = new StaticCatalog([{
               display: flex;
               flex-direction: column;
               height: 100vh;
-              padding: 2em;
+              padding: 0.5em;
               box-sizing: border-box;
-              min-width: 40em;
               font-family: monospace;
             }
             h1 {
@@ -70,14 +73,16 @@ export const ToolbeltCatalog = new StaticCatalog([{
             }
 
             #tool-list {
-              margin: 4em 0;
+              /* margin: 1em 0; */
+              margin: 0;
               display: flex;
               flex-wrap: wrap;
               list-style: none;
+              gap: 2em;
             }
             #tool-list li {
-              margin: 1em;
-              flex-basis: 20em;
+              /*margin: 1em;*/
+              flex-basis: 15em;
             }
             #tool-list a {
               display: flex;
