@@ -20,7 +20,7 @@ export const ActivityEmbed = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
-  const messageHost = useMemo(() => new MessageHost(), [contentWindow]);
+  const messageHost = useMemo(() => new MessageHost(), [contentWindow, props.activity.spec.implementation]);
   useEffect(() => {
     if (contentWindow) {
       console.log('Initiating connection to iframe content');

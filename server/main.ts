@@ -1,10 +1,12 @@
 import { Meteor } from 'meteor/meteor';
+import { check } from 'meteor/check';
 import { CounterVolatileCatalog } from '../imports/apps/counter-volatile';
 import { CounterTaskCatalog } from '../imports/apps/counter-task';
-import { EntitiesCollection, Entity } from '/imports/db/entities';
+import { EntitiesCollection } from '/imports/db/entities';
 import { WelcomeCatalog } from '/imports/apps/welcome';
 import { ToolbeltCatalog } from '/imports/apps/toolbelt';
 import { WorldClockCatalog } from '/imports/apps/world-clock';
+import { Entity } from '/imports/entities';
 
 async function applyManifests(catalogId: string, namespace: string, entities: Entity[]) {
   const allIds = new Array<string>();
@@ -35,10 +37,32 @@ async function upsertEntity(catalogId: string, namespaceOverride: string | null,
   return _id;
 }
 
+Meteor.methods({
+  async '/CatalogUpload/UpsertEntity'(catalogId: unknown, namespaceOverride: unknown, entity: Entity) {
+    check(catalogId, String);
+    check(namespaceOverride, String);
+    check(entity, Object);
+    check(entity['apiVersion'], String);
+    check(entity['kind'], String);
+    return await upsertEntity(catalogId, namespaceOverride, entity);
+  },
+  async '/CatalogUpload/RemoveOtherEntities'(catalogId: unknown, namespaceOverride: unknown, entityIds: string[]) {
+    check(catalogId, String);
+    check(namespaceOverride, String);
+    check(entityIds, Array);
+    const removedCount = EntitiesCollection.remove({
+      _id: { $nin: entityIds },
+      'metadata.catalogId': catalogId,
+      'metadata.namespace': namespaceOverride,
+    });
+    return removedCount;
+  },
+})
+
 Meteor.startup(async () => {
 
-  EntitiesCollection.remove({});
-  await applyManifests('system:bundled-apps', 'counter-task', CounterTaskCatalog.entries);
+  // EntitiesCollection.remove({});
+  // await applyManifests('system:bundled-apps', 'counter-task', CounterTaskCatalog.entries);
   await applyManifests('system:bundled-apps', 'counter-volatile', CounterVolatileCatalog.entries);
   await applyManifests('system:bundled-apps', 'welcome', WelcomeCatalog.entries);
   await applyManifests('system:bundled-apps', 'toolbelt', ToolbeltCatalog.entries);
