@@ -23,12 +23,13 @@ export interface CommandEntity {
     };
   } | {
     type: 'bring-to-top' | 'close-task' | 'delete-task';
-    taskName: string;
   } | {
     type: 'resize-window' | 'move-window';
-    taskName: string;
     xAxis: number;
     yAxis: number;
+  } | {
+    type: 'set-task-rollup';
+    state: 'normal' | 'rolled' | 'toggle';
   };
 }
 
@@ -40,6 +41,7 @@ export interface TaskEntity {
   spec: {
     placement: {
       current: 'floating' | 'grid';
+      rolledWindow: boolean;
       floating: {
         left: number;
         top: number;

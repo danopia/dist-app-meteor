@@ -18,13 +18,15 @@ export const LauncherWindow = () => {
     <WindowFrame
         floatingRect={{left: 0, top: 0}}
         layoutMode="floating"
-        resizable={true}
+        resizable={false}
         onMoved={() => {}}
         onResized={() => {}}
         showLoader={false}
-        title="Launcher"
     >
-      <nav className="activity-contents-wrap launcher-window">
+        <section className="shell-powerbar">
+          <div className="window-title">Launcher</div>
+        </section>
+        <nav className="activity-contents-wrap launcher-window">
         <ul>{activities.map(activity => activity.spec
             .intentFilters?.some(x =>
               x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher') ? (

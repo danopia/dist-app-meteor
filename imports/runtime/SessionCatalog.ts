@@ -61,7 +61,7 @@ export class SessionCatalog {
         generation: (newEntity.metadata.generation ?? 0) + 1,
       },
     });
-    if (count == 0) throw new Error(`TODO: Update applied to zero entites`);
+    if (count == 0) throw new Error(`TODO: Update applied to zero entities`);
   }
 
   // Mutation helper
@@ -74,4 +74,16 @@ export class SessionCatalog {
 
     this.updateEntity(entity);
   }
+
+  deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string) {
+    const count = this.coll.remove({
+      apiVersion: apiVersion,
+      kind: kind,
+      'metadata.catalogId': this.catalogId,
+      'metadata.namespace': namespace,
+      'metadata.name': name,
+    });
+    if (count == 0) throw new Error(`TODO: Delete applied to zero entities`);
+  }
+
 }

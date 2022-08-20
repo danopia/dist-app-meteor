@@ -12,6 +12,8 @@ export class Runtime {
   public readonly manifestCatalog = new SessionCatalog('system:bundled-apps');
 
   handleCommand(command: CommandEntity) {
+    const taskName = command.metadata.ownerReferences?.find(x => x.kind == 'Task')?.name;
+
     switch (command.spec.type) {
       case 'launch-intent': {
         console.log('Launching intent', command.spec.intent, 'from', command.metadata);
@@ -25,8 +27,35 @@ export class Runtime {
         break;
       }
 
+      case 'set-task-rollup': {
+        if (!taskName) throw new Error('Unknown task name');
+        const { state } = command.spec;
+        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, taskName, x => {
+          switch (state) {
+            case 'normal': x.spec.placement.rolledWindow = false; break;
+            case 'rolled': x.spec.placement.rolledWindow = true; break;
+            case 'toggle': x.spec.placement.rolledWindow = !x.spec.placement.rolledWindow; break;
+          }
+        });
+        this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSnap => {
+          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
+          spaceSnap.spec.windowOrder.unshift(taskName);
+        });
+        break;
+      }
+
+      case 'delete-task': {
+        if (!taskName) throw new Error('Unknown task name');
+        this.sessionCatalog.deleteEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, taskName);
+        this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSnap => {
+          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
+          spaceSnap.spec.windowOrder.unshift(taskName);
+        });
+        break;
+      }
+
       case 'bring-to-top': {
-        const {taskName} = command.spec;
+        if (!taskName) throw new Error('Unknown task name');
         this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSnap => {
           if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
           spaceSnap.spec.windowOrder.unshift(taskName);
@@ -34,15 +63,17 @@ export class Runtime {
         break;
       }
       case 'move-window': {
+        if (!taskName) throw new Error('Unknown task name');
         const {xAxis, yAxis} = command.spec;
-        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => {
+        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, taskName, taskSnap => {
           taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, left: xAxis, top: yAxis};
         });
         break;
       }
       case 'resize-window': {
+        if (!taskName) throw new Error('Unknown task name');
         const {xAxis, yAxis} = command.spec;
-        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => {
+        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, taskName, taskSnap => {
           taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, width: xAxis, height: yAxis};
         });
         break;

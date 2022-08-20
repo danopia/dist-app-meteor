@@ -23,27 +23,28 @@ export const TaskWindow = (props: {
   function bringToTop() {
     runtime?.runTaskCommand(props.task, activity, {
       type: 'bring-to-top',
-      taskName: props.task.metadata.name,
+      // taskName: props.task.metadata.name,
     });
   }
 
   return (
     <WindowFrame
-        title={`Task ${props.task.metadata.name}`}
+        // title={`Task ${props.task.metadata.name}`}
         floatingRect={props.task.spec.placement.floating}
+        sizeRules={activity?.spec.windowSizing}
         layoutMode={props.task.spec.placement.current}
         resizable={true}
         zIndex={props.zIndex}
         showLoader={lifeCycle !== 'ready'}
+        isRolledUp={props.task.spec.placement.rolledWindow}
         onInteraction={() => bringToTop()}
         onResized={newSize => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
           runtime?.runTaskCommand(props.task, activity, {
             type: 'resize-window',
-            taskName: props.task.metadata.name,
             xAxis: newSize.width,
-            yAxis: newSize.height,
+            yAxis: placement.rolledWindow ? placement.floating.height : newSize.height,
           });
         }}
         onMoved={newPos => {
@@ -51,13 +52,26 @@ export const TaskWindow = (props: {
           if (placement.current !== 'floating') return;
           runtime?.runTaskCommand(props.task, activity, {
             type: 'move-window',
-            taskName: props.task.metadata.name,
             xAxis: newPos.left,
             yAxis: newPos.top,
           });
         }}
       >
-      {activity ? (
+      <button className="window-rollup-toggle"
+          onClick={() => runtime?.runTaskCommand(props.task, activity, {
+            type: 'set-task-rollup',
+            state: 'toggle',
+          })}>
+      </button>
+      <section className="shell-powerbar">
+        <div className="window-title">Task {props.task.metadata.name}</div>
+        <nav className="window-buttons">
+          <button onClick={() => runtime?.runTaskCommand(props.task, activity, {
+            type: 'delete-task',
+          })}>close</button>
+        </nav>
+      </section>
+      {(activity && !props.task.spec.placement.rolledWindow) ? (
         <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activity={activity} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
