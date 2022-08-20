@@ -112,11 +112,19 @@ iframe.activity-contents-wrap {
 }
 .window-title {
   flex: 1;
+  margin: 0.1em 0.5em;
   align-self: center;
 }
 .window-buttons {
   display: flex;
   justify-content: stretch;
+}
+.window-buttons button {
+  padding: 0 0.2em;
+  cursor: pointer;
+}
+.window-buttons button svg {
+  fill: red;
 }
 
 .react-draggable-transparent-selection,

@@ -53,44 +53,78 @@ export const ToolbeltCatalog = new StaticCatalog([{
         metaCharset: 'utf-8',
         headTitle: 'Counter PoC',
         bodyHtml: stripIndent(html)`
-          <h1>&#128104;&#8205;&#128187; devmode.cloud developer toolbelt</h1>
+          <h1>&#128104;&#8205;&#128187; developer toolbelt</h1>
           <ul id="tool-list"></ul>
         `,
         inlineStyle: stripIndent`
+          html {
+            height: 100%;
+          }
           body {
+            display: grid;
+            grid-template-rows: 5em 1fr;
+            box-sizing: border-box;
+            height: 100%;
+            margin: 0;
+            padding: 0.5em;
+
             background-color: #333;
             color: #fff;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 0.5em;
-            box-sizing: border-box;
             font-family: monospace;
           }
           h1 {
             margin: 0.3em 1em;
             color: #999;
+            position: sticky;
+            top: 0;
+            background-color: #333;
           }
-
           #tool-list {
-            /* margin: 1em 0; */
-            margin: 0;
-            display: flex;
-            flex-wrap: wrap;
             list-style: none;
-            gap: 2em;
+            padding: 0;
+            margin: 0 1em;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-rows: repeat(auto-fit, max(1fr, 10em));
+            justify-content: space-around;
+            gap: 3em;
+            max-width: 1200px;
+          }
+          @media (min-width: 1200px) {
+            body {
+              font-size: 1.15em;
+            }
+          }
+          @media (max-width: 900px) {
+            #tool-list {
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 2em;
+            }
+          }
+          @media (max-width: 600px) {
+            #tool-list {
+              grid-template-columns: 1fr 1fr;
+              gap: 1.5em;
+            }
+            body {
+              font-size: 0.9em;
+            }
+          }
+          @media (max-width: 400px) {
+            #tool-list {
+              grid-template-columns: 1fr;
+            }
           }
           #tool-list li {
-            /*margin: 1em;*/
-            flex-basis: 15em;
+            display: grid;
           }
           #tool-list a {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 1em;
-            height: 3em;
+            box-sizing: border-box;
 
             font-size: 1.6em;
             background-color: rgba(200, 200, 200, 0.5);
@@ -769,7 +803,6 @@ export const ToolbeltCatalog = new StaticCatalog([{
             <textarea class="right" name="header" placeholder="header data"></textarea>
             <textarea class="right" name="body" placeholder="body data"></textarea>
           </form>
-
         `,
         inlineStyle: stripIndent`
           body {
@@ -790,9 +823,9 @@ export const ToolbeltCatalog = new StaticCatalog([{
           }
           form {
             display: grid;
-            grid-template-columns: 1fr 8em 1fr;
+            grid-template-columns: 1fr min(20%, 8em) 1fr;
             grid-gap: 1em;
-            grid-template-rows: 8em 1fr;
+            grid-template-rows: min(33%,8em) 1fr;
 
             margin: 1em;
             flex: 1;
@@ -1136,6 +1169,18 @@ export const ToolbeltCatalog = new StaticCatalog([{
 
           .error-msg {
             color: #f33;
+          }
+
+          @media (min-width: 1000px) {
+            body {
+              font-size: 1.15em;
+            }
+          }
+          @media (max-width: 600px) {
+            body {
+              font-size: 0.8em;
+              padding: 1em 0.5em;
+            }
           }
         `,
         inlineScript: stripIndent(html)`
