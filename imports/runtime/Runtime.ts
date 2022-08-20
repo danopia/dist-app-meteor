@@ -27,17 +27,24 @@ export class Runtime {
 
       case 'bring-to-top': {
         const {taskName} = command.spec;
-        this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSNap => spaceSNap.spec.windowOrder.unshift(taskName));
+        this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSnap => {
+          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
+          spaceSnap.spec.windowOrder.unshift(taskName);
+        });
         break;
       }
       case 'move-window': {
         const {xAxis, yAxis} = command.spec;
-        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, left: xAxis, top: yAxis});
+        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => {
+          taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, left: xAxis, top: yAxis};
+        });
         break;
       }
       case 'resize-window': {
         const {xAxis, yAxis} = command.spec;
-        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, width: xAxis, height: yAxis});
+        this.sessionCatalog.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.workspaceEntity.metadata.namespace, command.spec.taskName, taskSnap => {
+          taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, width: xAxis, height: yAxis};
+        });
         break;
       }
 
@@ -85,7 +92,7 @@ export class Runtime {
       },
     });
 
-    this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSNap => spaceSNap.spec.windowOrder.unshift(taskId));
+    this.sessionCatalog.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.workspaceEntity.metadata.namespace, this.workspaceEntity.metadata.name, spaceSNap => {spaceSNap.spec.windowOrder.unshift(taskId)});
   }
 
   runTaskCommand(task: TaskEntity, activity: ActivityEntity | null, commandSpec: CommandEntity["spec"]) {

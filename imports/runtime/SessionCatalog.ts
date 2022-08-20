@@ -65,10 +65,13 @@ export class SessionCatalog {
   }
 
   // Mutation helper
-  mutateEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string, mutationCb: (x: T) => void) {
+  mutateEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], namespace: string | undefined, name: string, mutationCb: (x: T) => void | Symbol) {
     const entity = this.getEntity(apiVersion, kind, namespace, name);
     if (!entity) throw new Error(`Entity doesn't exist`);
-    mutationCb(entity);
+
+    const result = mutationCb(entity);
+    if (result == Symbol.for('no-op')) return;
+
     this.updateEntity(entity);
   }
 }
