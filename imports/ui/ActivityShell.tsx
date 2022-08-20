@@ -1,38 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { Fragment, useContext, useEffect, useState } from 'react';
 import { useFind, useTracker } from 'meteor/react-meteor-data';
-import { SessionCatalog } from '../runtime/SessionCatalog';
-import { Random } from 'meteor/random';
 import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
-import { Runtime } from '../runtime/Runtime';
-import { RuntimeContext } from './context';
+import { RuntimeContext } from './contexts';
 import { ActivityEntity } from '../entities/manifest';
-import { WorkspaceEntity } from '../entities/runtime';
 
 export const ActivityShell = () => {
-  const [runtime] = useState(() => {
-    const catalog = new SessionCatalog();
-    const workspaceName = Random.id();
-    catalog.insertEntity<WorkspaceEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Workspace',
-      metadata: {
-        name: workspaceName,
-      },
-      spec: {
-        windowOrder: [],
-      },
-    });
-    const workspace = catalog.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', undefined, workspaceName);
-    const runtime = new Runtime(catalog, workspace);
-    return runtime;
-  });
-  // const sessionCatalog = useMemo(() => new SessionCatalog(), []);
-
-  // const runtime = useMemo(() => {
-  //   const workspace = sessionCatalog.findEntities('runtime.dist.app/v1alpha1', 'Workspace').fetch()[0];
-  //   return new Runtime(sessionCatalog, workspace.metadata.name);
-  // }, [sessionCatalog]);
+  const runtime = useContext(RuntimeContext);
+  if (!runtime) throw new Error(`Missing runtime`);
 
   const [didWelcome, setDidWelcome] = useState(false);
   const welcomeAct = useTracker(() => runtime.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', 'welcome', 'main'));
@@ -78,7 +53,7 @@ export const ActivityShell = () => {
   // }
 
   return (
-    <RuntimeContext.Provider value={runtime}>
+    <Fragment>
       <section className="shell-powerbar">
         <select defaultValue="dan@danopia.net">
           <optgroup label="Signed in">
@@ -108,6 +83,6 @@ export const ActivityShell = () => {
           <TaskWindow key={task.metadata.name} task={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} />
         ))}
       </div>
-    </RuntimeContext.Provider>
+    </Fragment>
   );
 };

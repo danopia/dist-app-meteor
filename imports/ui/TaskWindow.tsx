@@ -2,7 +2,7 @@ import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext, useState } from "react";
 import { ActivityEmbed } from "./ActivityEmbed";
 import { WindowFrame } from "./widgets/WindowFrame";
-import { RuntimeContext } from "./context";
+import { RuntimeContext } from "./contexts";
 import { TaskEntity } from "../entities/runtime";
 import { ActivityEntity } from "../entities/manifest";
 
@@ -13,19 +13,20 @@ export const TaskWindow = (props: {
 }) => {
 
   const runtime = useContext(RuntimeContext);
+  if (!runtime) throw new Error(`Missing runtime`);
 
   // const task = runtime.getTask()
 
-  const activity = useTracker(() => runtime?.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
+  const activity = useTracker(() => runtime.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
-  function bringToTop() {
-    runtime?.runTaskCommand(props.task, activity, {
+  const bringToTop = () => {
+    runtime.runTaskCommand(props.task, activity, {
       type: 'bring-to-top',
       // taskName: props.task.metadata.name,
     });
-  }
+  };
 
   return (
     <WindowFrame
@@ -41,7 +42,7 @@ export const TaskWindow = (props: {
         onResized={newSize => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime?.runTaskCommand(props.task, activity, {
+          runtime.runTaskCommand(props.task, activity, {
             type: 'resize-window',
             xAxis: newSize.width,
             yAxis: placement.rolledWindow ? placement.floating.height : newSize.height,
@@ -50,7 +51,7 @@ export const TaskWindow = (props: {
         onMoved={newPos => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime?.runTaskCommand(props.task, activity, {
+          runtime.runTaskCommand(props.task, activity, {
             type: 'move-window',
             xAxis: newPos.left,
             yAxis: newPos.top,
@@ -58,7 +59,7 @@ export const TaskWindow = (props: {
         }}
       >
       <button className="window-rollup-toggle"
-          onClick={() => runtime?.runTaskCommand(props.task, activity, {
+          onClick={() => runtime.runTaskCommand(props.task, activity, {
             type: 'set-task-rollup',
             state: 'toggle',
           })}>

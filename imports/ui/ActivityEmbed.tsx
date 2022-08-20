@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
-import { RuntimeContext } from './context';
+import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
 
 export const ActivityEmbed = (props: {
@@ -20,6 +20,8 @@ export const ActivityEmbed = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
+  if (!runtime) throw new Error(`Missing runtime`);
+
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, props.activity.spec.implementation]);
   useEffect(() => {
     if (contentWindow) {
@@ -37,7 +39,7 @@ export const ActivityEmbed = (props: {
     });
     messageHost.addRpcListener('launchIntent', rpc => {
       console.log('handling', rpc);
-      runtime?.runTaskCommand(props.task, props.activity, {
+      runtime.runTaskCommand(props.task, props.activity, {
         type: 'launch-intent',
         intent: {
           activityRef: (rpc as any).intent?.activity?.name as string | undefined,

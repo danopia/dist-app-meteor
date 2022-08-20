@@ -1,7 +1,7 @@
 import { useFind } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
 import { ActivityEntity } from "../entities/manifest";
-import { RuntimeContext } from "./context";
+import { RuntimeContext } from "./contexts";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 export const LauncherWindow = () => {
