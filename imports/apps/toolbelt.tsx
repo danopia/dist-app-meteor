@@ -1231,7 +1231,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
           const parseEpoch = inputStr => {
 
             // check for simple integers
-            if (inputStr.match(/^\d+$/)) {
+            if (inputStr.match(/^\\d+$/)) {
               const inputInt = parseInt(inputStr);
 
               // go by number of digits

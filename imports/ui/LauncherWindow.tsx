@@ -35,7 +35,7 @@ export const LauncherWindow = () => {
         <ul>{activities.map(activity => activity.spec
             .intentFilters?.some(x =>
               x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher') ? (
-          <li key={activity._id}>
+          <li key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`}>
             <button onClick={() => shell.createTask(activity)}>
               {activity.metadata.title}
             </button>
