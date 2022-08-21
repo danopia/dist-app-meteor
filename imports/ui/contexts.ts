@@ -1,4 +1,4 @@
 import { createContext } from "react";
-import { Runtime } from "../runtime/Runtime";
+import { EntityEngine } from "../engine/EntityEngine";
 
-export const RuntimeContext = createContext<Runtime | null>(null);
+export const RuntimeContext = createContext<EntityEngine>(new EntityEngine());

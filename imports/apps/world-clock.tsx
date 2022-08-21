@@ -2,18 +2,10 @@ import { html, stripIndent } from "common-tags";
 import { StaticCatalog } from "/imports/api/catalog";
 
 export const WorldClockCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
-    // namespace: 'default',
     title: 'World Clock',
     description: 'Displays the current time in multiple cities',
     tags: ['poc'],
@@ -32,7 +24,6 @@ export const WorldClockCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'main',
-    // namespace: 'default',
     title: 'World Clock',
   },
   spec: {

@@ -2,18 +2,10 @@ import { html, stripIndent } from "common-tags";
 import { StaticCatalog } from "/imports/api/catalog";
 
 export const CounterTaskCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
-    // namespace: 'default',
     title: 'Vue Counter',
     description: 'Demonstration of inline Javascript tasks (with Vue)',
     links: [{
@@ -39,7 +31,6 @@ export const CounterTaskCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'main',
-    // namespace: 'default',
     title: 'Counter (task)',
   },
   spec: {

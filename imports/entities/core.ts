@@ -30,6 +30,32 @@ export interface NamespaceEntity {
   apiVersion: "core/v1";
   kind: "Namespace";
   metadata: EntityMetadata;
+  spec: {
+    layers: Array<{
+      mode: 'ReadOnly' | 'ReadWrite' | 'WriteOnly';
+      accept: [{
+        apiGroup?: string;
+        apiVersion?: string;
+        kind?: string;
+      }];
+      storage: {
+        type: 'local-inmemory';
+      } | {
+        type: 'bundled';
+        bundleId?: string;
+      } | {
+        type: 'profile';
+      // } | {
+      //   storage: 'imported';
+      //   remoteUrl: unknown;
+      };
+    }>;
+
+    // e.g. 'manifest.dist.app'
+    // apis: Record<string, {
+
+    // }>;
+  };
   // spec: {};
 }
 

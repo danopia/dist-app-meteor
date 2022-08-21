@@ -2,18 +2,10 @@ import { html, stripIndent } from "common-tags";
 import { StaticCatalog } from "/imports/api/catalog";
 
 export const CounterVolatileCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
-    // namespace: 'default',
     title: 'Volatile Counter',
     description: 'Demonstration of inline Javascript apps (with Vue)',
     links: [{
@@ -36,7 +28,6 @@ export const CounterVolatileCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'main',
-    // namespace: 'default',
     title: 'Counter (volatile)',
   },
   spec: {

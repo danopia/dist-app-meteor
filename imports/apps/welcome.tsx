@@ -2,18 +2,10 @@ import { html, stripIndent } from "common-tags";
 import { StaticCatalog } from "/imports/api/catalog";
 
 export const WelcomeCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
-    // namespace: 'default',
     title: 'Welcome',
     description: 'First-time user experience for blank sessions',
     tags: ['poc'],
@@ -32,7 +24,6 @@ export const WelcomeCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'main',
-    // namespace: 'default',
     title: 'Welcome Splash',
   },
   spec: {

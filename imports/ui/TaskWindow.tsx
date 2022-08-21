@@ -13,16 +13,17 @@ export const TaskWindow = (props: {
 }) => {
 
   const runtime = useContext(RuntimeContext);
-  if (!runtime) throw new Error(`Missing runtime`);
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main')
+  if (!shell) throw new Error(`no shell`);
 
   // const task = runtime.getTask()
 
-  const activity = useTracker(() => runtime.manifestCatalog.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
+  const activity = useTracker(() => runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
   const bringToTop = () => {
-    runtime.runTaskCommand(props.task, activity, {
+    shell.runTaskCommand(props.task, activity, {
       type: 'bring-to-top',
       // taskName: props.task.metadata.name,
     });
@@ -42,7 +43,7 @@ export const TaskWindow = (props: {
         onResized={newSize => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime.runTaskCommand(props.task, activity, {
+          shell.runTaskCommand(props.task, activity, {
             type: 'resize-window',
             xAxis: newSize.width,
             yAxis: placement.rolledWindow ? placement.floating.height : newSize.height,
@@ -51,7 +52,7 @@ export const TaskWindow = (props: {
         onMoved={newPos => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
-          runtime.runTaskCommand(props.task, activity, {
+          shell.runTaskCommand(props.task, activity, {
             type: 'move-window',
             xAxis: newPos.left,
             yAxis: newPos.top,
@@ -59,7 +60,7 @@ export const TaskWindow = (props: {
         }}
       >
       <button className="window-rollup-toggle"
-          onClick={() => runtime.runTaskCommand(props.task, activity, {
+          onClick={() => shell.runTaskCommand(props.task, activity, {
             type: 'set-task-rollup',
             state: 'toggle',
           })}>
@@ -67,7 +68,7 @@ export const TaskWindow = (props: {
       <section className="shell-powerbar">
         <div className="window-title">Task {props.task.metadata.name}</div>
         <nav className="window-buttons">
-          <button onClick={() => runtime.runTaskCommand(props.task, activity, {
+          <button onClick={() => shell.runTaskCommand(props.task, activity, {
             type: 'delete-task',
           })}>
             <svg version="1.1" height="20" viewBox="0 0 512 512">

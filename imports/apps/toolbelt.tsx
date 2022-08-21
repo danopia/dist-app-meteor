@@ -2,18 +2,10 @@ import { html, stripIndent } from "common-tags";
 import { StaticCatalog } from "/imports/api/catalog";
 
 export const ToolbeltCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
     name: 'app',
-    // namespace: 'default',
     title: 'Developer Toolbelt',
     description: 'Demonstration of inline utility Javascript apps',
     tags: ['poc'],
@@ -32,7 +24,6 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'launcher',
-    // namespace: 'default',
     title: 'Developer Toolbelt',
   },
   spec: {
@@ -208,10 +199,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'aws-ips',
-    // namespace: 'default',
     title: 'AWS Or Not',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -663,10 +657,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'base64',
-    // namespace: 'default',
     title: 'Base64 encoding',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -782,10 +779,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'jwt',
-    // namespace: 'default',
     title: 'JWT inspector',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -901,10 +901,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'pretty-json',
-    // namespace: 'default',
     title: 'JSON formatter',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -1019,10 +1022,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'timestamp',
-    // namespace: 'default',
     title: 'timestamp conversion tool',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -1300,10 +1306,13 @@ export const ToolbeltCatalog = new StaticCatalog([{
   kind: 'Activity',
   metadata: {
     name: 'urlencode',
-    // namespace: 'default',
     title: 'URLEncoder',
   },
   spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms'],
@@ -1418,7 +1427,6 @@ export const ToolbeltCatalog = new StaticCatalog([{
 //   kind: 'Activity',
 //   metadata: {
 //     name: 'jwt',
-//     // namespace: 'default',
 //     title: 'JWT inspector',
 //   },
 //   spec: {

@@ -20,7 +20,8 @@ export const ActivityEmbed = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
-  if (!runtime) throw new Error(`Missing runtime`);
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main')
+  if (!shell) throw new Error(`no shell`);
 
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, props.activity.spec.implementation]);
   useEffect(() => {
@@ -39,7 +40,7 @@ export const ActivityEmbed = (props: {
     });
     messageHost.addRpcListener('launchIntent', rpc => {
       console.log('handling', rpc);
-      runtime.runTaskCommand(props.task, props.activity, {
+      shell.runTaskCommand(props.task, props.activity, {
         type: 'launch-intent',
         intent: {
           activityRef: (rpc as any).intent?.activity?.name as string | undefined,
