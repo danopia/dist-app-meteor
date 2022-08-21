@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRoutes } from 'raviger';
+import { useRedirect, useRoutes } from 'raviger';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
 import { ActivityShell } from './ActivityShell';
@@ -18,6 +18,7 @@ const routes = {
 };
 
 export const App = () => {
+  useRedirect('/', '/shell');
   const route = useRoutes(routes) || (
     <section>
       <h2>Page Not Found</h2>
