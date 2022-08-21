@@ -43,6 +43,10 @@ export const TaskWindow = (props: {
         onResized={newSize => {
           const { placement } = props.task.spec;
           if (placement.current !== 'floating') return;
+          if (Math.floor(placement.floating.width) == Math.floor(newSize.width) &&
+              Math.floor(placement.floating.height) == Math.floor(newSize.height)) {
+            return;
+          }
           shell.runTaskCommand(props.task, activity, {
             type: 'resize-window',
             xAxis: newSize.width,
