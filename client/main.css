@@ -58,6 +58,11 @@ iframe.activity-contents-wrap {
   grid-area: activity;
   z-index: -10;
 }
+@media (prefers-color-scheme: dark) {
+  .shell-backdrop {
+    background-image: url("/bliss-darkened-optimized.svg");
+  }
+}
 .shell-window {
   position: absolute;
   /* left: 50px;
@@ -72,8 +77,8 @@ iframe.activity-contents-wrap {
   grid-template-rows: 1.5em 1fr;
   grid-template-columns: 1.5em 1fr;
   resize: both;
-  min-width: 100px;
-  min-height: 100px;
+  min-width: 200px;
+  min-height: 50px;
   box-shadow: 2px 4px 16px 2px rgba(0,0,0,0.3), 2px 4px 8px 2px rgba(0,0,0,0.2);
 }
 .shell-window-handle {
@@ -125,6 +130,14 @@ iframe.activity-contents-wrap {
 }
 .window-buttons button svg {
   fill: red;
+}
+
+
+@media (prefers-color-scheme: dark) {
+  .shell-window {
+    background-color: #333;
+    color: #fff;
+  }
 }
 
 .react-draggable-transparent-selection,

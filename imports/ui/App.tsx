@@ -14,11 +14,11 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 );
 
 const routes = {
-  '/shell': () => <ActivityShell />,
+  '/guest-shell': () => <ActivityShell />,
 };
 
 export const App = () => {
-  useRedirect('/', '/shell');
+  useRedirect('/', '/guest-shell');
   const route = useRoutes(routes) || (
     <section>
       <h2>Page Not Found</h2>

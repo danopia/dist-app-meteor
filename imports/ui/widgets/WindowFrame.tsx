@@ -65,7 +65,7 @@ export const WindowFrame = (props: {
           zIndex: props.zIndex,
 
           width: rects.width,
-          minWidth: props.sizeRules?.minHeight,
+          minWidth: props.sizeRules?.minWidth,
           maxWidth: props.sizeRules?.maxWidth,
 
           height: props.isRolledUp ? 'initial' : rects.height,

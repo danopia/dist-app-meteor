@@ -32,12 +32,9 @@ export const WelcomeCatalog = new StaticCatalog([{
       category: 'app.dist.Launcher',
     }],
     windowSizing: {
+      minWidth: 300,
       initialWidth: 600,
-      minWidth: 200,
-      // maxWidth: 1000,
       initialHeight: 300,
-      minHeight: 100,
-      // maxHeight: 1000,
     },
     implementation: {
       type: 'iframe',
@@ -69,6 +66,13 @@ export const WelcomeCatalog = new StaticCatalog([{
         inlineStyle: stripIndent`
           body {
             font-family: sans-serif;
+            margin: 1em 10%;
+          }
+          @media (prefers-color-scheme: dark) {
+            body {
+              background-color: rgb(55, 55, 55);
+              color: rgba(255, 255, 255, 0.83);
+            }
           }
         `,
         inlineScript: stripIndent(html)`
