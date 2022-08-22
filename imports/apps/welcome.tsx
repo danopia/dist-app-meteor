@@ -15,7 +15,7 @@ export const WelcomeCatalog = new StaticCatalog([{
       type: 'glyph',
       glyph: {
         text: '🚀',
-        backgroundColor: '#9ff',
+        backgroundColor: '#347',
       },
     },
   },
@@ -25,6 +25,11 @@ export const WelcomeCatalog = new StaticCatalog([{
   metadata: {
     name: 'main',
     title: 'Welcome Splash',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     intentFilters: [{
@@ -34,7 +39,7 @@ export const WelcomeCatalog = new StaticCatalog([{
     windowSizing: {
       minWidth: 300,
       initialWidth: 600,
-      initialHeight: 300,
+      initialHeight: 400,
     },
     implementation: {
       type: 'iframe',
@@ -64,9 +69,18 @@ export const WelcomeCatalog = new StaticCatalog([{
           </div>
         `,
         inlineStyle: stripIndent`
+          html {
+            height: 100%;
+            display: grid;
+            align-content: center;
+          }
           body {
             font-family: sans-serif;
-            margin: 1em 10%;
+            box-sizing: border-box;
+            overflow-y: scroll;
+          }
+          #app {
+            padding: 1em 10% 3em;
           }
           @media (prefers-color-scheme: dark) {
             body {

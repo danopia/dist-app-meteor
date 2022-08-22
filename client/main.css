@@ -12,30 +12,6 @@ body {
   grid-template-columns: min-content 1fr;
   /* gap: 1em; */
 }
-.launcher-window {
-  grid-area: nav;
-  padding: 0.5em;
-  box-sizing: border-box;
-  overflow-y: scroll;
-  border-right: 2px solid gray;
-}
-.launcher-window ul {
-  display: flex;
-  gap: 0.5em;
-  flex-direction: column;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.launcher-window li {
-  display: grid;
-  height: 2em;
-}
-.launcher-window button {
-  display: block;
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
 .activity-contents-wrap {
   grid-area: activity;
 }
@@ -119,6 +95,10 @@ iframe.activity-contents-wrap {
   flex: 1;
   margin: 0.1em 0.5em;
   align-self: center;
+
+  overflow-x: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
 }
 .window-buttons {
   display: flex;
@@ -146,4 +126,53 @@ iframe.activity-contents-wrap {
 }
 .react-draggable-transparent-selection iframe {
   pointer-events: none;
+}
+
+.appIcon {
+  width: 2em;
+  height: 2em;
+  line-height: 2em;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.launcher-window {
+  padding: 0.5em;
+  box-sizing: border-box;
+  overflow-y: scroll;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5em;
+  margin: 0;
+}
+@media (prefers-color-scheme: dark) {
+  .launcher-window button {
+    color: #eee;
+  }
+}
+.launcher-window button {
+  display: grid;
+  justify-items: center;
+  background: none;
+  padding: 1em;
+  gap: 0.5em;
+  border-width: 0;
+  cursor: pointer;
+}
+.launcher-window button:hover {
+  background-color: rgba(0,0,0,0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .launcher-window button:hover {
+    background-color: rgba(255,255,255,0.05);
+  }
+}
+.launcher-window button .appIcon {
+  font-size: 32px;
+  box-shadow: 2px 4px 8px 2px rgba(0,0,0,0.2);
+  transition: 50ms linear transform;
+}
+
+.launcher-window button:hover .appIcon {
+  transform: scale(1.1);
 }

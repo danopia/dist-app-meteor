@@ -1,20 +1,6 @@
-import { Entity } from "/imports/db/entities";
-
-class StaticCatalog {
-  constructor(private readonly entries: Array<Entity>) {}
-}
+import { StaticCatalog } from "../api/catalog";
 
 export const CounterCatalog = new StaticCatalog([{
-  apiVersion: 'core/v1',
-  kind: 'Namespace',
-  metadata: {
-    name: 'default',
-    tags: ['exported'],
-  },
-  // spec: {
-  //   export: 'true',
-  // },
-}, {
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
@@ -52,6 +38,11 @@ export const CounterCatalog = new StaticCatalog([{
     name: 'main',
     // namespace: 'default',
     title: 'da.gd',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     intentFilters: [{

@@ -15,7 +15,7 @@ export const ToolbeltCatalog = new StaticCatalog([{
       type: 'glyph',
       glyph: {
         text: '👨‍💻',
-        backgroundColor: '#9ff',
+        backgroundColor: '#363',
       },
     },
   },
@@ -25,6 +25,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'launcher',
     title: 'Developer Toolbelt',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     intentFilters: [{
@@ -200,6 +205,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'aws-ips',
     title: 'AWS Or Not',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {
@@ -658,6 +668,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'base64',
     title: 'Base64 encoding',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {
@@ -780,6 +795,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'jwt',
     title: 'JWT inspector',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {
@@ -902,6 +922,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'pretty-json',
     title: 'JSON formatter',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {
@@ -1023,6 +1048,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'timestamp',
     title: 'timestamp conversion tool',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {
@@ -1307,6 +1337,11 @@ export const ToolbeltCatalog = new StaticCatalog([{
   metadata: {
     name: 'urlencode',
     title: 'URLEncoder',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     windowSizing: {

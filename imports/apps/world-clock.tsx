@@ -25,6 +25,11 @@ export const WorldClockCatalog = new StaticCatalog([{
   metadata: {
     name: 'main',
     title: 'World Clock',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     intentFilters: [{

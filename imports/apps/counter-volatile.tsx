@@ -29,6 +29,11 @@ export const CounterVolatileCatalog = new StaticCatalog([{
   metadata: {
     name: 'main',
     title: 'Counter (volatile)',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
   },
   spec: {
     intentFilters: [{

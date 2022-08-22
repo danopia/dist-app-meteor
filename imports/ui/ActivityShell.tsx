@@ -3,6 +3,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
 import { RuntimeContext } from './contexts';
+import { ShellTopBar } from './ShellTopBar';
 
 export const ActivityShell = () => {
   const runtime = useContext(RuntimeContext);
@@ -17,28 +18,9 @@ export const ActivityShell = () => {
 
   return (
     <Fragment>
-      <section className="shell-powerbar">
-        <select defaultValue="dan@danopia.net">
-          <optgroup label="Signed in">
-            <option>dan@danopia.net</option>
-          </optgroup>
-          <option disabled>unnamed guest user</option>
-          <option disabled>add user...</option>
-        </select>
-        <select>
-          <option>[untitled scratch]</option>
-          <optgroup label="change location...">
-            <option disabled>local browser storage</option>
-            <option disabled>server: dist.app</option>
-          </optgroup>
-        </select>
-        <select>
-          <option>floating</option>
-          <option disabled>tabbed</option>
-          <option disabled>grid</option>
-        </select>
+      <ShellTopBar>
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
-      </section>
+      </ShellTopBar>
       <div className="shell-backdrop" />
       <div className="shell-floating-layer" key={floatingLayerKey}>
         <LauncherWindow />
