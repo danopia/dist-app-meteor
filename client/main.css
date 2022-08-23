@@ -134,6 +134,7 @@ iframe.activity-contents-wrap {
   line-height: 2em;
   border-radius: 50%;
   display: inline-block;
+  overflow: hidden;
 }
 
 .launcher-window {
