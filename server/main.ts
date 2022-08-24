@@ -63,9 +63,55 @@ Meteor.startup(async () => {
 
   // EntitiesCollection.remove({});
   // await applyManifests('system:bundled-apps', 'counter-task', CounterTaskCatalog.entries);
-  await applyManifests('system:bundled-apps', 'counter-volatile', CounterVolatileCatalog.entries);
-  await applyManifests('system:bundled-apps', 'welcome', WelcomeCatalog.entries);
-  await applyManifests('system:bundled-apps', 'toolbelt', ToolbeltCatalog.entries);
-  await applyManifests('system:bundled-apps', 'world-clock', WorldClockCatalog.entries);
+  // await applyManifests('system:bundled-apps', 'counter-volatile', CounterVolatileCatalog.entries);
+  // await applyManifests('system:bundled-apps', 'welcome', WelcomeCatalog.entries);
+  // await applyManifests('system:bundled-apps', 'toolbelt', ToolbeltCatalog.entries);
+  // await applyManifests('system:bundled-apps', 'world-clock', WorldClockCatalog.entries);
 
 });
+
+import { fetch, Headers, Request, Response } from 'meteor/fetch';
+
+Meteor.methods({
+  async 'poc-http-fetch'(req: {
+    url: string;
+    method: string;
+    headers: Array<[string,string]>;
+    body?: string;
+  }) {
+    console.log('poc-http-fetch:', req);
+
+    if (req.url === 'dist-app:/protocolendpoints/http/invoke' && req.body) {
+      const spec: {input: {
+        url: string;
+        method: string;
+        headers: Array<[string,string]>;
+        body?: string;
+      }} = JSON.parse(req.body);
+      if (!spec.input.url.startsWith('https://da.gd/')) throw new Error(`sandbox'd`);
+      const resp = await fetch(spec.input.url, {
+        method: spec.input.method,
+        headers: new Headers(spec.input.headers ?? []),
+        body: spec.input.body,
+      });
+      console.log(`remote server gave HTTP ${resp.status} to ${spec.input.method} ${spec.input.url}`);
+      return {
+        status: 200,
+        headers: [
+          ['content-type', 'application/json'],
+        ],
+        body: JSON.stringify({
+          status: resp.status,
+          headers: Array.from(resp.headers),
+          body: await resp.text(),
+        }),
+      };
+    }
+
+    return {
+      status: 429,
+      headers: [],
+      body: 'im a teapot',
+    };
+  }
+})

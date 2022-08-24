@@ -8,14 +8,16 @@ globalThis.fetch = async (req, opts) => {
 };
 
 globalThis.DistApp = class DistApp {
-  // private readonly promises = new Map<string, [() => void, () => void]>();
+  private nextPromise = 0;
+  private readonly promises = new Map<number, [(data: Record<string, unknown>) => void, (error: Error) => void]>();
   constructor(
     private readonly port: MessagePort,
   ) {
     // Hook up some handlers:
     port.addEventListener("message", evt => this
       .handleMessage(evt));
-    fetchProtocols.set('web-dist-app:', (input, init) => this
+    port.start();
+    fetchProtocols.set('dist-app:', (input, init) => this
       .handleFetch(new Request(input, init)));
   }
   static async connect() {
@@ -23,6 +25,14 @@ globalThis.DistApp = class DistApp {
     return new DistApp(port);
   }
   handleMessage(evt: MessageEvent) {
+    if (evt.data.rpc == 'respond') {
+      const pair = this.promises.get(evt.data.origId);
+      if (pair) {
+        this.promises.delete(evt.data.origId);
+        pair[0](evt.data.data);
+        return;
+      }
+    }
     console.warn('TODO: DistApp received:', evt.data);
   }
   async handleFetch(request: Request) {
@@ -32,13 +42,20 @@ globalThis.DistApp = class DistApp {
       headers: Array.from(request.headers),
       body: await request.text(),
     };
-    console.log('fetch payload', payload);
-    this.sendRpc({
+    // console.log('fetch payload', payload);
+    const respPayload = await this.sendRpcForResult({
       rpc: 'fetch',
       spec: payload,
     });
-    console.warn('TODO: returning HTTP 500');
-    return new Response('TODO', { status: 500 });
+    const respData: {
+      status: number;
+      headers: Array<[string,string]>;
+      body?: string;
+    } = JSON.parse(respPayload.body as string);
+    return new Response(respData.body, {
+      status: respData.status,
+      headers: new Headers(respData.headers ?? []),
+    });
     // throw new Error("TODO");
   }
   useVueState(key: string, initial: unknown) {
@@ -48,8 +65,19 @@ globalThis.DistApp = class DistApp {
   reportReady() {
     this.port.postMessage({rpc: 'reportReady'})
   }
-  sendRpc(data: unknown) {
+  sendRpc(data: Record<string, unknown>) {
     this.port.postMessage(data);
+  }
+  sendRpcForResult<T = Record<string, unknown>>(data: Record<string, unknown>) {
+    const promiseNum = this.nextPromise++;
+    return new Promise<T>((ok, fail) => {
+      this.sendRpc({ ...data, id: promiseNum });
+      this.promises.set(promiseNum, [
+        value => ok(value as T),
+        error => fail(error),
+      ]);
+    });
+    // dist-app:/protocolendpoints/http/invoke
   }
 }
 

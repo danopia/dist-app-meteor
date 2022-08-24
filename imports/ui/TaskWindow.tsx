@@ -70,7 +70,7 @@ export const TaskWindow = (props: {
           })}>
       </button>
       <section className="shell-powerbar">
-        <div className="window-title">Task {props.task.metadata.name}</div>
+        <div className="window-title">{activity?.metadata.title || activity?.metadata.name}</div>
         <nav className="window-buttons">
           <button onClick={() => shell.runTaskCommand(props.task, activity, {
             type: 'delete-task',

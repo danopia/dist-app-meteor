@@ -5,6 +5,7 @@ import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
 import { iframeEntrypoint } from '../userland/iframe-entrypoint-blob';
+import { meteorCallAsync } from '../lib/meteor-call';
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
@@ -39,7 +40,7 @@ export const ActivityEmbed = (props: {
     messageHost.addRpcListener('recycle-frame', () => {
       setIframeKey(Math.random());
     });
-    messageHost.addRpcListener('launchIntent', rpc => {
+    messageHost.addRpcListener('launchIntent', ({rpc}) => {
       console.log('handling', rpc);
       shell.runTaskCommand(props.task, props.activity, {
         type: 'launch-intent',
@@ -48,6 +49,16 @@ export const ActivityEmbed = (props: {
           action: (rpc as any).intent?.action as string ?? 'launch',
         },
       });
+    });
+    messageHost.addRpcListener('fetch', async ({rpc, respondWith}) => {
+      console.log('ActivityEmbed fetch', rpc);
+
+      // TODO BEGIN
+      const resp = await meteorCallAsync('poc-http-fetch', rpc.spec);
+      console.log('ActivityEmbed fetch result:', resp);
+      // TODO END
+
+      respondWith(resp as any);
     });
   }, [messageHost]);
 
@@ -99,14 +110,14 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
         html`<script src="${url}"></script>`,
       ]) ?? []),
       `<script>${iframeEntrypoint.replace('{ORIGIN}', JSON.stringify(location.origin).slice(1, -1))}</script>`,
+      ...(implementation.source.inlineScript ? [
+        `  <script type="module" defer>`,
+        implementation.source.inlineScript.replace(/^/gm, '    '),
+        `  </script>`,
+      ] : []),
       `<body>`,
       (implementation.source.bodyHtml ? [
         implementation.source.bodyHtml.replace(/^/gm, '  '),
-      ] : []),
-      ...(implementation.source.inlineScript ? [
-        `  <script type="module">`,
-        implementation.source.inlineScript.replace(/^/gm, '    '),
-        `  </script>`,
       ] : []),
       `</body>`,
     ].join('\n');

@@ -1,4 +1,7 @@
-export type RpcListener = (rpc: Record<string,unknown>) => void | Promise<void>;
+export type RpcListener = (event: {
+  rpc: Record<string,unknown>,
+  respondWith: (data: Record<string,unknown>) => void,
+}) => void | Promise<void>;
 
 export class MessageHost {
   constructor() {
@@ -15,15 +18,27 @@ export class MessageHost {
   private rpcListeners: Array<[string, RpcListener]> = [];
 
   handleMessage(event: MessageEvent) {
-    const {rpc} = event.data;
+    const {rpc, id} = event.data;
     let hits = 0;
     for (const listener of this.rpcListeners) {
       if (listener[0] == rpc) {
-        listener[1](event.data);
+        listener[1]({
+          rpc: event.data,
+          respondWith: this.respondTo.bind(this, id),
+        });
         hits++;
       }
     }
     console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+  }
+
+  respondTo(msgId: number, data: Record<string, unknown>) {
+    if (typeof msgId !== 'number') throw new Error(`Cannot respond to unnumbered RPC`);
+    this.localPort.postMessage({
+      rpc: 'respond',
+      origId: msgId,
+      data,
+    });
   }
 
   addRpcListener(rpcId: string, listener: RpcListener) {
