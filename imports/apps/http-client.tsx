@@ -42,109 +42,70 @@ export const HttpClientCatalog = new StaticCatalog([{
     },
     implementation: {
       type: 'iframe',
+      securityPolicy: {
+        scriptSrc: ['https://unpkg.com'],
+      },
       sandboxing: ['allow-scripts', 'allow-forms'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
         metaCharset: 'utf-8',
-        headTitle: 'AWS IPs',
+        headTitle: 'HTTP client',
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
 
-          const historyCol = document.querySelector('#history-col');
-          function addEntry () {
-
-            const title = document.createElement('h4');
-            const progress = document.createElement('progress');
-            const output = document.createElement('textarea');
-            output.readOnly = true;
-            output.rows = 1;
-            const time = document.createElement('time');
-
-            const headbox = document.createElement('div');
-            headbox.classList.add('entry-head');
-            headbox.appendChild(title);
-
-            const box = document.createElement('section');
-            box.classList.add('entry');
-            box.appendChild(headbox);
-            box.appendChild(progress);
-            historyCol.insertBefore(box, historyCol.children[0]);
-
-            const finalizeBox = () => {
-              box.removeChild(progress);
-
-              box.appendChild(output);
-              box.appendChild(time);
-              setTimeout(() => {
-                output.style.height = output.scrollHeight+'px';
-              }, 0);
-            }
-
-            return {
-              deeplink(path) {
-                const deeplink = document.createElement('a');
-                deeplink.href = '#' + encodeURIComponent(path);
-                deeplink.innerText = '#';
-                deeplink.classList.add('deeplink');
-                headbox.insertBefore(deeplink, title);
+          import { createApp, reactive } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
+          const app = createApp({
+            data: () => ({
+              request: {
+                method: 'GET',
+                url: 'https://da.gd/headers',
+                headers: [],
+                body: '',
               },
-              title(text) { title.innerText = text; },
-              promise(p) {
-                return p.then(text => {
-                  output.value = text.trim();
-                  finalizeBox();
-                }, err => {
-                  output.classList.add('error-msg');
-                  output.value = err.message || JSON.stringify(err, null, 2);
-                  finalizeBox();
+              history: [],
+            }),
+            methods: {
+              sendRequest: async function () {
+                const historyEntry = reactive({
+                  request: JSON.parse(JSON.stringify(this.request)),
+                  response: null,
+                  error: null,
+                  pending: true,
+                  started: new Date(),
                 });
+                if (['GET', 'HEAD', 'DELETE'].includes(historyEntry.request.method)) {
+                  historyEntry.request.body = null;
+                }
+                this.history.unshift(historyEntry);
+
+                const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
+                  method: 'POST',
+                  body: JSON.stringify({ input: historyEntry.request }),
+                });
+
+                historyEntry.pending = false;
+                historyEntry.response = {
+                  status: resp.status,
+                  headers: Array.from(resp.headers),
+                  body: await resp.text(),
+                };
+
+                // setTimeout(() => {
+                //   output.style.height = output.scrollHeight+'px';
+                // }, 0);
               },
-            };
-          };
-
-          function ParseInput(rawInput) {
-            const url = new URL(rawInput);
-            return {
-              text: url.toString(),
-              type: 'url',
-            };
-          }
-
-          function queryInput(input, andSetHash=false) {
-            const entry = addEntry();
-            entry.title(input.method + ' ' + input.url);
-            // entry.deeplink(input.text);
-
-            // if (andSetHash)
-            //   window.location.hash = \`#\${encodeURIComponent(input.text)}\`;
-
-            return entry.promise((async () => {
-              const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
-                method: 'POST',
-                body: JSON.stringify({input}),
-              });
-
-              return 'HTTP '+resp.status+'\\n'+Array.from(resp.headers).map(x => x.join(': ')).join('\\n')+'\\n\\n'+(await resp.text());
-            })());
-          }
-
-          const form = document.querySelector('form');
-          form.addEventListener('submit', evt => {
-            evt.preventDefault();
-            const url = new URL(evt.target.url.value).toString();
-            const method = evt.target.method.value;
-            queryInput({url, method}, true);
-            // .then(() => url.value = '');
+            },
           });
 
+          app.mount('body');
           await distApp.reportReady();
         `,
         bodyHtml: stripIndent(html)`
           <h1>🌐 HTTP Client</h1>
 
-          <form id="lookup">
-            <select name="method">
+          <form @submit.prevent="sendRequest">
+            <select name="method" v-model="request.method">
               <option>GET</option>
               <option>HEAD</option>
               <option disabled>POST</option>
@@ -152,20 +113,52 @@ export const HttpClientCatalog = new StaticCatalog([{
               <option disabled>DELETE</option>
               <option disabled>OPTIONS</option>
             </select>
-            <input type="text" name="url" placeholder="URL" required autofocus value="https://da.gd/ip">
+            <input type="text" name="url" placeholder="URL" required autofocus v-model="request.url">
             <button type="submit">Fetch</button>
+            <table class="header-grid" style="grid-column: 1 / 4">
+              <tbody>
+                <tr v-for="header in request.headers">
+                  <th><input v-model="header[0]"></th>
+                  <td><input v-model="header[1]"></td>
+                  <td><button type="button" @click="request.headers.splice(request.headers.indexOf(header), 1)">X</button></td>
+                </tr>
+                <tr><td colspan="2"><button type="button" @click="request.headers.push(['Key','Value'])">Add header</button></td></tr>
+              </tbody>
+            </table>
           </form>
 
           <div id="history-col">
+            <section class="entry" v-for="entry in history">
+              <div class="entry-head">
+                <a href class="deeplink">#</a>
+                <h4>{{ entry.request.method }} {{ entry.request.url }}</h4>
+              </div>
+              <progress v-if="entry.pending"></progress>
+              <div v-if="entry.response">
+                <details class="response-details">
+                  <summary>HTTP {{ entry.response.status }} ({{ entry.response.headers.length }} headers)</summary>
+                  <table class="header-grid">
+                    <tbody>
+                      <tr v-for="header in entry.response.headers">
+                        <th>{{ header[0] }}</th>
+                        <td>{{ header[1] }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </details>
+                <textarea readonly="" rows="1" style="height: 150px;">{{ entry.response.body }}</textarea>
+                <time></time>
+              </div>
+              <textarea v-if="entry.error" readonly="" class="error-msg" rows="1" style="height: 150px;">{{ entry.error.stack }}</textarea>
+            </section>
             <section class="intro">
               <ul>
-                <li>howdy</li>
+                <li>this basic tool can issue arbitrary HTTP requests against any URL</li>
               </ul>
             </section>
             <section class="footer">
               <div>
-                toolbelt tools by
-                <a target="_new" href="https://github.com/danopia">@danopia</a>
+                requests will be sent through an arbitrary hosted server
               </div>
             </section>
           </div>
@@ -178,7 +171,6 @@ export const HttpClientCatalog = new StaticCatalog([{
             padding: 2em 2em 10em;
             box-sizing: border-box;
             width: 100%;
-            max-width: 60em;
             font-family: monospace;
           }
           h1 {
@@ -188,6 +180,7 @@ export const HttpClientCatalog = new StaticCatalog([{
           form {
             display: grid;
             grid-template-columns: min-content 1fr 8em;
+            grid-template-rows: 3em min-content;
             grid-gap: 1em;
             grid-auto-rows: 3em;
             margin: 1em;
@@ -278,6 +271,14 @@ export const HttpClientCatalog = new StaticCatalog([{
           }
           section.footer a {
             color: rgba(200, 200, 200, 0.8);
+          }
+
+          .header-grid {
+            text-align: left;
+          }
+          .header-grid input {
+            width: 100%;
+            box-sizing: border-box;
           }
         `,
       },
