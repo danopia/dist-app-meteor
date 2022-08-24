@@ -4,6 +4,7 @@ import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
+import { iframeEntrypoint } from '../userland/iframe-entrypoint-blob';
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
@@ -97,7 +98,7 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
       ...(implementation.source.scriptUrls?.flatMap(url => [
         html`<script src="${url}"></script>`,
       ]) ?? []),
-      `<script>${embedInnerScript}</script>`,
+      `<script>${iframeEntrypoint.replace('{ORIGIN}', JSON.stringify(location.origin).slice(1, -1))}</script>`,
       `<body>`,
       (implementation.source.bodyHtml ? [
         implementation.source.bodyHtml.replace(/^/gm, '  '),
@@ -113,62 +114,6 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
   }
   throw new Error('Function not implemented.');
 }
-
-const embedInnerScript = `
-const originalFetch = globalThis.fetch;
-// globalThis.fetch = () => Promise.reject('TODO: fetch during bootstrap');
-globalThis.DistApp = class DistApp {
-  constructor(port) {
-    this.port = port;
-    port.addEventListener("message", evt => this.handleMessage(evt));
-  }
-  handleMessage(evt) {
-    console.log('host got:', evt.data);
-  }
-  useVueState(key, initial) {
-    console.log("TODO: useVueState", key, initial);
-    return initial;
-  }
-  reportReady() {
-    this.port.postMessage({rpc: 'reportReady'})
-  }
-  sendRpc(data) {
-    this.port.postMessage(data);
-  }
-  static async connect() {
-    const port = await new Promise((ok, reject) => {
-      function handleEvent() {
-        if (event.origin !== ${JSON.stringify(location.origin)}) return;
-        if (typeof event.data !== 'object' || !event.data) return;
-        if (typeof event.data.protocol !== 'string') return;
-
-        window.removeEventListener("message", handleEvent);
-        window.addEventListener("message", () => {
-          console.error("Received a second protocol initiation?? Reloading");
-          try {
-            event.ports?.map(port => port.postMessage({
-              rpc: 'recycle-frame',
-            })) ?? [];
-            if (port) reject(
-              new Error("Received protocol packet without a port"));
-            ok(port);
-          } finally {
-            window.location.reload();
-          }
-        });
-
-        if (event.data.protocol !== 'protocol.dist.app/v1alpha1') reject(
-          new Error("Received unexpected protocol "+event.data.protocol));
-        const [port] = event.ports ?? [];
-        if (!port) reject(
-          new Error("Received protocol packet without a port"));
-        ok(port);
-      }
-      window.addEventListener("message", handleEvent);
-    }, false);
-    return new DistApp(port);
-  }
-}`;
 
 function toBinary(string: string) {
   const charCodes = new TextEncoder().encode(string);
