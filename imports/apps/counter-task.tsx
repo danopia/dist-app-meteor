@@ -19,7 +19,7 @@ export const CounterTaskCatalog = new StaticCatalog([{
       type: 'glyph',
       glyph: {
         text: '🧮',
-        backgroundColor: '#9ff',
+        backgroundColor: '#aaa',
       },
     },
     // dependencies: {
