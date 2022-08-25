@@ -55,7 +55,8 @@ export const ActivityEmbed = (props: {
 
       // TODO BEGIN
       // TODO: catch any errors and send those to the application
-      const resp = await meteorCallAsync('poc-http-fetch', rpc.spec);
+      const resp = await meteorCallAsync('poc-http-fetch', rpc.spec)
+        .then(x => ({data: x}), err => ({error: err.stack}));
       console.log('ActivityEmbed fetch result:', resp);
       // TODO END
 

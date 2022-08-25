@@ -35,9 +35,9 @@ export class MessageHost {
   respondTo(msgId: number, data: Record<string, unknown>) {
     if (typeof msgId !== 'number') throw new Error(`Cannot respond to unnumbered RPC`);
     this.localPort.postMessage({
+      ...data,
       rpc: 'respond',
       origId: msgId,
-      data,
     });
   }
 

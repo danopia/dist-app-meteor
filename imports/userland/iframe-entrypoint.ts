@@ -29,7 +29,11 @@ globalThis.DistApp = class DistApp {
       const pair = this.promises.get(evt.data.origId);
       if (pair) {
         this.promises.delete(evt.data.origId);
-        pair[0](evt.data.data);
+        if (evt.data.error) {
+          pair[1](new Error(evt.data.error));
+        } else {
+          pair[0](evt.data.data);
+        }
         return;
       }
     }
@@ -42,21 +46,18 @@ globalThis.DistApp = class DistApp {
       headers: Array.from(request.headers),
       body: await request.text(),
     };
-    // console.log('fetch payload', payload);
-    const respPayload = await this.sendRpcForResult({
-      rpc: 'fetch',
-      spec: payload,
-    });
-    const respData: {
+    const respPayload = await this.sendRpcForResult<{
       status: number;
       headers: Array<[string,string]>;
       body?: string;
-    } = JSON.parse(respPayload.body as string);
-    return new Response(respData.body, {
-      status: respData.status,
-      headers: new Headers(respData.headers ?? []),
+    }>({
+      rpc: 'fetch',
+      spec: payload,
     });
-    // throw new Error("TODO");
+    return new Response(respPayload.body, {
+      status: respPayload.status,
+      headers: new Headers(respPayload.headers ?? []),
+    });
   }
   useVueState(key: string, initial: unknown) {
     console.log("TODO: useVueState", key, initial);

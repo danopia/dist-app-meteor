@@ -79,17 +79,27 @@ export const HttpClientCatalog = new StaticCatalog([{
                 }
                 this.history.unshift(historyEntry);
 
-                const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
-                  method: 'POST',
-                  body: JSON.stringify({ input: historyEntry.request }),
-                });
+                try {
+                  const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
+                    method: 'POST',
+                    body: JSON.stringify({ input: historyEntry.request }),
+                  });
+                  if (!resp.ok) throw new Error("HTTP gateway gave its own "+resp.status+" response");
 
-                historyEntry.pending = false;
-                historyEntry.response = {
-                  status: resp.status,
-                  headers: Array.from(resp.headers),
-                  body: await resp.text(),
-                };
+                  const respData = await resp.json();
+
+                  historyEntry.pending = false;
+                  historyEntry.response = {
+                    status: respData.status,
+                    headers: Array.from(respData.headers),
+                    body: respData.body,
+                  };
+                } catch (err) {
+                  historyEntry.pending = false;
+                  historyEntry.error = {
+                    stack: err.message,
+                  };
+                }
 
                 // setTimeout(() => {
                 //   output.style.height = output.scrollHeight+'px';
@@ -279,6 +289,9 @@ export const HttpClientCatalog = new StaticCatalog([{
           .header-grid input {
             width: 100%;
             box-sizing: border-box;
+          }
+          .header-grid td {
+            word-break: break-word;
           }
         `,
       },
