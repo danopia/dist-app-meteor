@@ -1,3 +1,5 @@
+import 'happy-eyeballs/eye-patch';
+
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
 import { CounterVolatileCatalog } from '../imports/apps/counter-volatile';

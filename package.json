@@ -13,6 +13,7 @@
     "@react-hook/resize-observer": "^1.2.6",
     "@use-it/event-listener": "^0.1.7",
     "common-tags": "^1.8.2",
+    "happy-eyeballs": "0.0.15",
     "meteor-node-stubs": "^1.2.5",
     "raviger": "^4.1.0",
     "react": "^18",
