@@ -60,7 +60,10 @@ export const HttpClientCatalog = new StaticCatalog([{
               request: {
                 method: 'GET',
                 url: 'https://da.gd/headers',
-                headers: [],
+                headers: [
+                  ['accept', 'text/plain, application/json;q=0.9, text/*;q=0.8, */*;q=0.7'],
+                  ['user-agent', 'dist-app-poc/0.1 (+https://github.com/danopia/dist-app-poc)'],
+                ],
                 body: '',
               },
               history: [],
@@ -82,7 +85,10 @@ export const HttpClientCatalog = new StaticCatalog([{
                 try {
                   const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
                     method: 'POST',
-                    body: JSON.stringify({ input: historyEntry.request }),
+                    body: JSON.stringify({ input: {
+                      ...historyEntry.request,
+                      headers: historyEntry.request.headers.filter(x => x[0]),
+                    }}),
                   });
                   if (!resp.ok) throw new Error("HTTP gateway gave its own "+resp.status+" response");
 
@@ -124,30 +130,70 @@ export const HttpClientCatalog = new StaticCatalog([{
               <option disabled>OPTIONS</option>
             </select>
             <input type="text" name="url" placeholder="URL" required autofocus v-model="request.url">
+            <button type="button" @click="request.headers.push(['',''])">Add header</button>
             <button type="submit">Fetch</button>
-            <table class="header-grid" style="grid-column: 1 / 4">
-              <tbody>
-                <tr v-for="header in request.headers">
-                  <th><input v-model="header[0]"></th>
-                  <td><input v-model="header[1]"></td>
-                  <td><button type="button" @click="request.headers.splice(request.headers.indexOf(header), 1)">X</button></td>
-                </tr>
-                <tr><td colspan="2"><button type="button" @click="request.headers.push(['Key','Value'])">Add header</button></td></tr>
-              </tbody>
-            </table>
+            <div class="header-input-grid">
+              <template v-for="header in request.headers">
+                <input placeholder="Header name" v-model="header[0]" list="request-headers">
+                <input placeholder="Header contents" v-model="header[1]">
+                <button class="square" type="button" @click="request.headers.splice(request.headers.indexOf(header), 1)">X</button>
+              </template>
+            </div>
           </form>
+
+          <datalist id="request-headers">
+            <option value="accept">
+            <option value="accept-encoding">
+            <option value="accept-charset">
+            <option value="accept-datetime">
+            <option value="accept-encoding">
+            <option value="accept-language">
+            <option value="access-control-request-method">
+            <option value="access-control-request-headers">
+            <option value="authorization">
+            <option value="cache-control">
+            <option value="content-encoding">
+            <option value="content-type">
+            <option value="cookie">
+            <option value="forwarded">
+            <option value="if-match">
+            <option value="if-modified-since">
+            <option value="if-none-match">
+            <option value="if-range">
+            <option value="if-unmodified-since">
+            <option value="origin">
+            <option value="range">
+            <option value="referer">
+            <option value="upgrade-insecure-requests">
+            <option value="user-agent">
+            <option value="via">
+            <option value="x-requested-with">
+            <option value="x-forwarded-for">
+            <option value="x-forwarded-host">
+            <option value="x-forwarded-proto">
+            <option value="x-csrf-token">
+          </datalist>
 
           <div id="history-col">
             <section class="entry" v-for="entry in history">
-              <div class="entry-head">
-                <a href class="deeplink">#</a>
-                <h4>{{ entry.request.method }} {{ entry.request.url }}</h4>
-              </div>
               <progress v-if="entry.pending"></progress>
-              <div v-if="entry.response">
+              <div v-if="entry.request" class="entry-body">
+                <details class="request-details">
+                  <summary>{{ entry.request.method }} {{entry.request.url}} ({{ entry.request.headers.length }} headers)</summary>
+                  <table class="header-grid" border="1">
+                    <tbody>
+                      <tr v-for="header in entry.request.headers">
+                        <th>{{ header[0] }}</th>
+                        <td>{{ header[1] }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </details>
+              </div>
+              <div v-if="entry.response" class="entry-body">
                 <details class="response-details">
                   <summary>HTTP {{ entry.response.status }} ({{ entry.response.headers.length }} headers)</summary>
-                  <table class="header-grid">
+                  <table class="header-grid" border="1">
                     <tbody>
                       <tr v-for="header in entry.response.headers">
                         <th>{{ header[0] }}</th>
@@ -156,9 +202,8 @@ export const HttpClientCatalog = new StaticCatalog([{
                     </tbody>
                   </table>
                 </details>
-                <textarea readonly="" rows="1" style="height: 150px;">{{ entry.response.body }}</textarea>
-                <time></time>
               </div>
+              <textarea v-if="entry.response" readonly rows="1" style="height: 150px;">{{ entry.response.body }}</textarea>
               <textarea v-if="entry.error" readonly="" class="error-msg" rows="1" style="height: 150px;">{{ entry.error.stack }}</textarea>
             </section>
             <section class="intro">
@@ -189,42 +234,52 @@ export const HttpClientCatalog = new StaticCatalog([{
           }
           form {
             display: grid;
-            grid-template-columns: min-content 1fr 8em;
+            grid-template-columns: min-content minmax(8em,1fr) 8em 8em;
             grid-template-rows: 3em min-content;
             grid-gap: 1em;
             grid-auto-rows: 3em;
             margin: 1em;
           }
-          input, textarea, select {
+          input, textarea, select, button {
             box-sizing: border-box;
+            font-family: inherit;
+            padding: 0.3em 0.5em;
+            border: 1px solid #999;
+          }
+          input, textarea, select {
             background-color: #222;
             color: #fff;
             font-size: 1em;
-            padding: 0.3em 0.5em;
-            border: 1px solid #999;
-            overflow-y: hidden;
+            /*overflow-y: hidden;*/
           }
           input[readonly], textarea[readonly] {
             border-width: 0;
             background-color: #555;
-            font-family: inherit;
             color: #fff;
           }
           button {
-            font-size: 1.2em;
-            border: 1px solid #999;
             background-color: #444;
-            font-family: inherit;
             color: #fff;
+            cursor: pointer;
+          }
+          button:hover, button:focus {
+            border: 1px solid #ccc;
+            background-color: #666;
+          }
+          button.primary {
+            font-size: 1.2em;
+          }
+          button.square {
+            aspect-ratio: 1;
           }
           section {
-            font-size: 1.3em;
+            font-size: 1em;
             margin: 0.8em;
             padding: 1em;
             background-color: rgba(200, 200, 200, 0.3);
           }
-          .entry-head {
-            padding: 0 0 0.3em;
+          .entry details {
+            margin: 0.3em 0;
           }
           @media (max-width: 800px) {
             body {
@@ -234,8 +289,9 @@ export const HttpClientCatalog = new StaticCatalog([{
               margin: 0.8em 0;
             }
             section.entry {
-              padding: 0;
-              text-align: center;
+              padding-left: 0;
+              padding-right: 0;
+              /* text-align: center; */
             }
             .entry-head {
               padding: 0.5em;
@@ -257,10 +313,17 @@ export const HttpClientCatalog = new StaticCatalog([{
             display: inline;
             margin: 0em 0 0.2em;
           }
+          .header-input-grid {
+            grid-column: 1 / 5;
+            display: grid;
+            grid-template-columns: minmax(6em,1fr) minmax(8em,2fr) 2.5em;
+            grid-gap: 0.2em;
+          }
           section.entry textarea {
             width: 100%;
             resize: vertical;
             vertical-align: bottom;
+            padding: 0.3em 1em;
           }
           .error-msg {
             color: #f33 !important;
@@ -275,6 +338,9 @@ export const HttpClientCatalog = new StaticCatalog([{
             padding: 0 0.5em;
             list-style: none;
           }
+          .entry-body {
+            margin: 0 1em;
+          }
           section.footer {
             background-color: rgba(200, 200, 200, 0.15);
             color: rgba(200, 200, 200, 0.5);
@@ -283,12 +349,16 @@ export const HttpClientCatalog = new StaticCatalog([{
             color: rgba(200, 200, 200, 0.8);
           }
 
-          .header-grid {
-            text-align: left;
+          .entry .header-grid {
+            width: 100%;
+            margin: 0.2em 0 0.5em;
           }
           .header-grid input {
             width: 100%;
             box-sizing: border-box;
+          }
+          .header-grid th {
+            text-align: left;
           }
           .header-grid td {
             word-break: break-word;
