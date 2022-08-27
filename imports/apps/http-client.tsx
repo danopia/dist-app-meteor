@@ -54,6 +54,36 @@ export const HttpClientCatalog = new Array<Entity>({
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
 
+          async function sendInternetRequest(request) {
+            const resp = await distApp.fetch('dist-app:/protocolendpoints/http/invoke', {
+              method: 'POST',
+              body: JSON.stringify({ input: {
+                ...request,
+                headers: request.headers.filter(x => x[0]),
+              }}),
+            });
+            if (!resp.ok) throw new Error("HTTP gateway gave its own "+resp.status+" response");
+
+            const respData = await resp.json();
+            return {
+              status: respData.status,
+              headers: respData.headers,
+              body: respData.body,
+            };
+          }
+          async function sendInternalRequest(request) {
+            const resp = await distApp.fetch(request.url.replace(/^internal:/, ''), {
+              method: request.method,
+              headers: new Headers(request.headers.filter(x => x[0])),
+              body: request.body,
+            });
+            return {
+              status: resp.status,
+              headers: Array.from(resp.headers),
+              body: await resp.text(),
+            };
+          }
+
           import { createApp, reactive } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
           const app = createApp({
             data: () => ({
@@ -83,24 +113,14 @@ export const HttpClientCatalog = new Array<Entity>({
                 this.history.unshift(historyEntry);
 
                 try {
-                  const resp = await fetch('dist-app:/protocolendpoints/http/invoke', {
-                    method: 'POST',
-                    body: JSON.stringify({ input: {
-                      ...historyEntry.request,
-                      headers: historyEntry.request.headers.filter(x => x[0]),
-                    }}),
-                  });
-                  if (!resp.ok) throw new Error("HTTP gateway gave its own "+resp.status+" response");
-
-                  const respData = await resp.json();
-
+                  if (historyEntry.request.url.startsWith('internal:')) {
+                    historyEntry.response = await sendInternalRequest(historyEntry.request);
+                  } else {
+                    historyEntry.response = await sendInternetRequest(historyEntry.request);
+                  }
                   historyEntry.pending = false;
-                  historyEntry.response = {
-                    status: respData.status,
-                    headers: Array.from(respData.headers),
-                    body: respData.body,
-                  };
                 } catch (err) {
+                  console.error(err.stack);
                   historyEntry.pending = false;
                   historyEntry.error = {
                     stack: err.message,

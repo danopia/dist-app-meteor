@@ -18,7 +18,7 @@ globalThis.DistApp = class DistApp {
       .handleMessage(evt));
     port.start();
     fetchProtocols.set('dist-app:', (input, init) => this
-      .handleFetch(new Request(input, init)));
+      .fetch(input, init));
   }
   static async connect() {
     const port = await receiveMessagePort();
@@ -39,12 +39,34 @@ globalThis.DistApp = class DistApp {
     }
     console.warn('TODO: DistApp received:', evt.data);
   }
-  async handleFetch(request: Request) {
+  async fetch(req: RequestInfo | URL, opts: RequestInit | undefined) {
+    if (typeof req == 'string') {
+      return await this.handleFetch({
+        method: opts?.method || 'GET',
+        url: req,
+        headers: new Headers(opts?.headers),
+        body: (opts?.body != null) ? await new Response(opts.body).text() : null,
+      });
+    }
+    const request = new Request(req, opts);
+    return await this.handleFetch({
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      body: await request.text() || null,
+    });
+  }
+  async handleFetch(request: {
+    url: string;
+    method: string;
+    headers: Headers;
+    body: string | null;
+  }) {
     const payload = {
       url: request.url,
       method: request.method,
-      headers: Array.from(request.headers),
-      body: await request.text(),
+      headers: Array.from(request.headers as any),
+      body: request.body ?? undefined,
     };
     const respPayload = await this.sendRpcForResult<{
       status: number;

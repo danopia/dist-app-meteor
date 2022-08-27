@@ -7,6 +7,7 @@ echo "Compiling" $inFile "..."
 ./node_modules/typescript/bin/tsc \
     $inFile \
     --target es2020 \
+    --skipLibCheck \
     --outFile $outFile
 
 begin

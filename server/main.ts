@@ -107,6 +107,7 @@ Meteor.methods({
       };
     }
 
+    console.warn(`server got unhandled fetch for`, req.url);
     return {
       status: 429,
       headers: [],
