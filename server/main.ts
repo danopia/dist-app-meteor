@@ -72,7 +72,7 @@ Meteor.startup(async () => {
 
 });
 
-import { fetch, Headers, Request, Response } from 'meteor/fetch';
+import { fetch, Headers } from 'meteor/fetch';
 
 Meteor.methods({
   async 'poc-http-fetch'(req: {

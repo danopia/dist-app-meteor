@@ -15,7 +15,7 @@ export const WorldClockCatalog = new Array<Entity>({
       type: 'glyph',
       glyph: {
         text: '🕑',
-        backgroundColor: '#9ff',
+        backgroundColor: '#c6c',
       },
     },
   },

@@ -58,6 +58,9 @@ export const CounterTaskCatalog = new Array<Entity>({
         // scriptUrls: [
         //   'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.37/vue.min.js',
         // ],
+        inlineStyle: stripIndent`
+          body { background: #ccc; }
+        `,
         bodyHtml: stripIndent(html)`
           <div id="app">
             <h3>Counter</h3>
