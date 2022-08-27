@@ -1,6 +1,6 @@
-import { StaticCatalog } from "../api/catalog";
+import { Entity } from "/imports/entities";
 
-export const CounterCatalog = new StaticCatalog([{
+export const CounterCatalog = new Array<Entity>({
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
@@ -50,7 +50,7 @@ export const CounterCatalog = new StaticCatalog([{
       category: 'Launcher',
     }],
     type: 'iframe',
-    ifram:
+    // ifram:
     implementationRefs: [{
       namespace: 'webapp',
       kind: 'Iframe',
@@ -68,4 +68,4 @@ export const CounterCatalog = new StaticCatalog([{
 //     contentType: 'image/svg+xml',
 //     stringData: `<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 16 16'><text x='0' y='14'>👨‍💻</text></svg>`,
 //   },
-}])
+});

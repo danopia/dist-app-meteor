@@ -1,7 +1,7 @@
 import { html, stripIndent } from "common-tags";
-import { StaticCatalog } from "/imports/api/catalog";
+import { Entity } from "/imports/entities";
 
-export const CounterTaskCatalog = new StaticCatalog([{
+export const CounterTaskCatalog = new Array<Entity>({
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
@@ -87,4 +87,4 @@ export const CounterTaskCatalog = new StaticCatalog([{
       },
     },
   },
-}]);
+});

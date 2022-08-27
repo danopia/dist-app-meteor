@@ -1,7 +1,7 @@
 import { html, stripIndent } from "common-tags";
-import { StaticCatalog } from "/imports/api/catalog";
+import { Entity } from "/imports/entities";
 
-export const WelcomeCatalog = new StaticCatalog([{
+export const WelcomeCatalog = new Array<Entity>({
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
@@ -121,4 +121,4 @@ export const WelcomeCatalog = new StaticCatalog([{
       },
     },
   },
-}])
+});

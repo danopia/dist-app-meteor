@@ -1,5 +1,5 @@
 import { Mongo } from "meteor/mongo";
-import { StaticCatalog } from "../api/catalog";
+import { Entity } from "/imports/entities";
 import { ArbitraryEntity } from "../entities/core";
 
 export interface EntityStorage {
@@ -12,13 +12,13 @@ export interface EntityStorage {
 }
 
 export class StaticEntityStorage implements EntityStorage {
-  constructor(private readonly src: StaticCatalog) {}
+  constructor(private readonly src: Array<Entity>) {}
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[] {
-    return (this.src.entries as ArbitraryEntity[]).filter(x =>
+    return (this.src as ArbitraryEntity[]).filter(x =>
       x.apiVersion == apiVersion && x.kind == kind) as T[];
   }
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null {
-    return (this.src.entries as ArbitraryEntity[]).find(x =>
+    return (this.src as ArbitraryEntity[]).find(x =>
       x.apiVersion == apiVersion && x.kind == kind && x.metadata.name == name) as T;
   }
   insertEntity<T extends ArbitraryEntity>(entity: T): void {

@@ -1,7 +1,7 @@
 import { html, stripIndent } from "common-tags";
-import { StaticCatalog } from "/imports/api/catalog";
+import { Entity } from "/imports/entities";
 
-export const ToolbeltCatalog = new StaticCatalog([{
+export const ToolbeltCatalog = new Array<Entity>({
   apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Application',
   metadata: {
@@ -1487,4 +1487,4 @@ export const ToolbeltCatalog = new StaticCatalog([{
 //       },
 //     },
 //   },
-}])
+});
