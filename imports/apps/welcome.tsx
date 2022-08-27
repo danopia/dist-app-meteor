@@ -44,9 +44,6 @@ export const WelcomeCatalog = new Array<Entity>({
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts'],
-      securityPolicy: {
-        scriptSrc: ['https://unpkg.com'],
-      },
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -64,7 +61,7 @@ export const WelcomeCatalog = new Array<Entity>({
             </p>
             <p>
               <strong>To enable session restore, use an account:</strong>
-              <button @click="signIn">Sign in to dist.app</button>
+              <button onclick="signIn()">Sign in to dist.app</button>
             </p>
           </div>
         `,
@@ -92,29 +89,15 @@ export const WelcomeCatalog = new Array<Entity>({
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
 
-          import { createApp } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
-          const app = createApp({
-            data: () => ({
-              // total: 0
-            }),
-            // methods: {
-            //   incrementTotal: function () {
-            //     this.total += 1
-            //   }
-            // }
-            methods: {
-              signIn: function () {
-                distApp.sendRpc({ rpc: 'launchIntent', intent: {
-                  action: 'settings.AddAccount',
-                  // flag new_task
-                  extras: {
-                    'AccountTypes': 'platform.dist.app',
-                  },
-                }});
-              }
-            }
-          });
-          app.mount('#app');
+          globalThis.signIn = () => {
+            distApp.sendRpc({ rpc: 'launchIntent', intent: {
+              action: 'settings.AddAccount',
+              // flag new_task
+              extras: {
+                'AccountTypes': 'platform.dist.app',
+              },
+            }});
+          };
 
           await distApp.reportReady();
         `,
