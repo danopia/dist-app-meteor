@@ -141,6 +141,8 @@ export const HttpClientCatalog = new Array<Entity>({
             </div>
           </form>
 
+          <!-- TODO: add more from like https://da.gd/headers -->
+          <!-- TODO: parameterize using some external config, or make it dynamic/learning -->
           <datalist id="request-headers">
             <option value="accept">
             <option value="accept-encoding">

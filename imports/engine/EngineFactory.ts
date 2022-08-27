@@ -42,36 +42,7 @@ export class EngineFactory {
           //   type: 'static-catalog',
           // },
         }});
-      // engine.insertEntity<ForeignNamespaceEntity>({
-      //   apiVersion: 'runtime.dist.app/v1alpha1',
-      //   kind: 'ForeignNamespace',
-      //   metadata: {
-      //     namespace: 'default',
-      //     name: defaultNamespace,
-      //   },
-      //   spec: {
-      //     namespace: defaultNamespace,
-      //     remote: {
-      //       type: 'static-catalog',
-      //     },
-      //   }});
     }
-
-        // }, {
-    // engine.addNamespace({
-    //   name: 'system_apps',
-    //   spec: {
-    //     layers: [{
-    //       mode: 'ReadOnly',
-    //       accept: [{
-    //         apiGroup: 'manifest.dist.app',
-    //       }],
-    //       storage: {
-    //         type: 'bundled',
-    //         bundleId: 'system:bundled-apps'
-    //       },
-    //     }],
-    //   }});
 
     // const workspaceName = Random.id();
     engine.insertEntity<WorkspaceEntity>({
@@ -88,10 +59,8 @@ export class EngineFactory {
     const shell = engine.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main');
     if (!shell) throw new Error(`no shell`);
 
-    // const staticCatalog = engine.loadEntity('runtime.dist.app/v1alpha1', 'ForeignNamespace', 'default', 'app:welcome');
-
-    const welcomeAct = engine.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', 'app:welcome', 'main');
-    console.log(welcomeAct)
+    const welcomeActNamespace = localStorage.welcomeAct ?? 'app:welcome';
+    const welcomeAct = engine.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', welcomeActNamespace, 'main');
     if (!welcomeAct) throw new Error(`no welcome act`);
 
     shell.createTask(welcomeAct);

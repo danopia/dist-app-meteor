@@ -13,12 +13,14 @@ import { LayeredNamespace } from "./next-gen";
 
 function loadFunc(this: EntityEngine, input: ArbitraryEntity, key: string) {
   if (input.apiVersion == 'runtime.dist.app/v1alpha1') {
-    if (input.kind == 'ForeignNamespace') {
-      // return new
-    }
+    // if (input.kind == 'ForeignNamespace') {
+    //   // return new
+    // }
     if (input.kind == 'Workspace') {
-      console.log(input);
       return new ShellSession(this, input.metadata.namespace ?? 'bug', input.metadata.name);
+    }
+    if (input.kind == 'Activity') {
+      throw new Error(`TODO: activity class`)
     }
   }
   throw new Error('TODO: loadFunc for '+key);

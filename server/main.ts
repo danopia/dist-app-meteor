@@ -2,12 +2,7 @@ import 'happy-eyeballs/eye-patch';
 
 import { Meteor } from 'meteor/meteor';
 import { check } from 'meteor/check';
-import { CounterVolatileCatalog } from '../imports/apps/counter-volatile';
-import { CounterTaskCatalog } from '../imports/apps/counter-task';
 import { EntitiesCollection } from '/imports/db/entities';
-import { WelcomeCatalog } from '/imports/apps/welcome';
-import { ToolbeltCatalog } from '/imports/apps/toolbelt';
-import { WorldClockCatalog } from '/imports/apps/world-clock';
 import { Entity } from '/imports/entities';
 
 async function applyManifests(catalogId: string, namespace: string, entities: Entity[]) {
@@ -15,7 +10,7 @@ async function applyManifests(catalogId: string, namespace: string, entities: En
   for (const entity of entities) {
     allIds.push(await upsertEntity(catalogId, namespace, entity));
   }
-  const removed = EntitiesCollection.remove({
+  EntitiesCollection.remove({
     _id: { $nin: allIds },
     'metadata.catalogId': catalogId,
     'metadata.namespace': namespace,
