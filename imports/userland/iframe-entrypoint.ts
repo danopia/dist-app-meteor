@@ -7,6 +7,7 @@ globalThis.fetch = async (req, opts) => {
   return await handler(req, opts);
 };
 
+//@ts-ignore
 globalThis.DistApp = class DistApp {
   private nextPromise = 0;
   private readonly promises = new Map<number, [(data: Record<string, unknown>) => void, (error: Error) => void]>();

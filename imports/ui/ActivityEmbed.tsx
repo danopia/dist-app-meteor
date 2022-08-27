@@ -6,6 +6,7 @@ import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
 import { iframeEntrypoint } from '../userland/iframe-entrypoint-blob';
 import { meteorCallAsync } from '../lib/meteor-call';
+import { useObjectURL } from '../lib/use-object-url';
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
@@ -65,10 +66,23 @@ export const ActivityEmbed = (props: {
   }, [messageHost]);
 
   const { implementation } = props.activity.spec;
-  if (implementation.type == 'iframe') return (
+  if (implementation.type != 'iframe') throw new Error(`TODO: non-iframe activities`);
+
+  const frameSrc = useMemo(() => compileFrameSrc(implementation), [JSON.stringify(implementation)]);
+  const frameBlob = useMemo(() => new Blob([frameSrc], {
+    type: 'text/html; encoding=utf-8',
+  }), [frameSrc]);
+
+  const frameUrl = useObjectURL(frameBlob);
+  useEffect(() => frameUrl.setObject(frameBlob), [frameBlob]);
+
+  if (!frameUrl.objectURL) return (
+    <div className={props.className}></div>
+  );
+  return (
     <iframe ref={iframeRef} key={iframeKey}
         className={props.className}
-        src={compileFrameSrc(implementation)}
+        src={frameUrl.objectURL}
         sandbox={implementation.sandboxing?.join(' ') ?? ""}
         /* @ts-expect-error: csp is not typed */
         csp={[
@@ -78,7 +92,6 @@ export const ActivityEmbed = (props: {
           `connect-src 'self' ${(implementation.securityPolicy?.connectSrc ?? []).join(' ')}`,
         ].join('; ')}
         onLoad={evt => {
-          // console.log('onLoad', evt.currentTarget.contentWindow);
           setContentWindow(evt.currentTarget.contentWindow);
         }}
       />
@@ -123,16 +136,7 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
       ] : []),
       `</body>`,
     ].join('\n');
-    return `data:text/html;base64,${btoa(toBinary(docHtml))}`;
+    return docHtml;
   }
   throw new Error('Function not implemented.');
-}
-
-function toBinary(string: string) {
-  const charCodes = new TextEncoder().encode(string);
-  let result = '';
-  for (let i = 0; i < charCodes.byteLength; i++) {
-    result += String.fromCharCode(charCodes[i]);
-  }
-  return result;
 }
