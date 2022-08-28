@@ -1,4 +1,5 @@
 import { html, stripIndent } from "common-tags";
+import { useVueState } from "./_vue";
 import { Entity } from "/imports/entities";
 
 export const CounterTaskCatalog = new Array<Entity>({
@@ -55,9 +56,6 @@ export const CounterTaskCatalog = new Array<Entity>({
         htmlLang: 'en',
         metaCharset: 'utf-8',
         headTitle: 'Counter PoC',
-        // scriptUrls: [
-        //   'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.37/vue.min.js',
-        // ],
         inlineStyle: stripIndent`
           body { background: #ccc; }
         `,
@@ -69,11 +67,12 @@ export const CounterTaskCatalog = new Array<Entity>({
           </div>
         `,
         inlineScript: stripIndent(html)`
-          import { createApp } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
+          import { createApp, reactive, watchEffect } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           const app = createApp({
-            data: () => distApp.useVueState('root', {
+            data: await useVueState('root', {
               counter: 0,
             }),
             methods: {

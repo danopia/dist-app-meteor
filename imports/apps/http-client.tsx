@@ -1,4 +1,5 @@
 import { html, stripIndent } from "common-tags";
+import { useVueState } from "./_vue";
 import { Entity } from "/imports/entities";
 
 export const HttpClientCatalog = new Array<Entity>({
@@ -52,7 +53,6 @@ export const HttpClientCatalog = new Array<Entity>({
         metaCharset: 'utf-8',
         headTitle: 'HTTP client',
         inlineScript: stripIndent(html)`
-          const distApp = await DistApp.connect();
 
           async function sendInternetRequest(request) {
             const resp = await distApp.fetch('dist-app:/protocolendpoints/http/invoke', {
@@ -84,18 +84,23 @@ export const HttpClientCatalog = new Array<Entity>({
             };
           }
 
-          import { createApp, reactive } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
+          import { createApp, reactive, watchEffect } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
+          const distApp = await DistApp.connect();
+          ${useVueState}
+
+          const request = await useVueState('request', {
+            method: 'GET',
+            url: 'https://da.gd/headers',
+            headers: [
+              ['accept', 'text/plain, application/json;q=0.9, text/*;q=0.8, */*;q=0.7'],
+              ['user-agent', 'dist-app-poc/0.1 (+https://github.com/danopia/dist-app-poc)'],
+            ],
+            body: '',
+          });
+
           const app = createApp({
             data: () => ({
-              request: {
-                method: 'GET',
-                url: 'https://da.gd/headers',
-                headers: [
-                  ['accept', 'text/plain, application/json;q=0.9, text/*;q=0.8, */*;q=0.7'],
-                  ['user-agent', 'dist-app-poc/0.1 (+https://github.com/danopia/dist-app-poc)'],
-                ],
-                body: '',
-              },
+              request: request(),
               history: [],
             }),
             methods: {

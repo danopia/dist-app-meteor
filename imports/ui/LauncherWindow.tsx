@@ -34,6 +34,8 @@ export const LauncherWindow = () => {
         .map(y => apps.find(z => z.metadata.namespace == x.metadata.namespace && z.metadata.name == y.name))[0],
     }));
 
+    // icon maybe 𓃑 or ☰
+
   return (
     <WindowFrame
         floatingRect={{left: 0, top: 0}}

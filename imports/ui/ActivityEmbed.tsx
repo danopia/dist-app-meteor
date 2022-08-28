@@ -61,6 +61,43 @@ export const ActivityEmbed = (props: {
       console.log('ActivityEmbed fetch', rpc);
       if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
 
+      if (rpc.spec.url.startsWith('/task/state/')) {
+        const stateKey = decodeURIComponent(rpc.spec.url.split('/')[2]);
+        // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
+        if (rpc.spec.method == 'GET') {
+          const {appState} = runtime.getEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', props.activityInstance.metadata.namespace, props.activityInstance.metadata.name)?.spec ?? {};
+          if (appState?.[stateKey] != null) return respondWith<FetchResponseEntity>({
+            kind: 'FetchResponse',
+            spec: {
+              status: 200,
+              body: appState[stateKey],
+              headers: [['content-type', 'text/plain']],
+            },
+          });
+          return respondWith<FetchResponseEntity>({
+            kind: 'FetchResponse',
+            spec: {
+              status: 404,
+              body: `no state exists here yet (TODO)`,
+              headers: [['content-type', 'text/plain']],
+            },
+          });
+        }
+        const newBody = typeof rpc.spec.body == 'string' ? rpc.spec.body : new TextDecoder().decode(rpc.spec.body);
+        runtime.mutateEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', props.activityInstance.metadata.namespace, props.activityInstance.metadata.name, actInst => {
+          actInst.spec.appState ??= {};
+          actInst.spec.appState[stateKey] = newBody;
+        });
+        return respondWith<FetchResponseEntity>({
+          kind: 'FetchResponse',
+          spec: {
+            status: 200,
+            body: `ok`,
+            headers: [['content-type', 'text/plain']],
+          },
+        });
+      }
+
       if (rpc.spec.url.startsWith('/binding/')) {
         const slashIdx = rpc.spec.url.indexOf('/', '/binding/'.length);
         const bindingName = rpc.spec.url.slice('/binding'.length, slashIdx);
