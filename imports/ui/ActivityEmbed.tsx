@@ -85,7 +85,7 @@ export const ActivityEmbed = (props: {
         });
         const apiSpec: OpenAPIV3.Document = parse(apiEntity.spec.definition);
         const server = apiSpec.servers?.[0];
-        if (!server) return respondWith<FetchResponseEntity>({
+        if (!server || !server.url.startsWith('https://')) return respondWith<FetchResponseEntity>({
           kind: 'FetchResponse',
           spec: {
             status: 404,
@@ -102,6 +102,7 @@ export const ActivityEmbed = (props: {
           method: rpc.spec.method,
           headers: rpc.spec.headers,
           body: rpc.spec.body ?? undefined,
+          redirect: 'manual',
         });
         const firstByte = Date.now() - t0.valueOf();
         const respBody = new Uint8Array(await realResp.arrayBuffer())
