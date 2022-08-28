@@ -1,6 +1,8 @@
-export type RpcListener = (event: {
-  rpc: Record<string,unknown>,
-  respondWith: (data: Record<string,unknown>) => void,
+import { ProtocolEntity } from "../entities/protocol";
+
+export type RpcListener<T extends ProtocolEntity> = (event: {
+  rpc: T;
+  respondWith: (data: ProtocolEntity) => void;
 }) => void | Promise<void>;
 
 export class MessageHost {
@@ -9,19 +11,21 @@ export class MessageHost {
     this.localPort = port1;
     this.remotePort = port2;
 
-    this.localPort.onmessage = this.handleMessage.bind(this);
+    this.localPort.addEventListener("message", this.handleMessage.bind(this));
+    this.localPort.start();
     // TODO: also messageerror
   }
 
   private localPort: MessagePort;
   private remotePort: MessagePort | null;
-  private rpcListeners: Array<[string, RpcListener]> = [];
+  private rpcListeners: Array<[ProtocolEntity["kind"], RpcListener<ProtocolEntity>]> = [];
 
   handleMessage(event: MessageEvent) {
-    const {rpc, id} = event.data;
+    const rpc: ProtocolEntity = event.data;
+    const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
     let hits = 0;
     for (const listener of this.rpcListeners) {
-      if (listener[0] == rpc) {
+      if (listener[0] == rpc.kind) {
         listener[1]({
           rpc: event.data,
           respondWith: this.respondTo.bind(this, id),
@@ -32,17 +36,16 @@ export class MessageHost {
     console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
   }
 
-  respondTo(msgId: number, data: Record<string, unknown>) {
+  respondTo(msgId: number | false, data: ProtocolEntity) {
     if (typeof msgId !== 'number') throw new Error(`Cannot respond to unnumbered RPC`);
     this.localPort.postMessage({
       ...data,
-      rpc: 'respond',
       origId: msgId,
     });
   }
 
-  addRpcListener(rpcId: string, listener: RpcListener) {
-    this.rpcListeners.push([rpcId, listener]);
+  addRpcListener<T extends ProtocolEntity>(rpcId: T["kind"], listener: RpcListener<T>) {
+    this.rpcListeners.push([rpcId, listener as RpcListener<ProtocolEntity>]);
   }
 
   connectTo(otherWindow: Window) {

@@ -1,3 +1,5 @@
+import type { FetchResponseEntity, LaunchIntentEntity, LifecycleEntity, ProtocolEntity } from "../entities/protocol.js";
+
 const originalFetch = globalThis.fetch;
 const fetchProtocols = new Map<string, typeof fetch>();
 globalThis.fetch = async (req, opts) => {
@@ -10,7 +12,7 @@ globalThis.fetch = async (req, opts) => {
 //@ts-ignore
 globalThis.DistApp = class DistApp {
   private nextPromise = 0;
-  private readonly promises = new Map<number, [(data: Record<string, unknown>) => void, (error: Error) => void]>();
+  private readonly promises = new Map<number, [(data: ProtocolEntity) => void, (error: Error) => void]>();
   constructor(
     private readonly port: MessagePort,
   ) {
@@ -18,6 +20,7 @@ globalThis.DistApp = class DistApp {
     port.addEventListener("message", evt => this
       .handleMessage(evt));
     port.start();
+
     fetchProtocols.set('dist-app:', (input, init) => this
       .fetch(input, init));
   }
@@ -26,15 +29,20 @@ globalThis.DistApp = class DistApp {
     return new DistApp(port);
   }
   handleMessage(evt: MessageEvent) {
-    if (evt.data.rpc == 'respond') {
-      const pair = this.promises.get(evt.data.origId);
+    const entity = evt.data as ProtocolEntity;
+    if (entity.kind == 'FetchResponse') {
+      const pair = this.promises.get(entity.origId);
       if (pair) {
-        this.promises.delete(evt.data.origId);
-        if (evt.data.error) {
-          pair[1](new Error(evt.data.error));
-        } else {
-          pair[0](evt.data.data);
-        }
+        this.promises.delete(entity.origId);
+        pair[0](entity);
+        return;
+      }
+    }
+    if (entity.kind == 'FetchError') {
+      const pair = this.promises.get(entity.origId);
+      if (pair) {
+        this.promises.delete(entity.origId);
+        pair[1](new Error(entity.spec.message));
         return;
       }
     }
@@ -61,25 +69,22 @@ globalThis.DistApp = class DistApp {
     url: string;
     method: string;
     headers: Headers;
-    body: string | null;
+    body: string | Uint8Array | null;
   }) {
-    const payload = {
-      url: request.url,
-      method: request.method,
-      headers: Array.from(request.headers as any),
-      body: request.body ?? undefined,
-    };
-    const respPayload = await this.sendRpcForResult<{
-      status: number;
-      headers: Array<[string,string]>;
-      body?: string;
-    }>({
-      rpc: 'fetch',
-      spec: payload,
+    const respPayload = await this.sendRpcForResult<FetchResponseEntity>({
+      kind: 'FetchRequest',
+      id: -1,
+      spec: {
+        url: request.url,
+        method: request.method,
+        headers: Array.from(request.headers as any),
+        body: request.body ?? undefined,
+      },
     });
-    return new Response(respPayload.body, {
-      status: respPayload.status,
-      headers: new Headers(respPayload.headers ?? []),
+    if (respPayload.spec.bodyStream != null) throw new Error(`TODO: stream`);
+    return new Response(respPayload.spec.body, {
+      status: respPayload.spec.status,
+      headers: new Headers(respPayload.spec.headers ?? []),
     });
   }
   useVueState(key: string, initial: unknown) {
@@ -87,17 +92,29 @@ globalThis.DistApp = class DistApp {
     return initial;
   }
   reportReady() {
-    this.port.postMessage({rpc: 'reportReady'})
+    this.sendRpc({
+      kind: 'Lifecycle',
+      spec: {
+        stage: 'ready',
+      },
+    });
   }
-  sendRpc(data: Record<string, unknown>) {
+  launchIntent(intent: LaunchIntentEntity["spec"]) {
+    this.sendRpc({
+      kind: 'LaunchIntent',
+      spec: intent,
+    });
+  }
+  sendRpc<Treq extends ProtocolEntity>(data: Treq) {
     this.port.postMessage(data);
   }
-  sendRpcForResult<T = Record<string, unknown>>(data: Record<string, unknown>) {
+  // openResultStream<Tresp extends ProtocolEntity>(expectKinds: Array<string>) {}
+  sendRpcForResult<Tresp extends ProtocolEntity>(data: ProtocolEntity & {id: number}) {
     const promiseNum = this.nextPromise++;
-    return new Promise<T>((ok, fail) => {
+    return new Promise<Tresp>((ok, fail) => {
       this.sendRpc({ ...data, id: promiseNum });
       this.promises.set(promiseNum, [
-        value => ok(value as T),
+        value => ok(value as Tresp),
         error => fail(error),
       ]);
     });
@@ -116,12 +133,15 @@ function receiveMessagePort() {
       window.addEventListener("message", () => {
         console.error("Received a second protocol initiation?? Reloading");
         try {
-          event.ports?.map(port => port.postMessage({
-            rpc: 'recycle-frame',
-          })) ?? [];
+          const entity: LifecycleEntity = {
+            kind: 'Lifecycle',
+            spec: {
+              stage: 'recycle',
+            },
+          };
+          event.ports?.map(port => port.postMessage(entity)) ?? [];
           if (port) reject(
             new Error("Received protocol packet without a port"));
-          ok(port);
         } finally {
           window.location.reload();
         }

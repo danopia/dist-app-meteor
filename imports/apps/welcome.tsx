@@ -90,13 +90,13 @@ export const WelcomeCatalog = new Array<Entity>({
           const distApp = await DistApp.connect();
 
           globalThis.signIn = () => {
-            distApp.sendRpc({ rpc: 'launchIntent', intent: {
+            distApp.launchIntent({
               action: 'settings.AddAccount',
               // flag new_task
               extras: {
                 'AccountTypes': 'platform.dist.app',
               },
-            }});
+            });
           };
 
           await distApp.reportReady();

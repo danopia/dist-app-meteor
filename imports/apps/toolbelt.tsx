@@ -187,11 +187,11 @@ export const ToolbeltCatalog = new Array<Entity>({
           toolList.addEventListener('click', evt => {
             evt.preventDefault();
             const href = evt.target.closest('a').getAttribute('href');
-            distApp.sendRpc({ rpc: 'launchIntent', intent: {
+            distApp.launchIntent({
               activity: {
                 name: href,
               },
-            }});
+            });
           });
 
           await distApp.reportReady();

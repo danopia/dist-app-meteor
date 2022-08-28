@@ -68,23 +68,19 @@ Meteor.startup(async () => {
 });
 
 import { fetch, Headers } from 'meteor/fetch';
+import { FetchRequestEntity, FetchResponseEntity } from '/imports/entities/protocol';
 
 Meteor.methods({
-  async 'poc-http-fetch'(req: {
-    url: string;
-    method: string;
-    headers: Array<[string,string]>;
-    body?: string;
-  }) {
+  async 'poc-FetchRequestEntity'(req: FetchRequestEntity): Promise<FetchResponseEntity> {
     console.log('poc-http-fetch:', req);
 
-    if (req.url === 'dist-app:/protocolendpoints/http/invoke' && req.body) {
+    if (req.spec.url === 'dist-app:/protocolendpoints/http/invoke' && typeof req.spec.body == 'string') {
       const spec: {input: {
         url: string;
         method: string;
         headers: Array<[string,string]>;
         body?: string;
-      }} = JSON.parse(req.body);
+      }} = JSON.parse(req.spec.body);
       if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
         `This domain is not reachable for the current user`);
 
@@ -95,23 +91,31 @@ Meteor.methods({
       });
       console.log(`remote server gave HTTP ${resp.status} to ${spec.input.method} ${spec.input.url}`);
       return {
-        status: 200,
-        headers: [
-          ['content-type', 'application/json'],
-        ],
-        body: JSON.stringify({
-          status: resp.status,
-          headers: Array.from(resp.headers),
-          body: await resp.text(),
-        }),
+        kind: 'FetchResponse',
+        origId: -1,
+        spec: {
+          status: 200,
+          headers: [
+            ['content-type', 'application/json'],
+          ],
+          body: JSON.stringify({
+            status: resp.status,
+            headers: Array.from(resp.headers),
+            body: await resp.text(),
+          }),
+        },
       };
     }
 
-    console.warn(`server got unhandled fetch for`, req.url);
+    console.warn(`server got unhandled fetch for`, req.spec.url);
     return {
-      status: 429,
-      headers: [],
-      body: 'im a teapot',
+      kind: 'FetchResponse',
+      origId: -1,
+      spec: {
+        status: 429,
+        headers: [],
+        body: 'im a teapot',
+      },
     };
   }
 })

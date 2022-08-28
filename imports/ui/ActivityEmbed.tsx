@@ -7,6 +7,7 @@ import { TaskEntity } from '../entities/runtime';
 import { iframeEntrypointText } from '../userland/iframe-entrypoint-blob';
 import { meteorCallAsync } from '../lib/meteor-call';
 import { useObjectURL } from '../lib/use-object-url';
+import { FetchErrorEntity, FetchRequestEntity, FetchResponseEntity, LaunchIntentEntity, LifecycleEntity } from '../entities/protocol';
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
@@ -35,33 +36,36 @@ export const ActivityEmbed = (props: {
     }
   }, [contentWindow]);
   useEffect(() => {
-    messageHost.addRpcListener('reportReady', () => {
-      props.onLifecycle('ready');
+    messageHost.addRpcListener<LifecycleEntity>('Lifecycle', ({rpc}) => {
+      if (rpc.spec.stage == 'recycle') {
+        setIframeKey(Math.random());
+      } else {
+        props.onLifecycle(rpc.spec.stage);
+      }
     });
-    messageHost.addRpcListener('recycle-frame', () => {
-      setIframeKey(Math.random());
-    });
-    messageHost.addRpcListener('launchIntent', ({rpc}) => {
+    messageHost.addRpcListener<LaunchIntentEntity>('LaunchIntent', ({rpc}) => {
       console.log('handling', rpc);
       shell.runTaskCommand(props.task, props.activity, {
         type: 'launch-intent',
         intent: {
-          activityRef: (rpc as any).intent?.activity?.name as string | undefined,
-          action: (rpc as any).intent?.action as string ?? 'launch',
+          activityRef: rpc.spec.activity?.name,
+          action: rpc.spec.action ?? 'launch',
         },
       });
     });
-    messageHost.addRpcListener('fetch', async ({rpc, respondWith}) => {
+    messageHost.addRpcListener<FetchRequestEntity>('FetchRequest', async ({rpc, respondWith}) => {
       console.log('ActivityEmbed fetch', rpc);
+
+      if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
 
       // TODO BEGIN
       // TODO: catch any errors and send those to the application
-      const resp = await meteorCallAsync('poc-http-fetch', rpc.spec)
-        .then(x => ({data: x}), err => ({error: err.stack}));
+      const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', rpc)
+        .catch<FetchErrorEntity>(err => ({kind: 'FetchError', origId: -1, spec: {message: err.message}}));
       console.log('ActivityEmbed fetch result:', resp);
       // TODO END
 
-      respondWith(resp as any);
+      respondWith(resp);
     });
   }, [messageHost]);
 
