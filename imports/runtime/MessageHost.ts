@@ -23,20 +23,20 @@ export class MessageHost {
   handleMessage(event: MessageEvent) {
     const rpc: ProtocolEntity = event.data;
     const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
-    let hits = 0;
+    // let hits = 0;
     for (const listener of this.rpcListeners) {
       if (listener[0] == rpc.kind) {
         listener[1]({
           rpc: event.data,
           respondWith: this.respondTo.bind(this, id),
         });
-        hits++;
+        // hits++;
       }
     }
-    console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+    // console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
   }
 
-  respondTo(msgId: number | false, data: ProtocolEntity) {
+  respondTo(msgId: number | false, data: Omit<ProtocolEntity, 'origId'>) {
     if (typeof msgId !== 'number') throw new Error(`Cannot respond to unnumbered RPC`);
     this.localPort.postMessage({
       ...data,
