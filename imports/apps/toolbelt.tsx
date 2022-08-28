@@ -160,6 +160,7 @@ export const ToolbeltCatalog = new Array<Entity>({
             'binary.html',
             // 'calculator.html',
             'dagd.html',
+            'google-dns.html',
             'irc-colors.html',
             'jwt.html',
             'pretty-json.html',
@@ -1456,6 +1457,459 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
       },
     },
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'Activity',
+  metadata: {
+    name: 'google-dns',
+    title: 'Google DNS Query',
+    ownerReferences: [{
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'Application',
+      name: 'app',
+    }],
+  },
+  spec: {
+    windowSizing: {
+      initialWidth: 800,
+      initialHeight: 500,
+    },
+    fetchBindings: [{
+      pathPrefix: '/google-dns',
+      apiName: 'google-dns',
+    }],
+    implementation: {
+      type: 'iframe',
+      sandboxing: ['allow-scripts', 'allow-forms'],
+      source: {
+        type: 'piecemeal',
+        htmlLang: 'en',
+        metaCharset: 'utf-8',
+        headTitle: 'Google DNS',
+        bodyHtml: stripIndent(html)`
+          <h1>&#128104;&#8205;&#128187; Google DNS</h1>
+
+          <form id="lookup">
+            <select name="type">
+              <option>A</option>
+              <option>AAAA</option>
+              <option>CNAME</option>
+              <option>MX</option>
+              <option>ANY</option>
+              <option>TXT</option>
+              <option>PTR</option>
+            </select>
+            <input type="text" name="name" placeholder="Hostname, FQDN, etc" required autofocus>
+            <button type="submit">Lookup</button>
+          </form>
+
+          <div id="history-col">
+            <section class="footer">
+              <div>
+                toolbelt tools by
+                <a target="_new" href="https://github.com/danopia">@danopia</a>
+              </div>
+              <div>
+                DNS resolution by
+                <a target="_blank" href="https://developers.google.com/speed/public-dns/docs/doh/json">Google Public DNS</a>
+              </div>
+            </section>
+          </div>
+        `,
+        inlineStyle: stripIndent`
+          body {
+            background-color: #333;
+            color: #fff;
+            margin: 0;
+            padding: 2em 2em 10em;
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 60em;
+            font-family: monospace;
+          }
+          h1 {
+            margin: 0.3em 1em;
+            color: #999;
+          }
+          form {
+            display: grid;
+            grid-template-columns: 8em 1fr 8em;
+            grid-gap: 1em;
+            grid-auto-rows: 3em;
+            margin: 1em;
+          }
+          select, input, textarea {
+            box-sizing: border-box;
+            background-color: #222;
+            color: #fff;
+            font-size: 1em;
+            padding: 0.3em 0.5em;
+            border: 1px solid #999;
+            overflow-y: hidden;
+          }
+          input[readonly], textarea[readonly] {
+            border-width: 0;
+            background-color: #555;
+            font-family: inherit;
+            color: #fff;
+          }
+          button {
+            font-size: 1.2em;
+            border: 1px solid #999;
+            background-color: #444;
+            font-family: inherit;
+            color: #fff;
+          }
+          section {
+            font-size: 1.3em;
+            margin: 0.8em;
+            padding: 1em;
+            background-color: rgba(200, 200, 200, 0.3);
+          }
+          .entry-head {
+            padding: 0 0 0.3em;
+          }
+          @media (max-width: 800px) {
+            body {
+              padding: 1em 0 10em;
+            }
+            section {
+              margin: 0.8em 0;
+            }
+            section.entry {
+              padding: 0;
+              text-align: center;
+            }
+            .entry-head {
+              padding: 0.5em;
+            }
+            progress {
+              margin-bottom: 1em;
+            }
+          }
+          h3 {
+            margin: 0.2em 0 0.4em;
+          }
+          h3:not(:first-child) {
+            padding-top: 1.2em;
+          }
+          a.deeplink {
+            margin-right: 0.4em;
+          }
+          h4 {
+            display: inline;
+            margin: 0em 0 0.2em;
+          }
+          section.entry textarea {
+            width: 100%;
+            resize: vertical;
+            vertical-align: bottom;
+          }
+          .error-msg {
+            color: #f33 !important;
+          }
+          a {
+            color: #ccc;
+          }
+          section.intro {
+            padding: 0.5em 1em;
+          }
+          section.intro ul {
+            padding: 0 0.5em;
+            list-style: none;
+          }
+          section.footer {
+            background-color: rgba(200, 200, 200, 0.15);
+            color: rgba(200, 200, 200, 0.5);
+          }
+          section.footer a {
+            color: rgba(200, 200, 200, 0.8);
+          }
+        `,
+        inlineScript: stripIndent(html)`
+          const distApp = await DistApp.connect();
+
+          const historyCol = document.querySelector('#history-col');
+          function addEntry () {
+
+            const title = document.createElement('h4');
+            const progress = document.createElement('progress');
+            const output = document.createElement('textarea');
+            output.readOnly = true;
+            output.rows = 1;
+            const time = document.createElement('time');
+
+            const headbox = document.createElement('div');
+            headbox.classList.add('entry-head');
+            headbox.appendChild(title);
+
+            const box = document.createElement('section');
+            box.classList.add('entry');
+            box.appendChild(headbox);
+            box.appendChild(progress);
+            historyCol.insertBefore(box, historyCol.children[0]);
+
+            const finalizeBox = () => {
+              box.removeChild(progress);
+
+              box.appendChild(output);
+              box.appendChild(time);
+              setTimeout(() => {
+                output.style.height = output.scrollHeight+'px';
+              }, 0);
+            }
+
+            return {
+              deeplink(path) {
+                const deeplink = document.createElement('a');
+                deeplink.href = '#' + encodeURI(path);
+                deeplink.innerText = '#';
+                deeplink.classList.add('deeplink');
+                headbox.insertBefore(deeplink, title);
+              },
+              title(text) { title.innerText = text; },
+              promise(p) {
+                return p.then(text => {
+                  output.value = text.trim();
+                  finalizeBox();
+                }, err => {
+                  output.classList.add('error-msg');
+                  output.value = err.message || JSON.stringify(err, null, 2);
+                  finalizeBox();
+                });
+              },
+            };
+          };
+
+          function ParseInput(rawInput) {
+            const v4Match = rawInput.match(/((?:\\d{1,3}\\.){3}\\d{1,3})(\\/|:|$)/);
+            const dnsMatch = rawInput.match(/([a-z0-9.-]+\\.[a-z][a-z0-9-]+)(\\/|:|$)/i);
+            if (v4Match) {
+              return {
+                text: v4Match[1].toLowerCase(),
+                nameType: 'ipv4',
+              };
+            } else if (dnsMatch) {
+              return {
+                text: dnsMatch[1].toLowerCase(),
+                nameType: 'dns',
+              };
+            } else {
+              throw new Error(\`Couldn't parse input: \${rawInput}\`);
+            }
+          }
+
+          function queryInput(input, andSetHash=false) {
+            const entry = addEntry();
+            entry.title(input.type + ' ' + input.text);
+            // entry.deeplink(input.text);
+            // existingQueries.set(input.text, entry);
+
+            // if (andSetHash)
+            //   window.location.hash = \`#\${encodeURI(input.text)}\`;
+
+            return entry.promise((async () => {
+
+              // TODO: if type=ipv4, rewrite to e.g. "10.41.232.199.in-addr.arpa."
+
+              const opts = new URLSearchParams();
+              opts.set('name', input.text);
+              opts.set('type', input.type);
+              opts.set('do', '1');
+              const resp = await distApp.fetch('/binding/google-dns/resolve?'+opts.toString());
+              const json = await resp.json();
+
+              return JSON.stringify(json, null, 2);
+            })());
+          }
+
+          const form = document.querySelector('form');
+          form.addEventListener('submit', evt => {
+            evt.preventDefault();
+            const {name, type} = evt.target;
+            queryInput({...ParseInput(name.value), type: type.value}, true)
+              // .then(() => name.value = '');
+          });
+
+          const inputBox = form.name;
+          inputBox.addEventListener('paste', evt => {
+            try {
+              const pasteData = evt.clipboardData.getData('text');
+              queryInput(ParseInput(pasteData), true)
+                .then(() => inputBox.value = '');
+            } catch (err) {
+              console.log('not acting on paste.', err);
+            }
+          });
+
+          await distApp.reportReady();
+        `,
+      },
+    },
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'Api',
+  metadata: {
+    name: 'google-dns',
+    links: [{
+      url: 'https://developers.google.com/speed/public-dns/docs/doh/json',
+      type: 'documentation',
+    }],
+  },
+  spec: {
+    type: 'openapi',
+    definition: stripIndent`
+      openapi: 3.0.1
+      info:
+        title: Google Public DNS Resolver
+        version: 2022-08-28
+        description: Query DNS records from Google's closest server
+      servers:
+        - url: https://8.8.8.8
+      paths:
+        /resolve:
+          get:
+            parameters:
+            - in: query
+              name: name
+              schema:
+                type: string
+              required: true
+            - in: query
+              name: type
+              schema:
+                type: string
+              required: false
+            - in: query
+              name: cd
+              schema:
+                type: string
+              required: false
+            - in: query
+              name: ct
+              schema:
+                type: string
+              required: false
+            - in: query
+              name: do
+              schema:
+                type: string
+              required: false
+            - in: query
+              name: edns_client_subnet
+              schema:
+                type: string
+              required: false
+            - in: query
+              name: random_padding
+              schema:
+                type: string
+              required: false
+            responses:
+              default:
+                $ref: '#/components/responses/DnsResponse'
+      components:
+        responses:
+          DnsResponse:
+            description: A DNS response.
+            content:
+              application/x-javascript:
+                schema:
+                  $ref: '#/components/schemas/DnsJsonResponse'
+        schemas:
+          DnsJsonResponse:
+            required:
+            - Status
+            - TC
+            - RD
+            - RA
+            - AD
+            - CD
+            - Question
+            properties:
+              Status:
+                description: Standard DNS response code (32 bit integer)
+                type: integer
+              TC:
+                description: Whether the response is truncated
+                type: boolean
+              RD:
+                description: Always true for Google Public DNS
+                type: boolean
+              RA:
+                description: Always true for Google Public DNS
+                type: boolean
+              AD:
+                description: Whether all response data was validated with DNSSEC
+                type: boolean
+              CD:
+                description: Whether the client asked to disable DNSSEC
+                type: boolean
+              Question:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - name
+                  - type
+                  properties:
+                    name:
+                      description: FQDN with trailing dot
+                      type: string
+                    type:
+                      description: Standard DNS RR type
+                      type: integer
+              Answer:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - name
+                  - type
+                  - data
+                  properties:
+                    name:
+                      description: Always matches name in the Question section
+                      type: string
+                    type:
+                      description: Standard DNS RR type
+                      type: integer
+                    TTL:
+                      description: Record's time-to-live in seconds
+                      type: integer
+                    data:
+                      description: Data for A - IP address as text
+                      type: string
+              Authority:
+                type: array
+                items:
+                  type: object
+                  required:
+                  - name
+                  - type
+                  - data
+                  properties:
+                    name:
+                      description: Always matches name in the Question section
+                      type: string
+                    type:
+                      description: Standard DNS RR type
+                      type: integer
+                    TTL:
+                      description: Record's time-to-live in seconds
+                      type: integer
+                    data:
+                      description: Data for A - IP address as text
+                      type: string
+              Comment:
+                description: Any diagnostic information
+                type: string
+              edns_client_subnet:
+                description: IP address / scope prefix-length
+                type: string
+    `,
   },
 // }, {
 //   apiVersion: 'manifest.dist.app/v1alpha1',
