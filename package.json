@@ -23,6 +23,8 @@
     "react-spinners": "^0.13"
   },
   "devDependencies": {
+    "@swc/cli": "^0.1.57",
+    "@swc/core": "^1.2.244",
     "@types/common-tags": "^1",
     "@types/meteor": "^1",
     "@types/mocha": "^8",

@@ -4,7 +4,7 @@ import { html } from 'common-tags';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
-import { iframeEntrypoint } from '../userland/iframe-entrypoint-blob';
+import { iframeEntrypointText } from '../userland/iframe-entrypoint-blob';
 import { meteorCallAsync } from '../lib/meteor-call';
 import { useObjectURL } from '../lib/use-object-url';
 
@@ -124,7 +124,7 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
       ...(implementation.source.scriptUrls?.flatMap(url => [
         html`<script src="${url}"></script>`,
       ]) ?? []),
-      `<script>${iframeEntrypoint.replace('{ORIGIN}', JSON.stringify(location.origin).slice(1, -1))}</script>`,
+      `<script type="module">${iframeEntrypointText.replace('{ORIGIN}', JSON.stringify(location.origin).slice(1, -1))}</script>`,
       ...(implementation.source.inlineScript ? [
         `  <script type="module" defer>`,
         implementation.source.inlineScript.replace(/^/gm, '    '),
