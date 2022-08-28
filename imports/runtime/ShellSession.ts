@@ -1,6 +1,6 @@
 import { Random } from "meteor/random";
 import { ActivityEntity } from "../entities/manifest";
-import { WorkspaceEntity, CommandEntity, TaskEntity } from "../entities/runtime";
+import { WorkspaceEntity, CommandEntity, TaskEntity, ActivityInstanceEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 
 export class ShellSession {
@@ -88,8 +88,29 @@ export class ShellSession {
 
   createTask(firstActivity: ActivityEntity) {
     const taskId = Random.id();
+    const actInstId = Random.id();
 
-    this.runtime.insertEntity({
+    this.runtime.insertEntity<ActivityInstanceEntity>({
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      kind: 'ActivityInstance',
+      metadata: {
+        name: actInstId,
+        ownerReferences: [{
+          apiVersion: 'runtime.dist.app/v1alpha1',
+          kind: 'Task',
+          name: taskId,
+        }],
+      },
+      spec: {
+        activity: {
+          catalogId: firstActivity.metadata.catalogId,
+          namespace: firstActivity.metadata.namespace,
+          name: firstActivity.metadata.name,
+        },
+      },
+    });
+
+    this.runtime.insertEntity<TaskEntity>({
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Task',
       metadata: {
@@ -104,6 +125,7 @@ export class ShellSession {
       spec: {
         placement: {
           current: 'floating',
+          rolledWindow: false,
           floating: {
             left: 100 + Math.floor(Math.random() * 200),
             top: 100 + Math.floor(Math.random() * 200),
@@ -115,11 +137,7 @@ export class ShellSession {
           },
         },
         stack: [{
-          activity: {
-            catalogId: firstActivity.metadata.catalogId,
-            namespace: firstActivity.metadata.namespace,
-            name: firstActivity.metadata.name,
-          },
+          activityInstance: actInstId,
         }],
       },
     });

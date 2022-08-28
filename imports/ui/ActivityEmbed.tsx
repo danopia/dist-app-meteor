@@ -6,7 +6,7 @@ import { OpenAPIV3 } from "openapi-types";
 import { ActivityEntity, ApiEntity, IframeImplementationSpec } from '../entities/manifest';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
-import { TaskEntity } from '../entities/runtime';
+import { ActivityInstanceEntity, TaskEntity } from '../entities/runtime';
 import { iframeEntrypointText } from '../userland/iframe-entrypoint-blob';
 import { meteorCallAsync } from '../lib/meteor-call';
 import { useObjectURL } from '../lib/use-object-url';
@@ -14,6 +14,7 @@ import { FetchErrorEntity, FetchRequestEntity, FetchResponseEntity, LaunchIntent
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
+  activityInstance: ActivityInstanceEntity;
   activity: ActivityEntity;
   className?: string;
   onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;

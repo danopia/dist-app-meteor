@@ -137,7 +137,7 @@ export class EntityEngine {
       namespace: entity.metadata.namespace,
       op: 'Write',
     });
-    return layer?.impl.insertEntity(entity);
+    return layer?.impl.insertEntity<T>(entity);
   }
 
   listEntities<T extends ArbitraryEntity>(

@@ -3,7 +3,7 @@ import React, { useContext, useState } from "react";
 import { ActivityEmbed } from "./ActivityEmbed";
 import { WindowFrame } from "./widgets/WindowFrame";
 import { RuntimeContext } from "./contexts";
-import { TaskEntity } from "../entities/runtime";
+import { ActivityInstanceEntity, TaskEntity } from "../entities/runtime";
 import { ActivityEntity } from "../entities/manifest";
 
 export const TaskWindow = (props: {
@@ -18,7 +18,9 @@ export const TaskWindow = (props: {
 
   // const task = runtime.getTask()
 
-  const activity = useTracker(() => runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', props.task.spec.stack[0].activity.namespace, props.task.spec.stack[0].activity.name)) ?? null;
+  // TODO: how does one navigate the stack?
+  const [actInst] = useTracker(() => props.task.spec.stack.map(x => runtime.getEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', props.task.metadata.namespace, x.activityInstance)).flatMap(x => x ? [x] : []));
+  const activity = useTracker(() => runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', actInst.spec.activity.namespace, actInst.spec.activity.name)) ?? null;
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
@@ -82,7 +84,7 @@ export const TaskWindow = (props: {
         </nav>
       </section>
       {(activity && !props.task.spec.placement.rolledWindow) ? (
-        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activity={activity} onLifecycle={setLifecycle} />
+        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activityInstance={actInst} activity={activity} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
   );

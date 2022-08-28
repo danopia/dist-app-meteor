@@ -53,19 +53,30 @@ export interface TaskEntity {
       };
     };
     stack: Array<{
-      activity: {
-        // group?: string; // "dist.app"
-        // kind: string; // "Asset"
-        catalogId?: string;
-        namespace?: string;
-        name: string;
-      };
+      activityInstance: string;
     }>;
+  };
+}
+export interface ActivityInstanceEntity {
+  _id?: string;
+  apiVersion: "runtime.dist.app/v1alpha1";
+  kind: "ActivityInstance";
+  metadata: EntityMetadata;
+  spec: {
+    activity: {
+      // group?: string; // "dist.app"
+      // kind: string; // "Asset"
+      catalogId?: string;
+      namespace?: string;
+      name: string;
+    };
+    appState?: Record<string, string>;
   };
 }
 
 export type RuntimeEntity = (
   | WorkspaceEntity
-  | TaskEntity
   | CommandEntity
+  | TaskEntity
+  | ActivityInstanceEntity
 );
