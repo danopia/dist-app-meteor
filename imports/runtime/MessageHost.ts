@@ -2,7 +2,7 @@ import { ProtocolEntity } from "../entities/protocol";
 
 export type RpcListener<T extends ProtocolEntity> = (event: {
   rpc: T;
-  respondWith: (data: ProtocolEntity) => void;
+  respondWith<T extends ProtocolEntity>(data: Omit<T, 'origId'>): void;
 }) => void | Promise<void>;
 
 export class MessageHost {

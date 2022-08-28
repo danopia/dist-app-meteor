@@ -65,8 +65,15 @@ export interface ActivityEntity {
   spec: {
     icon?: IconSpec;
     intentFilters?: Array<{
-      action: 'app.dist.Main',
-      category: 'app.dist.Launcher',
+      action: 'app.dist.Main';
+      category: 'app.dist.Launcher';
+    }>;
+    fetchBindings?: Array<{
+      pathPrefix: string;
+      apiName: string;
+      // validation?: boolean;
+      // kind: "Api";
+      // name: string;
     }>;
     implementation: ImplementationSpec;
     windowSizing?: {
@@ -76,13 +83,24 @@ export interface ActivityEntity {
       maxWidth?: number;
       minHeight?: number;
       maxHeight?: number;
-    }
+    };
     // launchMode:
     //   | "Standard"
     //   | "SingleTop"
     //   | "SingleTask"
     //   | "SingleInstance"
     //   ;
+  };
+}
+
+export interface ApiEntity {
+  _id?: string;
+  apiVersion: "manifest.dist.app/v1alpha1";
+  kind: "Api";
+  metadata: EntityMetadata;
+  spec: {
+    type: "openapi";
+    definition: string;
   };
 }
 
@@ -132,6 +150,7 @@ export interface ActivityEntity {
 export type ManifestEntity = (
   | ApplicationEntity
   | ActivityEntity
+  | ApiEntity
 
   // | EndpointEntity
   // | ServiceEntity

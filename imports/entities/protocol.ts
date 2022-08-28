@@ -47,8 +47,8 @@ export interface FetchResponseEntity {
     body?: string | Uint8Array;
     bodyStream?: boolean;
     timing?: {
-      startedAt: string;
-      connectMillis: number;
+      startedAt: Date;
+      connectMillis?: number;
       firstByteMillis: number;
       completedMillis: number;
     };

@@ -20,16 +20,18 @@
     "react-dom": "^18",
     "react-draggable": "^4",
     "react-error-boundary": "^3",
-    "react-spinners": "^0.13"
+    "react-spinners": "^0.13",
+    "yaml": "^2"
   },
   "devDependencies": {
-    "@swc/cli": "^0.1.57",
-    "@swc/core": "^1.2.244",
+    "@swc/cli": "^0.1",
+    "@swc/core": "^1",
     "@types/common-tags": "^1",
     "@types/meteor": "^1",
     "@types/mocha": "^8",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "openapi-types": "^12",
     "typescript": "^4"
   },
   "meteor": {

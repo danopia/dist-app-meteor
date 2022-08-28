@@ -1,6 +1,9 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { html } from 'common-tags';
+import { parse } from 'yaml';
+import { OpenAPIV3 } from "openapi-types";
+
+import { ActivityEntity, ApiEntity, IframeImplementationSpec } from '../entities/manifest';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { TaskEntity } from '../entities/runtime';
@@ -55,8 +58,69 @@ export const ActivityEmbed = (props: {
     });
     messageHost.addRpcListener<FetchRequestEntity>('FetchRequest', async ({rpc, respondWith}) => {
       console.log('ActivityEmbed fetch', rpc);
-
       if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
+
+      if (rpc.spec.url.startsWith('/binding/')) {
+        const slashIdx = rpc.spec.url.indexOf('/', '/binding/'.length);
+        const bindingName = rpc.spec.url.slice('/binding'.length, slashIdx);
+        const subPath = rpc.spec.url.slice(slashIdx+1);
+
+        const binding = props.activity.spec.fetchBindings?.find(x => x.pathPrefix == bindingName);
+        if (!binding) return respondWith<FetchResponseEntity>({
+          kind: 'FetchResponse',
+          spec: {
+            status: 404,
+            body: `No binding ${JSON.stringify(bindingName)} exists`,
+            headers: [['content-type', 'text/plain']],
+          },
+        });
+        const apiEntity = runtime.getEntity<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', props.activity.metadata.namespace, binding.apiName);
+        if (!apiEntity) return respondWith<FetchResponseEntity>({
+          kind: 'FetchResponse',
+          spec: {
+            status: 404,
+            body: `Binding ${JSON.stringify(bindingName)} lacks extant Api entity`,
+            headers: [['content-type', 'text/plain']],
+          },
+        });
+        const apiSpec: OpenAPIV3.Document = parse(apiEntity.spec.definition);
+        const server = apiSpec.servers?.[0];
+        if (!server) return respondWith<FetchResponseEntity>({
+          kind: 'FetchResponse',
+          spec: {
+            status: 404,
+            body: `Binding ${JSON.stringify(bindingName)} has no server available`,
+            headers: [['content-type', 'text/plain']],
+          },
+        });
+
+        const realUrl = new URL(subPath, server.url).toString();
+        if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
+
+        const t0 = new Date;
+        const realResp = await fetch(realUrl, {
+          method: rpc.spec.method,
+          headers: rpc.spec.headers,
+          body: rpc.spec.body ?? undefined,
+        });
+        const firstByte = Date.now() - t0.valueOf();
+        const respBody = new Uint8Array(await realResp.arrayBuffer())
+        const lastByte = Date.now() - t0.valueOf();
+
+        return respondWith<FetchResponseEntity>({
+          kind: 'FetchResponse',
+          spec: {
+            status: realResp.status,
+            body: respBody,
+            headers: Array.from(realResp.headers),
+            timing: {
+              startedAt: t0,
+              firstByteMillis: firstByte,
+              completedMillis: lastByte,
+            }
+          },
+        });
+      }
 
       // TODO BEGIN
       // TODO: catch any errors and send those to the application
