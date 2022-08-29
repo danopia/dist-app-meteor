@@ -1492,13 +1492,6 @@ export const ToolbeltCatalog = new Array<Entity>({
 
           <form id="lookup">
             <select name="type">
-              <option>A</option>
-              <option>AAAA</option>
-              <option>CNAME</option>
-              <option>MX</option>
-              <option>ANY</option>
-              <option>TXT</option>
-              <option>PTR</option>
             </select>
             <input type="text" name="name" placeholder="Hostname, FQDN, etc" required autofocus>
             <button type="submit">Lookup</button>
@@ -1562,7 +1555,7 @@ export const ToolbeltCatalog = new Array<Entity>({
             color: #fff;
           }
           section {
-            font-size: 1.3em;
+            /*font-size: 1.3em;*/
             margin: 0.8em;
             padding: 1em;
             background-color: rgba(200, 200, 200, 0.3);
@@ -1626,8 +1619,77 @@ export const ToolbeltCatalog = new Array<Entity>({
           section.footer a {
             color: rgba(200, 200, 200, 0.8);
           }
+
+          .result-wrap table {
+            min-width: min(75%,50em);
+            margin: 0 auto;
+          }
+          .result-wrap th, .result-wrap td {
+            padding: 0.25em 0.5em;
+          }
         `,
         inlineScript: stripIndent(html)`
+          const commonTypes = new Set([
+            'A', 'AAAA', 'NS', 'CNAME', 'MX', 'SRV', 'SSHFP', 'CAA',
+          ]);
+          const rrsetTypes = new Map([
+            [1, 'A'],
+            [2, 'NS'],
+            [5, 'CNAME'],
+            [6, 'SOA'],
+            [12, 'PTR'],
+            [13, 'HINFO'],
+            [15, 'MX'],
+            [16, 'TXT'],
+            [17, 'RP'],
+            [18, 'AFSDB'],
+            [24, 'SIG'],
+            [25, 'KEY'],
+            [28, 'AAAA'],
+            [29, 'LOC'],
+            [33, 'SRV'],
+            [35, 'NAPTR'],
+            [36, 'KX'],
+            [37, 'CERT'],
+            [39, 'DNAME'],
+            [42, 'APL'],
+            [43, 'DS'],
+            [44, 'SSHFP'],
+            [45, 'IPSECKEY'],
+            [46, 'RRSIG'],
+            [47, 'NSEC'],
+            [48, 'DNSKEY'],
+            [49, 'DHCID'],
+            [50, 'NSEC3'],
+            [51, 'NSEC3PARAM'],
+            [52, 'TLSA'],
+            [53, 'SMIMEA'],
+            [55, 'HIP'],
+            [59, 'CDS'],
+            [60, 'CDNSKEY'],
+            [61, 'OPENPGPKEY'],
+            [62, 'CSYNC'],
+            [63, 'ZONEMD'],
+            [64, 'SVCB'],
+            [65, 'HTTPS'],
+            [108, 'EUI48'],
+            [109, 'EUI64'],
+            [249, 'TKEY'],
+            [250, 'TSIG'],
+            [256, 'URI'],
+            [257, 'CAA'],
+            [32768, 'TA'],
+            [32769, 'DLV'],
+          ]);
+
+          const select = document.querySelector('select[name=type]');
+          for (const [num, name] of rrsetTypes.entries()) {
+            const option = document.createElement('option');
+            option.innerText = name;
+            option.value = num.toString();
+            select.appendChild(option);
+          }
+
           const distApp = await DistApp.connect();
 
           const historyCol = document.querySelector('#history-col');
@@ -1635,10 +1697,6 @@ export const ToolbeltCatalog = new Array<Entity>({
 
             const title = document.createElement('h4');
             const progress = document.createElement('progress');
-            const output = document.createElement('textarea');
-            output.readOnly = true;
-            output.rows = 1;
-            const time = document.createElement('time');
 
             const headbox = document.createElement('div');
             headbox.classList.add('entry-head');
@@ -1650,16 +1708,6 @@ export const ToolbeltCatalog = new Array<Entity>({
             box.appendChild(progress);
             historyCol.insertBefore(box, historyCol.children[0]);
 
-            const finalizeBox = () => {
-              box.removeChild(progress);
-
-              box.appendChild(output);
-              box.appendChild(time);
-              setTimeout(() => {
-                output.style.height = output.scrollHeight+'px';
-              }, 0);
-            }
-
             return {
               deeplink(path) {
                 const deeplink = document.createElement('a');
@@ -1670,13 +1718,21 @@ export const ToolbeltCatalog = new Array<Entity>({
               },
               title(text) { title.innerText = text; },
               promise(p) {
-                return p.then(text => {
-                  output.value = text.trim();
-                  finalizeBox();
+                return p.then(child => {
+                  box.removeChild(progress);
+                  box.appendChild(child);
                 }, err => {
+                  const output = document.createElement('textarea');
+                  output.readOnly = true;
+                  output.rows = 1;
                   output.classList.add('error-msg');
                   output.value = err.message || JSON.stringify(err, null, 2);
-                  finalizeBox();
+
+                  box.removeChild(progress);
+                  box.appendChild(output);
+                  setTimeout(() => {
+                    output.style.height = output.scrollHeight+'px';
+                  }, 0);
                 });
               },
             };
@@ -1703,11 +1759,6 @@ export const ToolbeltCatalog = new Array<Entity>({
           function queryInput(input, andSetHash=false) {
             const entry = addEntry();
             entry.title(input.type + ' ' + input.text);
-            // entry.deeplink(input.text);
-            // existingQueries.set(input.text, entry);
-
-            // if (andSetHash)
-            //   window.location.hash = \`#\${encodeURI(input.text)}\`;
 
             return entry.promise((async () => {
 
@@ -1720,24 +1771,75 @@ export const ToolbeltCatalog = new Array<Entity>({
               const resp = await distApp.fetch('/binding/google-dns/resolve?'+opts.toString());
               const json = await resp.json();
 
-              return JSON.stringify(json, null, 2);
+              const wrap = document.createElement('div');
+              wrap.classList.add('result-wrap');
+
+              for (const tableKey of ["Question", "Answer", "Authority"]) {
+                if (json[tableKey]) {
+                  const label = document.createElement('h3');
+                  label.innerText = tableKey;
+                  wrap.appendChild(label);
+                  wrap.appendChild(buildDnsTable(json[tableKey]))
+                }
+              }
+
+              return wrap;
             })());
+          }
+
+          function buildDnsTable(items) {
+            const table = document.createElement('table');
+            table.border = 1;
+
+            const tr = document.createElement('tr');
+            for (const label of ["FQDN", "Type", "TTL", "Data"]) {
+              const th = document.createElement('th');
+              th.innerText = label;
+              th.style.textAlign = (label == 'FQDN' || label == 'TTL') ? 'right' : 'left';
+              tr.appendChild(th);
+            }
+            table.appendChild(tr);
+
+            for (const item of items) {
+              const tr = document.createElement('tr');
+              if (item.type == 46) continue; // DNSSEC signature
+              for (const field of ["name", "type", "TTL", "data"]) {
+                const td = document.createElement('td');
+                if (item[field] != null) {
+                  td.innerText = item[field];
+                  if (field == 'type') td.innerText = rrsetTypes.get(item[field]) ?? td.innerText;
+                  if (field == 'TTL') td.innerText = secondsToTime(item[field]).toString();
+                }
+                td.style.textAlign = (field == 'name' || field == 'TTL') ? 'right' : 'left';
+                if (field == 'name' || field == 'data') td.style.minWidth = '10em';
+                tr.appendChild(td);
+              }
+              table.appendChild(tr);
+            }
+
+            return table;
+          }
+
+          function secondsToTime(secs) {
+            const minutes = Math.floor(secs / 60);
+            if (minutes == 0) return [secs, 's'].join('');
+            const hours = Math.floor(minutes / 60);
+            if (hours == 0) return [minutes, 'm', secs-(minutes*60), 's'].join('');
+            return [hours, 'h', minutes-(hours*60), 'm', secs-(minutes*60), 's'].join('');
           }
 
           const form = document.querySelector('form');
           form.addEventListener('submit', evt => {
             evt.preventDefault();
             const {name, type} = evt.target;
-            queryInput({...ParseInput(name.value), type: type.value}, true)
-              // .then(() => name.value = '');
+            queryInput({...ParseInput(name.value), type: type.value});
           });
 
           const inputBox = form.name;
           inputBox.addEventListener('paste', evt => {
             try {
               const pasteData = evt.clipboardData.getData('text');
-              queryInput(ParseInput(pasteData), true)
-                .then(() => inputBox.value = '');
+              queryInput(ParseInput(pasteData));
             } catch (err) {
               console.log('not acting on paste.', err);
             }
