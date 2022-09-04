@@ -101,8 +101,8 @@ Meteor.methods({
         headers: Array<[string,string]>;
         body?: string;
       }} = JSON.parse(req.spec.body);
-      if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
-        `This domain is not reachable for the current user`);
+      // if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
+      //   `This domain is not reachable for the current user`);
 
       const resp = await fetch(spec.input.url, {
         method: spec.input.method,
