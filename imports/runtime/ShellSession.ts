@@ -18,12 +18,13 @@ export class ShellSession {
     switch (command.spec.type) {
       case 'launch-intent': {
         console.log('Launching intent', command.spec.intent, 'from', command.metadata);
-        if (command.spec.intent.activityRef) {
-          const activity = this.runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', command.metadata.namespace, command.spec.intent.activityRef);
+        if (command.spec.intent.activity?.name) {
+          const activity = this.runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', command.metadata.namespace, command.spec.intent.activity.name);
           if (!activity) throw new Error(`activity 404 from intent`);
           this.createTask(activity);
         } else {
           console.log('TODO: Generic intents', command.spec.intent);
+          this.runtime.insertEntity({...command, metadata: {name: Random.id()}});
         }
         break;
       }

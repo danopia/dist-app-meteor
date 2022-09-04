@@ -113,7 +113,8 @@ export const ScalewayCatalog = new Array<Entity>({
               },
               openServerUrl(server) {
                 distApp.launchIntent({
-                  action: 'view',
+                  action: 'app.dist.View',
+                  catagory: 'app.dist.Browsable',
                   data: this.serverUrl(server),
                 });
               },

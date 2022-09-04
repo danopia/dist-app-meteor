@@ -14,7 +14,9 @@ export interface LaunchIntentEntity {
   kind: "LaunchIntent";
   metadata?: EntityMetadata;
   spec: {
+    // In sync with runtime.ts
     action?: string;
+    catagory?: string;
     data?: string;
     activity?: {
       name: string;

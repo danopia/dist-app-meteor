@@ -17,8 +17,13 @@ export interface CommandEntity {
   spec: {
     type: 'launch-intent';
     intent: {
-      action: string;
-      activityRef?: string;
+      // In sync with protocol.ts
+      action?: string;
+      catagory?: string;
+      data?: string;
+      activity?: {
+        name: string;
+      };
       flags?: Array<'new-task'>;
     };
   } | {

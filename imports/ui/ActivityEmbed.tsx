@@ -51,10 +51,7 @@ export const ActivityEmbed = (props: {
       console.log('handling', rpc);
       shell.runTaskCommand(props.task, props.activity, {
         type: 'launch-intent',
-        intent: {
-          activityRef: rpc.spec.activity?.name,
-          action: rpc.spec.action ?? 'launch',
-        },
+        intent: rpc.spec,
       });
     });
     messageHost.addRpcListener<FetchRequestEntity>('FetchRequest', async ({rpc, respondWith}) => {

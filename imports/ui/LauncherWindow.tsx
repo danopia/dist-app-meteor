@@ -45,10 +45,10 @@ export const LauncherWindow = () => {
         onResized={() => {}}
         showLoader={false}
     >
-        <section className="shell-powerbar">
-          <div className="window-title">Launcher</div>
-        </section>
-        <nav className="activity-contents-wrap launcher-window">
+      <section className="shell-powerbar">
+        <div className="window-title">Launcher</div>
+      </section>
+      <nav className="activity-contents-wrap launcher-window">
         {listItems.map(({activity, app}) => app?.spec.icon?.type == 'glyph' ? (
           <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
             <div className="appIcon" style={{
