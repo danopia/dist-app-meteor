@@ -18,6 +18,13 @@ export interface GlyphIconSpec {
     backgroundColor: string,
   };
 }
+export interface SvgIconSpec {
+  type: 'svg',
+  svg: {
+    textData: string;
+    backgroundColor: string,
+  };
+}
 export interface ImageIconSpec {
   type: 'image';
   image: {
@@ -29,6 +36,7 @@ export interface ImageIconSpec {
 };
 export type IconSpec =
 | GlyphIconSpec
+| SvgIconSpec
 | ImageIconSpec
 ;
 

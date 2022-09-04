@@ -57,6 +57,17 @@ export const LauncherWindow = () => {
               }}>{app.spec.icon.glyph.text}</div>
             <span>{activity.metadata.title}</span>
           </button>
+        ) : app?.spec.icon?.type == 'svg' ? (
+          <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
+            <div className="appIcon" style={{
+                backgroundImage: `url("data:image/svg+xml;base64,${btoa(app.spec.icon.svg.textData)}")`,
+                backgroundColor: app.spec.icon.svg.backgroundColor,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: 'center',
+                backgroundSize: '65%',
+              }}></div>
+            <span>{activity.metadata.title}</span>
+          </button>
         ) : (
           <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
             {activity.metadata.title}
