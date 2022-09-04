@@ -111,6 +111,12 @@ export const ScalewayCatalog = new Array<Entity>({
               serverUrl(server) {
                 return "https://"+server.id+".pub.instances.scw.cloud";
               },
+              openServerUrl(server) {
+                distApp.launchIntent({
+                  action: 'view',
+                  data: this.serverUrl(server),
+                });
+              },
               async handleIpChange(server, wantsIp) {
                 if (server.public_ip && wantsIp == false) {
                   const resp = await distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/ips/'+server.public_ip.id, {method: 'DELETE'});
@@ -197,7 +203,7 @@ export const ScalewayCatalog = new Array<Entity>({
               <td></td>
             </tr>
             <tr v-for="server in servers">
-              <td style="line-height: 0;" v-bind:title="server.state_detail +': '+ server.state">
+              <td style="line-height: 0;" v-bind:title="server.state +': '+ server.state_detail">
                 <div v-bind:class="'server-state '+ (server.state_detail || server.state)" />
               </td>
               <td>
@@ -207,6 +213,10 @@ export const ScalewayCatalog = new Array<Entity>({
               <!--td>{{ server.commercial_type }}</td-->
               <td><input type="checkbox" v-bind:checked="hasIp(server)" @change="evt => handleIpChange(server,evt.target.checked)" /></td>
               <td>
+              <button type="button"
+                  v-if="server.state == 'running'"
+                  @click="openServerUrl(server)"
+                >Go</button>
               <button type="button"
                   v-if="server.allowed_actions.includes('poweron')"
                   @click="doAction(server.id, 'poweron')"

@@ -15,6 +15,7 @@ export interface LaunchIntentEntity {
   metadata?: EntityMetadata;
   spec: {
     action?: string;
+    data?: string;
     activity?: {
       name: string;
     };

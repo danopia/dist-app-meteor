@@ -107,8 +107,11 @@ export interface ApiEntity {
   kind: "Api";
   metadata: EntityMetadata;
   spec: {
-    type: "openapi";
-    definition: string;
+    // endpoints: {}
+    // schema: {
+      type: "openapi";
+      definition: string;
+    // };
   };
 }
 

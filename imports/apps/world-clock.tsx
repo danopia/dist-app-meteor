@@ -79,8 +79,8 @@ export const WorldClockCatalog = new Array<Entity>({
 
             <div class="clock">
               <a class="location" target="_blank" rel="nofollow"
-                  href="https://time.is/Los_Angeles">Los Angeles</a>
-              <div id="Los_Angeles_z14e"></div>
+                  href="https://time.is/Norco,_California">Norco</a>
+              <div id="Norco__California_z14e"></div>
             </div>
 
             <div class="clock">
@@ -218,9 +218,9 @@ export const WorldClockCatalog = new Array<Entity>({
             },
 
 
-            Los_Angeles_z14e: {
+            Norco__California_z14e: {
               ...commonConfig,
-              coords: "34.0522300,-118.2436800",
+              coords: "33.9311300,-117.5486600",
             },
 
 
