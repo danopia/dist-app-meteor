@@ -74,6 +74,26 @@ Meteor.methods({
   async 'poc-FetchRequestEntity'(req: FetchRequestEntity): Promise<FetchResponseEntity> {
     console.log('poc-http-fetch:', req);
 
+    const proxyPrefix = 'dist-app:/protocolendpoints/openapi/proxy/https/';
+    if (req.spec.url.startsWith(proxyPrefix)) {
+      const realUrl = 'https://'+req.spec.url.slice(proxyPrefix.length);
+      const resp = await fetch(realUrl, {
+        method: req.spec.method,
+        headers: new Headers(req.spec.headers ?? []),
+        body: req.spec.body,
+      });
+      console.log(`remote server gave HTTP ${resp.status} to ${req.spec.method} ${req.spec.url}`);
+      return {
+        kind: 'FetchResponse',
+        origId: -1,
+        spec: {
+          status: resp.status,
+          headers: Array.from(resp.headers),
+          body: await resp.text(),
+        },
+      };
+    }
+
     if (req.spec.url === 'dist-app:/protocolendpoints/http/invoke' && typeof req.spec.body == 'string') {
       const spec: {input: {
         url: string;

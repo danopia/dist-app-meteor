@@ -135,6 +135,49 @@ export const ActivityEmbed = (props: {
         const realUrl = new URL(subPath, server.url).toString();
         if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
 
+        const pathConfig = Object.entries(apiSpec.paths).filter(x => {
+          const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
+          const pat = new URLPattern(patStr, server.url);
+          return pat.test(realUrl);
+        }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
+        const methodConfig = pathConfig?.[rpc.spec.method.toLowerCase() as 'get'];
+        if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430
+
+        secLoop: for (const security of methodConfig.security ?? apiSpec.security ?? []) {
+          const [secType, secScopes] = Object.entries(security)[0];
+          const secDef = apiSpec.components?.securitySchemes?.[secType];
+          if (!secDef || isReferenceObject(secDef)) throw new Error(`TODO, isReferenceObject`);
+          switch (secDef?.type) {
+            case 'apiKey': {
+              if (secDef.in !== 'header') throw new Error(`TODO: apiKey in ${secDef.in}`);
+              // TODO: actual secret storage i hope
+              const storageKey = `dist.app/credential/apiKey/${server.url}`;
+              let knownApiKey = localStorage[storageKey];
+              if (!knownApiKey) {
+                knownApiKey = prompt(`apiKey for ${secType}`);
+                if (!knownApiKey) throw new Error(`TODO: no apikey given`);
+                localStorage[storageKey] = knownApiKey;
+              }
+              rpc.spec.headers ??= [];
+              rpc.spec.headers.push([secDef.name, knownApiKey]);
+              break secLoop;
+            }; break;
+            default: throw new Error(`TODO: openapi sec type ${secDef.type}`);
+          }
+        }
+
+        if ((server as {} as Record<string,unknown>)['x-cors-enabled'] === false) {
+          // TODO: some sort of security model between browser and relay
+          const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', {
+            ...rpc,
+            spec: {
+              ...rpc.spec,
+              url: 'dist-app:/protocolendpoints/openapi/proxy/https/'+realUrl.replace(/^[^:]+:\/\//, ''),
+            },
+          }).catch<FetchErrorEntity>(err => ({kind: 'FetchError', origId: -1, spec: {message: err.message}}));
+          return respondWith(resp);
+        }
+
         const t0 = new Date;
         const realResp = await fetch(realUrl, {
           method: rpc.spec.method,
@@ -162,7 +205,6 @@ export const ActivityEmbed = (props: {
       }
 
       // TODO BEGIN
-      // TODO: catch any errors and send those to the application
       const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', rpc)
         .catch<FetchErrorEntity>(err => ({kind: 'FetchError', origId: -1, spec: {message: err.message}}));
       console.log('ActivityEmbed fetch result:', resp);
@@ -246,4 +288,11 @@ function compileFrameSrc(implementation: IframeImplementationSpec): string {
     return docHtml;
   }
   throw new Error('Function not implemented.');
+}
+
+
+function isReferenceObject(ref: unknown): ref is OpenAPIV3.ReferenceObject {
+  if (!ref || typeof ref !== 'object') return false;
+  const refObj = ref as Record<string,unknown>;
+  return typeof refObj.$ref == 'string';
 }

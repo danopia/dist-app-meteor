@@ -82,7 +82,7 @@ globalThis.DistApp = class DistApp {
       },
     });
     if (respPayload.spec.bodyStream != null) throw new Error(`TODO: stream`);
-    return new Response(respPayload.spec.body, {
+    return new Response(respPayload.spec.body || null, {
       status: respPayload.spec.status,
       headers: new Headers(respPayload.spec.headers ?? []),
     });
