@@ -20,6 +20,13 @@ self.addEventListener('fetch', (event) => {
     return fetch(event.request);
   }
 
+  const url = new URL(event.request.url);
+  if (url.origin !== location.origin) {
+    const promise = fetch(event.request);
+    promise.catch(() => {});
+    return promise;
+  }
+
   const requestToFetch = event.request.clone();
   event.respondWith(
   caches.match(event.request.clone()).then((cached) => {
