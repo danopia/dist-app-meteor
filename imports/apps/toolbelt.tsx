@@ -1862,6 +1862,7 @@ export const ToolbeltCatalog = new Array<Entity>({
   },
   spec: {
     type: 'openapi',
+    crossOriginResourceSharing: 'open',
     definition: stripIndent`
       openapi: 3.0.1
       info:

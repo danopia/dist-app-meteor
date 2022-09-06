@@ -94,7 +94,7 @@ export class FetchRpcHandler {
       const pathConfig = Object.entries(apiSpec.paths).filter(x => {
         const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
         //@ts-expect-error URLPattern not yet typed
-        const pat = new URLPattern(patStr, server.url);
+        const pat = new URLPattern({pathname: patStr});
         return pat.test(realUrl);
       }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
       const methodConfig = pathConfig?.[rpc.spec.method.toLowerCase() as 'get'];
