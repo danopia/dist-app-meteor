@@ -123,7 +123,7 @@ export class FetchRpcHandler {
         }
       }
 
-      if ((server as {} as Record<string,unknown>)['x-cors-enabled'] === false) {
+      if (apiEntity.spec.crossOriginResourceSharing === 'restricted') {
         // TODO: some sort of security model between browser and relay
         const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', {
           ...rpc,

@@ -110,6 +110,7 @@ export interface ApiEntity {
     // endpoints: {}
     // schema: {
       type: "openapi";
+      crossOriginResourceSharing?: 'restricted' | 'open';
       definition: string;
     // };
   };
