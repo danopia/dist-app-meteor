@@ -38,7 +38,7 @@ export const WelcomeCatalog = new Array<Entity>({
     }],
     windowSizing: {
       minWidth: 300,
-      initialWidth: 600,
+      initialWidth: 800,
       initialHeight: 400,
     },
     implementation: {
@@ -50,20 +50,21 @@ export const WelcomeCatalog = new Array<Entity>({
         metaCharset: 'utf-8',
         headTitle: 'Welcome Splash',
         bodyHtml: stripIndent(html)`
-          <div id="app">
-            <h1>Welcome to a dist.app shell.</h1>
-            <p>
-              This shell offers an experimental way of launching web-based applications.
-              The principles of least-privilege, stateless programming, and single-purpose program units are leveraged together to reduce individual application complexity.
-            </p>
-            <p>
-              To try out some demo applications, please look through the on-screen app tray.
-            </p>
-            <p>
-              <strong>To enable session restore, use an account:</strong>
-              <button onclick="signIn()">Sign in to dist.app</button>
-            </p>
-          </div>
+          <h1>Welcome to a dist.app shell.</h1>
+          <p>
+            This platform offers an experimental way of launching web-based applications.
+            The principles of least-privilege, stateless programming, and single-purpose program units are leveraged together to reduce individual application complexity.
+          </p>
+          <p>
+            This is a Guest shell, which means that the session data stays on this browser.
+            Your session can be kept for next time by signing in with your Google account.
+          </p>
+          <p style="text-align: center;">
+            <button onclick="signIn()">Sign in to dist.app</button>
+          </p>
+          <p>
+            To try out some demo applications, please look through the on-screen app tray.
+          </p>
         `,
         inlineStyle: stripIndent`
           html {
@@ -75,14 +76,22 @@ export const WelcomeCatalog = new Array<Entity>({
             font-family: sans-serif;
             box-sizing: border-box;
             overflow-y: scroll;
-          }
-          #app {
             padding: 1em 10% 3em;
+          }
+          button {
+            padding: 0.3em 1em;
+            font-size: 1.2em;
+            width: 50%;
+            max-width: 20em;
           }
           @media (prefers-color-scheme: dark) {
             body {
               background-color: rgb(55, 55, 55);
               color: rgba(255, 255, 255, 0.83);
+            }
+            button {
+              background-color: rgba(255, 255, 255, 0.1);
+              color: inherit;
             }
           }
         `,
@@ -94,7 +103,7 @@ export const WelcomeCatalog = new Array<Entity>({
               action: 'settings.AddAccount',
               // flag new_task
               extras: {
-                'AccountTypes': 'platform.dist.app',
+                'AccountTypes': 'v1alpha1.platform.dist.app',
               },
             });
           };
