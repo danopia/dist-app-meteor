@@ -16,6 +16,7 @@ export const WindowFrame = (props: {
     minWidth?: number; maxWidth?: number;
     minHeight?: number; maxHeight?: number;
   };
+  className?: string;
   zIndex?: number;
   isRolledUp?: boolean;
   layoutMode: "floating" | "grid";
@@ -60,7 +61,7 @@ export const WindowFrame = (props: {
       onStop={(_evt, data) => props.onMoved({ left: data.x, top: data.y })}
     >
       <div ref={windowRef}
-        className="shell-window"
+        className={"shell-window "+props.className}
         style={props.layoutMode == 'floating' ? {
           zIndex: props.zIndex,
 

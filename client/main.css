@@ -73,6 +73,15 @@ iframe.activity-contents-wrap {
   margin: 1em 30%;
   flex: 1;
 }
+.intent-frame .shell-window-handle {
+  background-color: #f38787;
+}
+.intent-frame .shell-window-handle:hover {
+  background-color: #f26d6d;
+}
+.intent-frame .shell-window-grip {
+  border-color: #e83c3c;
+}
 .shell-powerbar { /* TODO: rename to window-bar or something*/
   grid-area: powerbar;
   display: flex;
