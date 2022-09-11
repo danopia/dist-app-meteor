@@ -36,6 +36,7 @@
     "@types/react-dom": "^18",
     "openapi-types": "^12",
     "react-google-button": "^0.7",
+    "stack-source-map": "^1.0.7",
     "typescript": "^4"
   },
   "meteor": {

@@ -11,6 +11,11 @@ Meteor.methods({
     return await fetchRequestEntity(req);
   },
 
+  '/v1alpha1/report-error'(stack: unknown) {
+    check(stack, String);
+    console.log('Browser ' + stack.replace(/\n/g, '\n> '));
+  },
+
   // async '/CatalogUpload/UpsertEntity'(catalogId: unknown, namespaceOverride: unknown, entity: Entity) {
   //   check(catalogId, String);
   //   check(namespaceOverride, String);
