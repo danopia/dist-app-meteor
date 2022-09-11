@@ -144,7 +144,7 @@ export class EntityEngine {
     apiVersion: T["apiVersion"],
     kind: T["kind"],
     namespace?: string
-  ) {
+  ): T[] {
     const layer = this.selectNamespaceLayer({
       apiVersion: apiVersion,
       kind: kind,
@@ -161,7 +161,7 @@ export class EntityEngine {
     kind: T["kind"],
     namespace: string | undefined,
     name: string
-  ) {
+  ): T | null {
     const layer = this.selectNamespaceLayer({
       apiVersion: apiVersion,
       kind: kind,

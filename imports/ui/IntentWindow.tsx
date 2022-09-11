@@ -108,7 +108,7 @@ export const IntentWindow = (props: {
     }
 
     const receiverUrl = new URL(intent.receiverRef, baseUrl);
-    console.log({receiverUrl})
+    // console.log({receiverUrl})
     //@ts-expect-error URLPattern
     const match = new URLPattern({
       protocol: 'entity:',

@@ -49,7 +49,7 @@ export class EngineFactory {
           appUri: `bundled:${encodeURIComponent(defaultNamespace)}`,
           // isInLauncher: true,
           launcherIcons: [{
-            action: 'dist.app.Main',
+            action: 'app.dist.Main',
           }],
           preferences: {},
         },
