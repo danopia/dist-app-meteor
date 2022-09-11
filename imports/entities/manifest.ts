@@ -101,6 +101,24 @@ export interface ActivityEntity {
   };
 }
 
+export interface FacilityEntity {
+  _id?: string;
+  apiVersion: "manifest.dist.app/v1alpha1";
+  kind: "Facility";
+  metadata: EntityMetadata;
+  spec: {
+    fetchBindings?: Array<{
+      pathPrefix: string;
+      apiName: string;
+      // validation?: boolean;
+      // kind: "Api";
+      // name: string;
+    }>;
+    providesApis: Array<string>;
+    implementation: ImplementationSpec;
+  };
+}
+
 export interface ApiEntity {
   _id?: string;
   apiVersion: "manifest.dist.app/v1alpha1";

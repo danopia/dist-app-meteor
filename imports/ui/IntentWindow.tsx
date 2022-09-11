@@ -1,22 +1,23 @@
 import { Meteor } from "meteor/meteor";
-import { useTracker } from "meteor/react-meteor-data";
+import { Random } from "meteor/random";
 import { navigate } from "raviger";
-import React, { ReactNode, useCallback, useContext, useState } from "react";
+import React, { ReactNode, useContext, useState } from "react";
 import GoogleButton from 'react-google-button';
+import { EntityEngine } from "../engine/EntityEngine";
+import { EntityHandle } from "../engine/EntityHandle";
 
-import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
-import { LaunchIntentEntity } from "../entities/protocol";
-import { CommandEntity } from "../entities/runtime";
+import { ActivityEntity } from "../entities/manifest";
+import { AppInstallationEntity } from "../entities/profile";
+import { ActivityInstanceEntity, CommandEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 export const IntentWindow = (props: {
-  cmdName: string;
-  intent: LaunchIntentEntity['spec'],
+  command: CommandEntity;
+  // cmdName: string;
+  // intent: LaunchIntentEntity['spec'],
 }) => {
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main')
-  if (!shell) throw new Error(`no shell`);
 
   const [floatingRect, setFloatingRect] = useState<{
     left?: number;
@@ -25,36 +26,40 @@ export const IntentWindow = (props: {
     height?: number;
   }>({left: 100, top: 100, width: 500});
 
-  const apis = useTracker(() => runtime.getNamespacesServingApi({
-    apiVersion: 'manifest.dist.app/v1alpha1',
-    kind: 'Activity',
-    op: 'Read',
-  }));
+  // const apis = useTracker(() => runtime.getNamespacesServingApi({
+  //   apiVersion: 'manifest.dist.app/v1alpha1',
+  //   kind: 'Activity',
+  //   op: 'Read',
+  // }));
 
-  const activities = useTracker(() => Array
-    .from(apis.values())
-    .flatMap(x => x
-      .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
+  // const activities = useTracker(() => Array
+  //   .from(apis.values())
+  //   .flatMap(x => x
+  //     .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
 
   let children: ReactNode;
   const [lifecycle, setLifecycle] = useState('initial');
 
+  if (props.command.spec.type != 'launch-intent') throw new Error(`TODO: other commands`);
+  const { intent } = props.command.spec;
+  // console.log('IntentWindow', intent, props.command);
+
   //@ts-expect-error URLPattern
-  if (props.intent.action == 'app.dist.View' && props.intent.catagory == 'app.dist.Browsable' && props.intent.data && new URLPattern({protocol: 'https:'}).test(props.intent.data)) {
+  if (intent.action == 'app.dist.View' && intent.category == 'app.dist.Browsable' && intent.data && new URLPattern({protocol: 'https:'}).test(intent.data)) {
     children = (
       <nav className="activity-contents-wrap launcher-window">
         <h2>Open Web URL</h2>
-        <a href={props.intent.data} target="_blank" onClick={() => {
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'default', props.cmdName);
+        <a href={intent.data} target="_blank" onClick={() => {
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
         }}>
-          Open {props.intent.data}
+          Open {intent.data}
         </a>
       </nav>
     );
   }
 
   //@ts-expect-error extras is untyped
-  if (props.intent.action == 'settings.AddAccount' && props.intent.extras.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
+  if (intent.action == 'settings.AddAccount' && intent.extras.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
     const startLogin = (loginFunc: typeof Meteor.loginWithGoogle) => {
       setLifecycle('loading');
       loginFunc({}, (err) => {
@@ -62,7 +67,7 @@ export const IntentWindow = (props: {
           setLifecycle('initial');
           alert(err.message ?? err);
         } else {
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'default', props.cmdName);
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
           navigate('/my/new-shell');
         }
       });
@@ -80,11 +85,78 @@ export const IntentWindow = (props: {
     );
   }
 
+  if (!children && typeof intent.receiverRef == 'string') {
+    const hCommand = new EntityHandle<CommandEntity>(runtime, {
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      apiKind: 'Command',
+      namespace: props.command.metadata.namespace ?? 'default',
+      name: props.command.metadata.name,
+    });
+
+    let baseUrl = 'entity://';
+    let appInstallation: AppInstallationEntity | null = null;
+
+    const hActivityInstance = hCommand
+      .followOwnerReference<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance');
+    if (hActivityInstance) {
+      appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile', hActivityInstance?.spec.installationName);
+      if (appInstallation) {
+        const appNamespace = runtime.useRemoteNamespace(appInstallation?.spec.appUri);
+        baseUrl = `entity://${appNamespace}/manifest.dist.app@v1alpha1/`;
+        // throw {stack: JSON.stringify({appInstallation, intent}, null, 2)};
+      }
+    }
+
+    const receiverUrl = new URL(intent.receiverRef, baseUrl);
+    console.log({receiverUrl})
+    //@ts-expect-error URLPattern
+    const match = new URLPattern({
+      protocol: 'entity:',
+      pathname: "//:namespace/:api@:version/:kind/:name",
+    }).exec(receiverUrl);
+    if (match) {
+      const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
+
+      if (api == 'manifest.dist.app' && version == 'v1alpha1' && kind == 'Activity' && appInstallation) {
+        const activity = runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', namespace, name);
+        if (activity) {
+          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
+          if (!workspace) throw new Error(`no workspace`);
+
+          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.name, activity);
+          console.log('Created task', taskId);
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+
+          children = (<div className="activity-contents-wrap">Loading intent...</div>);
+        }
+
+      } else if (api == 'profile.dist.app' && version == 'v1alpha1' && kind == 'AppInstallation') {
+        const installation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', namespace, name);
+        if (installation) {
+          const appNamespace = runtime.useRemoteNamespace(installation.spec.appUri);
+          const appActivities = runtime.listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace);
+          const activities = appActivities.filter(x => x.spec.intentFilters?.some(y => y.action == intent.action && y.category == intent.category));
+          if (activities.length > 1) return (<div>More than one activity matched</div>);
+          if (activities.length < 1) return (<div>Less than one activity matched</div>);
+          const [activity] = activities;
+
+          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
+          if (!workspace) throw new Error(`no workspace`);
+
+          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.name, activity);
+          console.log('Created task', taskId);
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+
+          children = (<div className="activity-contents-wrap">Loading intent...</div>);
+        }
+      }
+    }
+  }
+
   children ??= (
     <nav className="activity-contents-wrap launcher-window">
-      <h2>Open generic intent</h2>
-      TODO
-      {JSON.stringify(props.intent)}
+      <h2>TODO: unhandled intent</h2>
+      <pre>{JSON.stringify({intent: intent, owner: props.command.metadata.ownerReferences}, null, 2)}</pre>
     </nav>
   );
 
@@ -103,9 +175,9 @@ export const IntentWindow = (props: {
       <section className="shell-powerbar">
         <div className="window-title">Handle Intent</div>
         <nav className="window-buttons">
-          <button onClick={() => runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'default', props.cmdName)}>
-            <svg version="1.1" height="20" viewBox="0 0 512 512">
-              <path transform="scale(25.6)" d="m6.0879 4.082-2.0059 2.0059 3.9121 3.9121-3.9121 3.9102 2.0059 2.0078 3.9121-3.9121 3.9102 3.9102 2.0078-2.0059-3.9102-3.9121 3.9082-3.9102-2.0039-2.0059-3.9121 3.9121-3.9121-3.9121z" strokeWidth=".039062"/>
+          <button onClick={() => runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name)}>
+            <svg version="1.1" height="20" viewBox="0 0 10 10">
+              <path d="m3 2-1 1 2 2-2 2 1 1 2-2 2 2 1-1-2-2 2-2-1-1-2 2z"/>
             </svg>
           </button>
         </nav>
@@ -113,4 +185,71 @@ export const IntentWindow = (props: {
       {children}
     </WindowFrame>
   );
+}
+
+
+
+function createTask(runtime: EntityEngine, workspaceName: string, installationName: string, firstActivity: ActivityEntity) {
+  const taskId = Random.id();
+  const actInstId = Random.id();
+
+  runtime.insertEntity<ActivityInstanceEntity>({
+    apiVersion: 'runtime.dist.app/v1alpha1',
+    kind: 'ActivityInstance',
+    metadata: {
+      name: actInstId,
+      namespace: 'session',
+      ownerReferences: [{
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Task',
+        name: taskId,
+      }],
+    },
+    spec: {
+      installationName,
+      activityName: firstActivity.metadata.name,
+      // activity: {
+      //   catalogId: firstActivity.metadata.catalogId,
+      //   namespace: firstActivity.metadata.namespace,
+      //   name: firstActivity.metadata.name,
+      // },
+    },
+  });
+
+  runtime.insertEntity<TaskEntity>({
+    apiVersion: 'runtime.dist.app/v1alpha1',
+    kind: 'Task',
+    metadata: {
+      name: taskId,
+      namespace: 'session',
+      ownerReferences: [{
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Workspace',
+        name: workspaceName,
+        // uid: this.workspaceEntity.metadata.uid,
+      }],
+    },
+    spec: {
+      placement: {
+        current: 'floating',
+        rolledWindow: false,
+        floating: {
+          left: 100 + Math.floor(Math.random() * 200),
+          top: 100 + Math.floor(Math.random() * 200),
+          width: firstActivity.spec.windowSizing?.initialWidth ?? 400,
+          height: firstActivity.spec.windowSizing?.initialHeight ?? 300,
+        },
+        grid: {
+          area: 'fullscreen',
+        },
+      },
+      stack: [{
+        activityInstance: actInstId,
+      }],
+    },
+  });
+
+  runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(taskId)});
+
+  return taskId;
 }

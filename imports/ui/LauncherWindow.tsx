@@ -1,44 +1,76 @@
-import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
-import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
+import { Random } from "meteor/random";
+import { useTracker } from "meteor/react-meteor-data";
+
+import { AppInstallationEntity } from "../entities/profile";
+import { CommandEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
+import { LauncherIcon } from "./LauncherIcon";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 export const LauncherWindow = () => {
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main')
-  if (!shell) throw new Error(`no shell`);
+  // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
+  // if (!shell) throw new Error(`no shell`);
 
-  const apis = useTracker(() => runtime.getNamespacesServingApi({
-    apiVersion: 'manifest.dist.app/v1alpha1',
-    kind: 'Activity',
-    op: 'Read',
-  }));
+  // const apis = useTracker(() => runtime.getNamespacesServingApi({
+  //   apiVersion: 'profile.dist.app/v1alpha1',
+  //   kind: 'AppInstallation',
+  //   op: 'Read',
+  // }));
 
-  const activities = useTracker(() => Array
-    .from(apis.values())
-    .flatMap(x => x
-      .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
+  // const installs = useTracker(() => Array
+  //   .from(apis.values())
+  //   .flatMap(x => x
+  //     .listEntities<AppInstallationEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
+  const installations = useTracker(() => runtime.listEntities<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile'), []);
 
-  const apps = useTracker(() => Array
-    .from(apis.values())
-    .flatMap(x => x
-      .listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application'))) ?? [];
+  // const activities = useTracker(() => Array
+  //   .from(apis.values())
+  //   .flatMap(x => x
+  //     .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
 
-  const listItems = activities
-    .filter(x => x.spec.intentFilters?.some(x => x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher'))
-    .map(x => ({
-      activity: x,
-      app: x.metadata.ownerReferences
-        ?.filter(y => y.kind == 'Application')
-        .map(y => apps.find(z => z.metadata.namespace == x.metadata.namespace && z.metadata.name == y.name))[0],
-    }));
+  // const apps = useTracker(() => Array
+  //   .from(apis.values())
+  //   .flatMap(x => x
+  //     .listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application'))) ?? [];
+
+  // const listItems = activities
+  //   .filter(x => x.spec.intentFilters?.some(x => x.action == 'app.dist.Main' && x.category == 'app.dist.Launcher'))
+  //   .map(x => ({
+  //     activity: x,
+  //     app: x.metadata.ownerReferences
+  //       ?.filter(y => y.kind == 'Application')
+  //       .map(y => apps.find(z => z.metadata.namespace == x.metadata.namespace && z.metadata.name == y.name))[0],
+  //   }));
 
     // icon maybe 𓃑 or ☰
 
+  const launchApp = (appInstall: AppInstallationEntity) => {
+    runtime.insertEntity<CommandEntity>({
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      kind: 'Command',
+      metadata: {
+        name: Random.id(),
+        namespace: 'session',
+      },
+      spec: {
+        type: 'launch-intent',
+        intent: {
+          receiverRef: `entity://${appInstall.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${appInstall.metadata.name}`,
+          action: 'app.dist.Main',
+          category: 'app.dist.Launcher',
+          // TODO: seems like there needs to be a better way to refer to a particular foreign application.
+          // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
+        }
+      },
+    })
+    // throw new Error(`TODO: launch app ${appInstall.metadata.name}`);
+  };
+
   return (
     <WindowFrame
-        floatingRect={{left: 0, top: 0}}
+        floatingRect={{left: 150, top: 0}}
         layoutMode="floating"
         resizable={false}
         onMoved={() => {}}
@@ -49,29 +81,8 @@ export const LauncherWindow = () => {
         <div className="window-title">Launcher</div>
       </section>
       <nav className="activity-contents-wrap launcher-window">
-        {listItems.map(({activity, app}) => app?.spec.icon?.type == 'glyph' ? (
-          <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
-            <div className="appIcon" style={{
-                backgroundColor: app.spec.icon.glyph.backgroundColor,
-                color: app.spec.icon.glyph.foregroundColor,
-              }}>{app.spec.icon.glyph.text}</div>
-            <span>{activity.metadata.title}</span>
-          </button>
-        ) : app?.spec.icon?.type == 'svg' ? (
-          <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
-            <div className="appIcon" style={{
-                backgroundImage: `url("data:image/svg+xml;base64,${btoa(app.spec.icon.svg.textData)}")`,
-                backgroundColor: app.spec.icon.svg.backgroundColor,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: 'center',
-                backgroundSize: '65%',
-              }}></div>
-            <span>{activity.metadata.title}</span>
-          </button>
-        ) : (
-          <button key={activity._id ?? `${activity.metadata.namespace}/${activity.metadata.name}`} onClick={() => shell.createTask(activity)}>
-            {activity.metadata.title}
-          </button>
+        {installations.map(installation => (
+          <LauncherIcon key={installation._id ?? `${installation.metadata.namespace}/${installation.metadata.name}`} appUri={installation.spec.appUri} onLaunch={() => launchApp(installation)} />
         ))}
       </nav>
     </WindowFrame>

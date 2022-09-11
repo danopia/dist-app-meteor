@@ -16,11 +16,12 @@ export interface LaunchIntentEntity {
   spec: {
     // In sync with runtime.ts
     action?: string;
-    catagory?: string;
+    category?: string;
+    receiverRef?: string;
     data?: string;
-    activity?: {
-      name: string;
-    };
+    // activity?: {
+    //   name: string;
+    // };
     flags?: Array<'new-task'>;
   };
 }

@@ -26,7 +26,7 @@ export const ActivityEmbed = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main')
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
   if (!shell) throw new Error(`no shell`);
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityInstance, props.activity), [runtime, props.activityInstance, props.activity]);
@@ -49,7 +49,7 @@ export const ActivityEmbed = (props: {
     });
     messageHost.addRpcListener<LaunchIntentEntity>('LaunchIntent', ({rpc}) => {
       console.log('handling', rpc);
-      shell.runTaskCommand(props.task, props.activity, {
+      shell.runTaskCommand(props.task, props.activityInstance, {
         type: 'launch-intent',
         intent: rpc.spec,
       });

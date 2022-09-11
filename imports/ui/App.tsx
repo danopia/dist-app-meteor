@@ -1,9 +1,12 @@
-import React from 'react';
-import { useRedirect, useRoutes } from 'raviger';
+import React, { useEffect } from 'react';
+import { navigate, useRedirect, useRoutes } from 'raviger';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 
 import { ActivityShell } from './ActivityShell';
 import { RuntimeProvider } from './RuntimeProvider';
+import { useTracker } from 'meteor/react-meteor-data';
+import { Meteor } from 'meteor/meteor';
+import { meteorCallAsync } from '../lib/meteor-call';
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
   <div role="alert">
@@ -15,6 +18,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 
 const routes = {
   '/guest-shell': () => <ActivityShell />,
+  '/my/new-shell': () => <NewShell />,
 };
 
 export const App = () => {
@@ -37,3 +41,17 @@ export const App = () => {
     </ErrorBoundary>
   );
 };
+
+const NewShell = () => {
+  const user = useTracker(() => Meteor.user());
+  console.log('new shell for', user);
+
+  useEffect(() => { (async () => {
+    const workspaceId = await meteorCallAsync('/v1alpha1/create user workspace');
+    navigate('/workspace/'+workspaceId);
+  })() }, []);
+
+  return (
+    <h2>redirecting...</h2>
+  );
+}

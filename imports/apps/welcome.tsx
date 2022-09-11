@@ -35,6 +35,9 @@ export const WelcomeCatalog = new Array<Entity>({
     intentFilters: [{
       action: 'app.dist.Main',
       category: 'app.dist.Launcher',
+    }, {
+      action: 'app.dist.FTUE',
+      category: 'app.dist.Default',
     }],
     windowSizing: {
       minWidth: 300,

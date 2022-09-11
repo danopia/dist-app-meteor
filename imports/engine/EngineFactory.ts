@@ -1,5 +1,6 @@
-import { ActivityEntity } from "../entities/manifest";
-import { WorkspaceEntity } from "../entities/runtime";
+// import { ActivityEntity } from "../entities/manifest";
+import { AppInstallationEntity } from "../entities/profile";
+import { CommandEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
 import { StaticCatalogs } from "./StaticCatalogs";
 
@@ -9,7 +10,7 @@ export class EngineFactory {
     const engine = new EntityEngine();
 
     engine.addNamespace({
-      name: 'default',
+      name: 'session',
       spec: {
         layers: [{
           mode: 'ReadWrite',
@@ -21,27 +22,38 @@ export class EngineFactory {
           },
         }],
       }});
+    engine.addNamespace({
+      name: 'profile',
+      spec: {
+        layers: [{
+          mode: 'ReadWrite',
+          accept: [{
+            apiGroup: 'profile.dist.app',
+          }],
+          storage: {
+            type: 'local-inmemory',
+          },
+        }],
+      }});
 
     for (const defaultNamespace of StaticCatalogs.keys()) {
       if (!defaultNamespace.startsWith('app:')) continue;
-      engine.addNamespace({
-        name: defaultNamespace,
+      engine.insertEntity<AppInstallationEntity>({
+        apiVersion: 'profile.dist.app/v1alpha1',
+        kind: 'AppInstallation',
+        metadata: {
+          name: `bundledguestapp-${defaultNamespace}`,
+          namespace: 'profile',
+        },
         spec: {
-          layers: [{
-            mode: 'ReadOnly',
-            accept: [{
-              apiGroup: 'manifest.dist.app',
-            }],
-            storage: {
-              type: 'bundled',
-              bundleId: defaultNamespace,
-            },
+          appUri: `bundled:${encodeURIComponent(defaultNamespace)}`,
+          // isInLauncher: true,
+          launcherIcons: [{
+            action: 'dist.app.Main',
           }],
-          // namespace: defaultNamespace,
-          // remote: {
-          //   type: 'static-catalog',
-          // },
-        }});
+          preferences: {},
+        },
+      });
     }
 
     // const workspaceName = Random.id();
@@ -50,20 +62,49 @@ export class EngineFactory {
       kind: 'Workspace',
       metadata: {
         name: 'main',
-        namespace: 'default',
+        namespace: 'session',
       },
       spec: {
         windowOrder: [],
       },
     });
-    const shell = engine.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'default', 'main');
-    if (!shell) throw new Error(`no shell`);
 
-    const welcomeActNamespace = localStorage.welcomeAct ?? 'app:welcome';
-    const welcomeAct = engine.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', welcomeActNamespace, 'main');
-    if (!welcomeAct) throw new Error(`no welcome act`);
+    // Add a latent command telling the runtime to process a particular intent
+    // when it first starts running (and then not again)
+    engine.insertEntity<CommandEntity>({
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      kind: 'Command',
+      metadata: {
+        name: 'launch-welcome',
+        namespace: 'session',
+      },
+      spec: {
+        type: 'launch-intent',
+        intent: {
+          receiverRef: "entity://profile/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
+          action: "app.dist.Main",
+          category: "app.dist.Launcher",
+          // action: 'app.dist.FTUE',
+          // category: 'app.dist.Default',
+          // TODO: seems like there needs to be a better way to refer to a particular foreign application.
+          // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
+        }
+      },
+    });
 
-    shell.createTask(welcomeAct);
+    //TODO:
+    // /:namespace/:api@:version/:kind/:name/
+    // engine.fetchEntity('/session/runtime@v1alpha1/Workspace/main/rpc/launch-intent')
+    // const workspace = useBase(engine, '/session/runtime@v1alpha1/Workspace/main');
+
+    // const shell = engine.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
+    // if (!shell) throw new Error(`no shell`);
+
+    // const welcomeActNamespace = localStorage.welcomeAct ?? 'app:welcome';
+    // const welcomeAct = engine.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', welcomeActNamespace, 'main');
+    // if (!welcomeAct) throw new Error(`no welcome act`);
+
+    // shell.createTask(welcomeAct);
 
     return engine;
   }

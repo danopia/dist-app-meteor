@@ -189,9 +189,10 @@ export const ToolbeltCatalog = new Array<Entity>({
             evt.preventDefault();
             const href = evt.target.closest('a').getAttribute('href');
             distApp.launchIntent({
-              activity: {
-                name: href,
-              },
+              receiverRef: 'Activity/'+href,
+              // activity: {
+              //   name: href,
+              // },
             });
           });
 

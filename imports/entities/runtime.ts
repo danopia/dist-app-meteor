@@ -19,7 +19,8 @@ export interface CommandEntity {
     intent: {
       // In sync with protocol.ts
       action?: string;
-      catagory?: string;
+      category?: string;
+      receiverRef?: string;
       data?: string;
       activity?: {
         name: string;
@@ -38,6 +39,7 @@ export interface CommandEntity {
   };
 }
 
+// TODO: rename to WindowEntity or FrameEntity
 export interface TaskEntity {
   _id?: string;
   apiVersion: "runtime.dist.app/v1alpha1";
@@ -68,13 +70,15 @@ export interface ActivityInstanceEntity {
   kind: "ActivityInstance";
   metadata: EntityMetadata;
   spec: {
-    activity: {
-      // group?: string; // "dist.app"
-      // kind: string; // "Asset"
-      catalogId?: string;
-      namespace?: string;
-      name: string;
-    };
+    installationName: string;
+    activityName: string;
+    // activity: {
+    //   // group?: string; // "dist.app"
+    //   // kind: string; // "Asset"
+    //   catalogId?: string;
+    //   namespace?: string;
+    //   name: string;
+    // };
     appState?: Record<string, string>;
   };
 }

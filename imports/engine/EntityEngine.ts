@@ -151,7 +151,9 @@ export class EntityEngine {
       namespace: namespace,
       op: 'Read',
     });
-    return layer.impl.listEntities<T>(apiVersion, kind);
+    return layer.impl.listEntities<T>(apiVersion, kind).map(entity => {
+      return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
+    });
   }
 
   getEntity<T extends ArbitraryEntity>(
@@ -167,7 +169,9 @@ export class EntityEngine {
       op: 'Read',
     });
     if (!layer) return null;
-    return layer.impl.getEntity(apiVersion, kind, name) ?? null;
+    const entity = layer.impl.getEntity(apiVersion, kind, name)
+    if (!entity) return null;
+    return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
   }
 
   loadEntity<T extends ArbitraryEntity>(
@@ -241,4 +245,36 @@ export class EntityEngine {
 
 
 
+  useRemoteNamespace(appUri: string) {
+    // const [loadedNs, setLoadedNs] = useState<string|false>(false);
+
+    // TODO: this sucks!
+    const nsName = encodeURIComponent(appUri);
+
+    if (this.namespaces.has(nsName)) return nsName;
+
+    const appUrl = new URL(appUri);
+
+    if (appUrl.protocol == 'bundled:') {
+      const bundledName = decodeURIComponent(appUrl.pathname);
+      this.addNamespace({
+        name: nsName,
+        spec: {
+          layers: [{
+            mode: 'ReadOnly',
+            accept: [{
+              apiGroup: 'manifest.dist.app',
+            }],
+            storage: {
+              type: 'bundled',
+              bundleId: bundledName,
+            },
+          }],
+        }});
+      return nsName;
+    }
+    // console.log('p', appUrl.protocol)
+
+    throw new Error("Function not implemented.");
+  }
 }

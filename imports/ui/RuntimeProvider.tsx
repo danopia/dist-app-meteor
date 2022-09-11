@@ -6,6 +6,8 @@ export const RuntimeProvider = (props: {
   children: ReactNode;
 }) => {
   const runtime = useMemo(() => EngineFactory.forGuestSession(), []);
+  //@ts-expect-error globalThis.runtime
+  globalThis.runtime = runtime;
 
   return (
     <RuntimeContext.Provider value={runtime}>
