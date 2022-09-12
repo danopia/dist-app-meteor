@@ -1,4 +1,4 @@
-import React, { Fragment, useContext, useState } from 'react';
+import React, { DependencyList, Fragment, useContext, useEffect, useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
@@ -25,6 +25,8 @@ export const ActivityShell = () => {
 
   // const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
   // if (!workspace) throw new Error(`no workspace`);
+
+  useBodyClass('shell-workspace-floating');
 
   return (
     <Fragment>
@@ -86,3 +88,12 @@ export const ShellCommands = () => {
             // },
           // })} />
         };
+
+function useBodyClass(className: string, deps?: DependencyList) {
+  useEffect(() => {
+    document.body.classList.add(className);
+    return () => {
+      document.body.classList.remove(className);
+    };
+  }, deps);
+}
