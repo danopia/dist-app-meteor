@@ -1,9 +1,17 @@
 import { check } from "meteor/check";
 import { Meteor } from "meteor/meteor";
 import { fetchRequestEntity } from "./fetch";
+import { getUserDefaultProfile } from "./profiles";
 import { FetchRequestEntity } from "/imports/entities/protocol";
 
 Meteor.methods({
+
+  async '/v1alpha1/create user workspace'() {
+    const userId = Meteor.userId();
+    if (!userId) throw new Meteor.Error(`logged-out`, `Log in to start a profile.`);
+    console.log('new workspace for', userId);
+    return await getUserDefaultProfile(userId);
+  },
 
   async 'poc-FetchRequestEntity'(req: FetchRequestEntity) {
     check(req, Object);

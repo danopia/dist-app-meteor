@@ -1,6 +1,7 @@
 import { Mongo } from "meteor/mongo";
+import { EntitiesCollection } from "../db/entities";
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
-import { MongoEntityStorage, StaticEntityStorage } from "./EntityStorage";
+import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { StaticCatalogs } from "./StaticCatalogs";
 // import { MongoEntityStorage } from "./next-gen-layer";
 
@@ -8,14 +9,18 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
   switch (layerSpec.storage.type) {
     case 'local-inmemory':
       return new MongoEntityStorage({
-        collection: new Mongo.Collection<ArbitraryEntity & {_id: string}>(null),
+        collection: new Mongo.Collection<ArbitraryEntity & { catalogId: string; _id: string }>(null),
         namespace: namespaceName,
+        catalogId: 'x',
       });
     case 'bundled':
       const staticCat = StaticCatalogs.get(layerSpec.storage.bundleId ?? '');
       if (!staticCat) throw new Error(`Bundled id ${JSON.stringify(layerSpec.storage.bundleId)} not found`);
       return new StaticEntityStorage(staticCat);
+    case 'profile':
+      return new MongoProfileStorage(layerSpec.storage.profileId);
   }
+  //@ts-expect-error should be exhaustive thus 'never'
   throw new Error(`BUG: nobody built ${JSON.stringify(layerSpec.storage.type)} layer`);
 }
 
@@ -23,9 +28,10 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
 //   'local-inmemory': InMemoryStorage,
 // };
 
+// TODO: use this for profiles too
 export class LayeredNamespace {
   constructor(
-    public readonly namespaceName: string,
+    public readonly namespaceName: string, // TODO: remove namespace construct
     public readonly spec: NamespaceEntity["spec"],
   ) {
     this.layers = spec.layers.map(x => ({

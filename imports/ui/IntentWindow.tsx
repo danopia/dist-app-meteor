@@ -14,6 +14,7 @@ import { WindowFrame } from "./widgets/WindowFrame";
 
 export const IntentWindow = (props: {
   command: CommandEntity;
+  workspaceName: string;
   // cmdName: string;
   // intent: LaunchIntentEntity['spec'],
 }) => {
@@ -120,7 +121,7 @@ export const IntentWindow = (props: {
       if (api == 'manifest.dist.app' && version == 'v1alpha1' && kind == 'Activity' && appInstallation) {
         const activity = runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', namespace, name);
         if (activity) {
-          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
+          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
           const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.name, activity);
@@ -140,7 +141,7 @@ export const IntentWindow = (props: {
           if (activities.length < 1) return (<div>Less than one activity matched</div>);
           const [activity] = activities;
 
-          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
+          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
           const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.name, activity);

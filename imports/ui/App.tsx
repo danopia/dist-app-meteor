@@ -17,8 +17,12 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 );
 
 const routes = {
-  '/guest-shell': () => <ActivityShell />,
+  '/guest-shell': () => <ActivityShell guest={true} />,
   '/my/new-shell': () => <NewShell />,
+  '/~:profileId/workspace/:workspaceName': (params: {
+    profileId: string;
+    workspaceName: string;
+  }) => <ActivityShell {...params} guest={false} />,
 };
 
 export const App = () => {
@@ -46,9 +50,15 @@ const NewShell = () => {
   const user = useTracker(() => Meteor.user());
   console.log('new shell for', user);
 
+  // Redirect based on server call
   useEffect(() => { (async () => {
-    const workspaceId = await meteorCallAsync('/v1alpha1/create user workspace');
-    navigate('/workspace/'+workspaceId);
+    const {profileId, workspaceName} = await meteorCallAsync<{
+      profileId: string;
+      workspaceName: string;
+    }>('/v1alpha1/create user workspace');
+    navigate(`/~${profileId}/workspace/${workspaceName}`, {
+      replace: true,
+    });
   })() }, []);
 
   return (

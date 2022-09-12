@@ -12,6 +12,7 @@ export const LauncherWindow = () => {
   const runtime = useContext(RuntimeContext);
 
   const installations = useTracker(() => runtime.listEntities<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile'), []);
+  console.log({installations})
 
   const icons = installations
     .flatMap(x => x.spec.launcherIcons

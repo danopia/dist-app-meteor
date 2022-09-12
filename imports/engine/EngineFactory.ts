@@ -1,4 +1,5 @@
 // import { ActivityEntity } from "../entities/manifest";
+import { Random } from "meteor/random";
 import { AppInstallationEntity } from "../entities/profile";
 import { CommandEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
@@ -36,61 +37,7 @@ export class EngineFactory {
         }],
       }});
 
-    for (const defaultNamespace of StaticCatalogs.keys()) {
-      if (!defaultNamespace.startsWith('app:')) continue;
-      engine.insertEntity<AppInstallationEntity>({
-        apiVersion: 'profile.dist.app/v1alpha1',
-        kind: 'AppInstallation',
-        metadata: {
-          name: `bundledguestapp-${defaultNamespace}`,
-          namespace: 'profile',
-        },
-        spec: {
-          appUri: `bundled:${encodeURIComponent(defaultNamespace)}`,
-          // isInLauncher: true,
-          launcherIcons: [{
-            action: 'app.dist.Main',
-          }],
-          preferences: {},
-        },
-      });
-    }
-
-    // const workspaceName = Random.id();
-    engine.insertEntity<WorkspaceEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Workspace',
-      metadata: {
-        name: 'main',
-        namespace: 'session',
-      },
-      spec: {
-        windowOrder: [],
-      },
-    });
-
-    // Add a latent command telling the runtime to process a particular intent
-    // when it first starts running (and then not again)
-    engine.insertEntity<CommandEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Command',
-      metadata: {
-        name: 'launch-welcome',
-        namespace: 'session',
-      },
-      spec: {
-        type: 'launch-intent',
-        intent: {
-          receiverRef: "entity://profile/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
-          action: "app.dist.Main",
-          category: "app.dist.Launcher",
-          // action: 'app.dist.FTUE',
-          // category: 'app.dist.Default',
-          // TODO: seems like there needs to be a better way to refer to a particular foreign application.
-          // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
-        }
-      },
-    });
+    insertGuestTemplate(engine, 'main');
 
     //TODO:
     // /:namespace/:api@:version/:kind/:name/
@@ -108,4 +55,62 @@ export class EngineFactory {
 
     return engine;
   }
+}
+
+export function insertGuestTemplate(engine: EntityEngine, workspaceName: string) {
+  for (const defaultNamespace of StaticCatalogs.keys()) {
+    if (!defaultNamespace.startsWith('app:')) continue;
+    engine.insertEntity<AppInstallationEntity>({
+      apiVersion: 'profile.dist.app/v1alpha1',
+      kind: 'AppInstallation',
+      metadata: {
+        name: `bundledguestapp-${defaultNamespace}`,
+        namespace: 'profile',
+      },
+      spec: {
+        appUri: `bundled:${encodeURIComponent(defaultNamespace)}`,
+        // isInLauncher: true,
+        launcherIcons: [{
+          action: 'app.dist.Main',
+        }],
+        preferences: {},
+      },
+    });
+  }
+
+  // const workspaceName = Random.id();
+  engine.insertEntity<WorkspaceEntity>({
+    apiVersion: 'runtime.dist.app/v1alpha1',
+    kind: 'Workspace',
+    metadata: {
+      name: workspaceName,
+      namespace: 'session',
+    },
+    spec: {
+      windowOrder: [],
+    },
+  });
+
+  // Add a latent command telling the runtime to process a particular intent
+  // when it first starts running (and then not again)
+  engine.insertEntity<CommandEntity>({
+    apiVersion: 'runtime.dist.app/v1alpha1',
+    kind: 'Command',
+    metadata: {
+      name: 'launch-welcome-'+Random.id(4),
+      namespace: 'session',
+    },
+    spec: {
+      type: 'launch-intent',
+      intent: {
+        receiverRef: "entity://profile/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
+        action: "app.dist.Main",
+        category: "app.dist.Launcher",
+        // action: 'app.dist.FTUE',
+        // category: 'app.dist.Default',
+        // TODO: seems like there needs to be a better way to refer to a particular foreign application.
+        // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
+      }
+    },
+  });
 }

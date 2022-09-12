@@ -10,11 +10,12 @@ import { AppInstallationEntity } from "../entities/profile";
 export const TaskWindow = (props: {
   task: TaskEntity,
   zIndex?: number;
+  workspaceName: string;
   // sessionCatalog: SessionCatalog,
 }) => {
 
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName)
   if (!shell) throw new Error(`no shell`);
 
   // const task = runtime.getTask()
@@ -88,7 +89,7 @@ export const TaskWindow = (props: {
         </nav>
       </section>
       {(activity && !props.task.spec.placement.rolledWindow) ? (
-        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activityInstance={actInst} activity={activity} onLifecycle={setLifecycle} />
+        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activityInstance={actInst} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
   );

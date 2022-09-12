@@ -42,9 +42,10 @@ export interface NamespaceEntity {
         type: 'local-inmemory';
       } | {
         type: 'bundled';
-        bundleId?: string;
+        bundleId: string;
       } | {
         type: 'profile';
+        profileId: string;
       // } | {
       //   storage: 'imported';
       //   remoteUrl: unknown;

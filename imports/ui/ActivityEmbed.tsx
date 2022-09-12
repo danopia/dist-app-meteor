@@ -12,6 +12,7 @@ import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 
 export const ActivityEmbed = (props: {
   task: TaskEntity;
+  workspaceName: string;
   activityInstance: ActivityInstanceEntity;
   activity: ActivityEntity;
   className?: string;
@@ -26,7 +27,7 @@ export const ActivityEmbed = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
   if (!shell) throw new Error(`no shell`);
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityInstance, props.activity), [runtime, props.activityInstance, props.activity]);
