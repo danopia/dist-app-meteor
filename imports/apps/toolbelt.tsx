@@ -1630,8 +1630,14 @@ export const ToolbeltCatalog = new Array<Entity>({
           }
         `,
         inlineScript: stripIndent(html)`
-          const commonTypes = new Set([
-            'A', 'AAAA', 'NS', 'CNAME', 'MX', 'SRV', 'SSHFP', 'CAA',
+          const primaryTypes = new Set([
+            'A', 'AAAA', 'MX', 'TXT',
+          ]);
+          const secondaryTypes = new Set([
+            'NS', 'CNAME', 'SRV', // normal but uncommon
+            'PTR', // reverse dns
+            'SSHFP', // ssh host key fingerprint
+            'CAA', // tls issuance policy
           ]);
           const rrsetTypes = new Map([
             [1, 'A'],
@@ -1684,11 +1690,22 @@ export const ToolbeltCatalog = new Array<Entity>({
           ]);
 
           const select = document.querySelector('select[name=type]');
+          const primaryGroup = document.createElement('optgroup');
+          primaryGroup.label = "Most Common";
+          const secondaryGroup = document.createElement('optgroup');
+          secondaryGroup.label = "Less Common";
+          select.append(primaryGroup, secondaryGroup);
           for (const [num, name] of rrsetTypes.entries()) {
             const option = document.createElement('option');
             option.innerText = name;
             option.value = num.toString();
-            select.appendChild(option);
+            if (primaryTypes.has(name)) {
+              primaryGroup.appendChild(option);
+            } else if (secondaryTypes.has(name)) {
+              secondaryGroup.appendChild(option);
+            } else {
+              select.appendChild(option);
+            }
           }
 
           const distApp = await DistApp.connect();
