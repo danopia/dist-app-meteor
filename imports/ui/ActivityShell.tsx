@@ -19,11 +19,9 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 );
 
 export const ActivityShell = (props: {
-  profileId: string;
-  workspaceName: string;
-  guest: false;
-} | {
-  guest: true;
+  profileId?: string;
+  workspaceName?: string;
+  guest: boolean;
 }) => {
   const runtime = useContext(RuntimeContext);
   // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
@@ -55,9 +53,10 @@ export const ActivityShell = (props: {
             },
           }],
         }});
-      insertGuestTemplate(runtime, 'guest');
-      return 'guest';
-    } else {
+      const workspaceName = Random.id();
+      insertGuestTemplate(runtime, workspaceName);
+      return workspaceName;
+    } else if (props.profileId && props.workspaceName) {
       console.log('add profile: user');
       runtime.addNamespace({
         name: 'profile',
@@ -86,14 +85,8 @@ export const ActivityShell = (props: {
         },
       });
       return workspaceName;
-    }
+    } else throw new Error(`Called without props`);
   }, [runtime]);
-  useEffect(() => {
-    return () => {
-      console.log('rm profile')
-      runtime.namespaces.delete('profile');
-    }
-  }, []);
 
   // TODO: pass entity handles and APIs down, to parameterize namespace
 

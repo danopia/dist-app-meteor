@@ -20,8 +20,8 @@ const routes = {
   '/guest-shell': () => <ActivityShell guest={true} />,
   '/my/new-shell': () => <NewShell />,
   '/~:profileId/workspace/:workspaceName': (params: {
-    profileId: string;
-    workspaceName: string;
+    profileId?: string;
+    workspaceName?: string;
   }) => <ActivityShell {...params} guest={false} />,
 };
 
