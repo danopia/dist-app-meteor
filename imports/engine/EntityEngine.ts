@@ -1,7 +1,7 @@
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
 import { AsyncCache, AsyncKeyedCache } from "../runtime/async-cache";
 import { ShellSession } from "../runtime/ShellSession";
-import { MongoEntityStorage, StaticEntityStorage } from "./EntityStorage";
+import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { LayeredNamespace } from "./next-gen";
 
 // type ApiFilter<T extends ArbitraryEntity> = {
@@ -107,7 +107,7 @@ export class EntityEngine {
     apiVersion: string;
     kind: string;
     op: 'Read' | 'Write';
-  }): Generator<[string, MongoEntityStorage | StaticEntityStorage]> {
+  }): Generator<[string, MongoEntityStorage | MongoProfileStorage | StaticEntityStorage]> {
     for (const [name, ns] of this.namespaces) {
       const layer = ns.selectLayer({
         op: props.op,

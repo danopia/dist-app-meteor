@@ -40,7 +40,7 @@ export class LayeredNamespace {
     }));
   }
   private readonly layers: Array<NamespaceEntity["spec"]["layers"][number] & {
-    impl: MongoEntityStorage | StaticEntityStorage,
+    impl: MongoEntityStorage | MongoProfileStorage | StaticEntityStorage,
   }>;
 
   selectLayer(props: {
