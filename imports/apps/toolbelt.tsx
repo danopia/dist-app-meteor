@@ -1560,6 +1560,7 @@ export const ToolbeltCatalog = new Array<Entity>({
             margin: 0.8em;
             padding: 1em;
             background-color: rgba(200, 200, 200, 0.3);
+            overflow-x: auto;
           }
           .entry-head {
             padding: 0 0 0.3em;
