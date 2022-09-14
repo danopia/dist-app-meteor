@@ -1766,7 +1766,7 @@ export const ToolbeltCatalog = new Array<Entity>({
               };
             } else {
               return {
-                text: rawInput,//.toLowerCase(),
+                text: rawInput,
                 nameType: 'dns',
               };
             }
@@ -1778,7 +1778,14 @@ export const ToolbeltCatalog = new Array<Entity>({
 
             return entry.promise((async () => {
 
-              // TODO: if type=ipv4, rewrite to e.g. "10.41.232.199.in-addr.arpa."
+              // Rejack any IPv4 queries into reverse-IP queries
+              if (input.nameType == 'ipv4') {
+                input = {
+                  type: 'PTR',
+                  nameType: 'dns',
+                  text: input.text.split('.').reverse().join('.') + '.in-addr.arpa.',
+                };
+              }
 
               const opts = new URLSearchParams();
               opts.set('name', input.text);
@@ -1855,7 +1862,7 @@ export const ToolbeltCatalog = new Array<Entity>({
           inputBox.addEventListener('paste', evt => {
             try {
               const pasteData = evt.clipboardData.getData('text');
-              queryInput(ParseInput(pasteData));
+              queryInput({...ParseInput(pasteData), type: form.type.value});
             } catch (err) {
               console.log('not acting on paste.', err);
             }
