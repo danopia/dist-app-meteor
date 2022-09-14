@@ -220,7 +220,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       securityPolicy: {
         connectSrc: ['https://ip-ranges.amazonaws.com', 'https://raw.githubusercontent.com', 'https://da.gd'],
       },
@@ -683,7 +683,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -810,7 +810,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -937,7 +937,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -1063,7 +1063,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       securityPolicy: {
         scriptSrc: ['https://cdnjs.cloudflare.com'],
       },
@@ -1352,7 +1352,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -1482,7 +1482,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     }],
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms'],
+      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
@@ -2040,7 +2040,7 @@ export const ToolbeltCatalog = new Array<Entity>({
 //   spec: {
 //     implementation: {
 //       type: 'iframe',
-//       sandboxing: ['allow-scripts', 'allow-forms'],
+//       sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
 //       source: {
 //         type: 'piecemeal',
 //         htmlLang: 'en',

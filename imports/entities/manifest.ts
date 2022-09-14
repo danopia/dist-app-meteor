@@ -42,7 +42,12 @@ export type IconSpec =
 
 export interface IframeImplementationSpec {
   type: 'iframe',
-  sandboxing?: Array<'allow-scripts' | 'allow-forms' | 'allow-popups'>;
+  sandboxing?: Array<
+    | 'allow-scripts'
+    | 'allow-forms'
+    | 'allow-popups'
+    | 'allow-modals'
+  >;
   securityPolicy?: {
     scriptSrc?: Array<string>;
     connectSrc?: Array<string>;
