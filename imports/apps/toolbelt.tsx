@@ -1758,19 +1758,16 @@ export const ToolbeltCatalog = new Array<Entity>({
 
           function ParseInput(rawInput) {
             const v4Match = rawInput.match(/((?:\\d{1,3}\\.){3}\\d{1,3})(\\/|:|$)/);
-            const dnsMatch = rawInput.match(/([a-z0-9.-]+\\.[a-z][a-z0-9-]+)(\\/|:|$)/i);
             if (v4Match) {
               return {
                 text: v4Match[1].toLowerCase(),
                 nameType: 'ipv4',
               };
-            } else if (dnsMatch) {
+            } else {
               return {
-                text: dnsMatch[1].toLowerCase(),
+                text: rawInput,//.toLowerCase(),
                 nameType: 'dns',
               };
-            } else {
-              throw new Error(\`Couldn't parse input: \${rawInput}\`);
             }
           }
 
