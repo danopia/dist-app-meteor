@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { Fragment, useContext } from "react";
 import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
 
@@ -11,8 +11,42 @@ import { WindowFrame } from "./widgets/WindowFrame";
 export const LauncherWindow = () => {
   const runtime = useContext(RuntimeContext);
 
-  const installations = useTracker(() => runtime.listEntities<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile'), []);
-  console.log({installations})
+  const namespaces = useTracker(() => Array.from(runtime.getNamespacesServingApi({
+    apiVersion: 'profile.dist.app/v1alpha1',
+    kind: 'AppInstallation',
+    op: 'Read',
+  }).keys()));
+
+  // icon maybe 𓃑 or ☰
+
+  return (
+    <WindowFrame
+        floatingRect={{left: 0, top: 0}}
+        layoutMode="floating"
+        resizable={false}
+        onMoved={() => {}}
+        onResized={() => {}}
+        showLoader={false}
+    >
+      <section className="shell-powerbar">
+        <div className="window-title">Launcher</div>
+      </section>
+      <nav className="activity-contents-wrap">
+        {namespaces.map(namespace => (
+          <LauncherSection namespace={namespace} />
+        ))}
+      </nav>
+    </WindowFrame>
+  );
+}
+
+
+export const LauncherSection = (props: {
+  namespace: string;
+}) => {
+  const runtime = useContext(RuntimeContext);
+
+  const installations = useTracker(() => runtime.listEntities<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', props.namespace), []);
 
   const icons = installations
     .flatMap(x => x.spec.launcherIcons
@@ -38,27 +72,18 @@ export const LauncherWindow = () => {
           // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
         }
       },
-    })
+    });
     // throw new Error(`TODO: launch app ${appInstall.metadata.name}`);
   };
 
   return (
-    <WindowFrame
-        floatingRect={{left: 0, top: 0}}
-        layoutMode="floating"
-        resizable={false}
-        onMoved={() => {}}
-        onResized={() => {}}
-        showLoader={false}
-    >
-      <section className="shell-powerbar">
-        <div className="window-title">Launcher</div>
-      </section>
-      <nav className="activity-contents-wrap launcher-window">
+    <Fragment>
+      <h3 style={{textTransform: 'uppercase', margin: '0.2em 1em 0', fontSize: '1em', color: '#999', fontWeight: 'normal'}}>{props.namespace}</h3>
+      <div className="launcher-window">
         {icons.map(icon => (
           <LauncherIcon key={icon.installation._id} appUri={icon.installation.spec.appUri} onLaunch={() => launchApp(icon)} />
         ))}
-      </nav>
-    </WindowFrame>
+      </div>
+    </Fragment>
   );
 }

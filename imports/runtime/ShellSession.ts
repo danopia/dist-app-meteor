@@ -119,6 +119,7 @@ export class ShellSession {
         }],
       },
       spec: {
+        installationNamespace: appInstallation.metadata.namespace,
         installationName: appInstallation.metadata.name,
         activityName: firstActivity.metadata.name,
         // activity: {

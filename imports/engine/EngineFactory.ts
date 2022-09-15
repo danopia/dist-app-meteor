@@ -57,7 +57,7 @@ export class EngineFactory {
   }
 }
 
-export function insertGuestTemplate(engine: EntityEngine, workspaceName: string) {
+export function insertGuestTemplate(engine: EntityEngine) {
   for (const defaultNamespace of StaticCatalogs.keys()) {
     if (!defaultNamespace.startsWith('app:')) continue;
     engine.insertEntity<AppInstallationEntity>({
@@ -65,7 +65,7 @@ export function insertGuestTemplate(engine: EntityEngine, workspaceName: string)
       kind: 'AppInstallation',
       metadata: {
         name: `bundledguestapp-${defaultNamespace}`,
-        namespace: 'profile',
+        namespace: 'profile:guest',
       },
       spec: {
         appUri: `bundled:${encodeURIComponent(defaultNamespace)}`,
@@ -79,17 +79,6 @@ export function insertGuestTemplate(engine: EntityEngine, workspaceName: string)
   }
 
   // const workspaceName = Random.id();
-  engine.insertEntity<WorkspaceEntity>({
-    apiVersion: 'runtime.dist.app/v1alpha1',
-    kind: 'Workspace',
-    metadata: {
-      name: workspaceName,
-      namespace: 'session',
-    },
-    spec: {
-      windowOrder: [],
-    },
-  });
 
   // Add a latent command telling the runtime to process a particular intent
   // when it first starts running (and then not again)

@@ -70,6 +70,8 @@ export interface ActivityInstanceEntity {
   kind: "ActivityInstance";
   metadata: EntityMetadata;
   spec: {
+    // TODO: installationRef
+    installationNamespace: string;
     installationName: string;
     activityName: string;
     // activity: {

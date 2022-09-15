@@ -9,6 +9,7 @@ import { IntentWindow } from './IntentWindow';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { insertGuestTemplate } from '../engine/EngineFactory';
 import { Random } from 'meteor/random';
+import { Meteor } from 'meteor/meteor';
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
   <div role="alert">
@@ -23,7 +24,6 @@ export const ActivityShell = (props: {
   workspaceName?: string;
   guest: boolean;
 }) => {
-  const runtime = useContext(RuntimeContext);
   // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
   // if (!shell) throw new Error(`no shell`);
 
@@ -33,60 +33,6 @@ export const ActivityShell = (props: {
   // if (!workspace) throw new Error(`no workspace`);
 
   useBodyClass('shell-workspace-floating');
-
-  const workspaceName = useMemo(() => {
-    if (runtime.namespaces.has('profile')) {
-      runtime.namespaces.delete('profile');
-    }
-    if (props.guest) {
-      console.log('add profile: guest');
-      runtime.addNamespace({
-        name: 'profile',
-        spec: {
-          layers: [{
-            mode: 'ReadWrite',
-            accept: [{
-              apiGroup: 'profile.dist.app',
-            }],
-            storage: {
-              type: 'local-inmemory',
-            },
-          }],
-        }});
-      const workspaceName = Random.id();
-      insertGuestTemplate(runtime, workspaceName);
-      return workspaceName;
-    } else if (props.profileId && props.workspaceName) {
-      console.log('add profile: user');
-      runtime.addNamespace({
-        name: 'profile',
-        spec: {
-          layers: [{
-            mode: 'ReadWrite',
-            accept: [{
-              apiGroup: 'profile.dist.app',
-            }],
-            storage: {
-              type: 'profile',
-              profileId: props.profileId,
-            },
-          }],
-        }});
-      const workspaceName = Random.id();
-      runtime.insertEntity<WorkspaceEntity>({
-        apiVersion: 'runtime.dist.app/v1alpha1',
-        kind: 'Workspace',
-        metadata: {
-          name: workspaceName,
-          namespace: 'session',
-        },
-        spec: {
-          windowOrder: [],
-        },
-      });
-      return workspaceName;
-    } else throw new Error(`Called without props`);
-  }, [runtime]);
 
   // TODO: pass entity handles and APIs down, to parameterize namespace
 
@@ -100,8 +46,8 @@ export const ActivityShell = (props: {
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <LauncherWindow />
         </ErrorBoundary>
-        <ShellTasks workspaceName={workspaceName} />
-        <ShellCommands workspaceName={workspaceName} />
+        <ShellTasks workspaceName={"main"} />
+        <ShellCommands workspaceName={"main"} />
       </div>
     </Fragment>
   );

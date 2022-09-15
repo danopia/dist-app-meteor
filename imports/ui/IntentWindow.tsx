@@ -65,11 +65,11 @@ export const IntentWindow = (props: {
       setLifecycle('loading');
       loginFunc({}, (err) => {
         if (err) {
-          setLifecycle('initial');
+          setLifecycle('ready');
           alert(err.message ?? err);
         } else {
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
-          navigate('/my/new-shell');
+          // navigate('/my/new-shell');
         }
       });
     };
@@ -100,7 +100,7 @@ export const IntentWindow = (props: {
     const hActivityInstance = hCommand
       .followOwnerReference<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance');
     if (hActivityInstance) {
-      appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile', hActivityInstance?.spec.installationName);
+      appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', hActivityInstance.spec.installationNamespace, hActivityInstance.spec.installationName);
       if (appInstallation) {
         const appNamespace = runtime.useRemoteNamespace(appInstallation?.spec.appUri);
         baseUrl = `entity://${appNamespace}/manifest.dist.app@v1alpha1/`;
@@ -124,7 +124,7 @@ export const IntentWindow = (props: {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.name, activity);
+          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity);
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
 
@@ -144,7 +144,7 @@ export const IntentWindow = (props: {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.name, activity);
+          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity);
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
 
@@ -190,7 +190,7 @@ export const IntentWindow = (props: {
 
 
 
-function createTask(runtime: EntityEngine, workspaceName: string, installationName: string, firstActivity: ActivityEntity) {
+function createTask(runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity) {
   const taskId = Random.id();
   const actInstId = Random.id();
 
@@ -207,6 +207,7 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
       }],
     },
     spec: {
+      installationNamespace: installationNamespace ?? 'default',
       installationName,
       activityName: firstActivity.metadata.name,
       // activity: {

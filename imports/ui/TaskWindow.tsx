@@ -23,7 +23,7 @@ export const TaskWindow = (props: {
   // TODO: how does one navigate the stack?
   const [actInst] = useTracker(() => props.task.spec.stack.map(x => runtime.getEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', props.task.metadata.namespace, x.activityInstance)).flatMap(x => x ? [x] : []));
 
-  const appInstallation = useTracker(() => runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', 'profile', actInst.spec.installationName));
+  const appInstallation = useTracker(() => runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', actInst.spec.installationNamespace, actInst.spec.installationName));
   if (!appInstallation) throw new Error(`TODO: no appInstallation`);
 
   const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
