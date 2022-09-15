@@ -26,6 +26,22 @@ export interface LaunchIntentEntity {
   };
 }
 
+export interface WriteDebugEventEntity {
+  apiVersion?: "protocol.dist.app/v1alpha1";
+  kind: "WriteDebugEvent";
+  metadata?: EntityMetadata;
+  spec: {
+    timestamp: Date;
+    level: string; // debug, info, warn, error
+    text: string;
+    error?: {
+      name: string;
+      message: string;
+      stack?: string;
+    };
+  };
+}
+
 export interface FetchRequestEntity {
   apiVersion?: "protocol.dist.app/v1alpha1";
   kind: "FetchRequest";
@@ -81,6 +97,7 @@ export interface FetchErrorEntity {
 export type ProtocolEntity = (
   | LifecycleEntity
   | LaunchIntentEntity
+  | WriteDebugEventEntity
   | FetchRequestEntity
   | FetchResponseEntity
   | FetchBodyChunkEntity

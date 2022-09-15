@@ -7,7 +7,7 @@ import { RuntimeContext } from './contexts';
 import { ActivityInstanceEntity, TaskEntity } from '../entities/runtime';
 import { iframeEntrypointText } from '../userland/iframe-entrypoint-blob';
 import { useObjectURL } from '../lib/use-object-url';
-import { FetchErrorEntity, FetchRequestEntity, LaunchIntentEntity, LifecycleEntity } from '../entities/protocol';
+import { FetchErrorEntity, FetchRequestEntity, LaunchIntentEntity, LifecycleEntity, WriteDebugEventEntity } from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 
 export const ActivityEmbed = (props: {
@@ -66,6 +66,12 @@ export const ActivityEmbed = (props: {
           } });
       }
     });
+    messageHost.addRpcListener<WriteDebugEventEntity>('WriteDebugEvent', ({rpc}) => {
+      // TODO: record the debug events, probably in 'session' but perhaps as 'debug.dist.app' API
+      if (rpc.spec.error) {
+        alert('A running dist.app encountered a script error:\n\n' + rpc.spec.error.stack);
+      }
+    })
   }, [messageHost]);
 
   const { implementation } = props.activity.spec;

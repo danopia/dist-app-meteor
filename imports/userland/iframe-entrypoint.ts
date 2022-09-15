@@ -1,4 +1,4 @@
-import type { FetchResponseEntity, LaunchIntentEntity, LifecycleEntity, ProtocolEntity } from "../entities/protocol.js";
+import type { WriteDebugEventEntity, FetchResponseEntity, LaunchIntentEntity, LifecycleEntity, ProtocolEntity } from "../entities/protocol.js";
 
 const originalFetch = globalThis.fetch;
 const fetchProtocols = new Map<string, typeof fetch>();
@@ -20,6 +20,11 @@ globalThis.DistApp = class DistApp {
     port.addEventListener("message", evt => this
       .handleMessage(evt));
     port.start();
+
+    window.addEventListener('error', evt => this
+      .handleError(evt.error)
+      .catch(err => console
+        .error(err)));
 
     fetchProtocols.set('dist-app:', (input, init) => this
       .fetch(input, init));
@@ -47,6 +52,18 @@ globalThis.DistApp = class DistApp {
       }
     }
     console.warn('TODO: DistApp received:', evt.data);
+  }
+  async handleError(err: Error) {
+    const {name, message, stack} = err;
+    this.sendRpc<WriteDebugEventEntity>({
+      kind: 'WriteDebugEvent',
+      spec: {
+        timestamp: new Date(),
+        level: 'error',
+        text: `Uncaught ${name} in page`,
+        error: { name, message, stack },
+      },
+    });
   }
   async fetch(req: RequestInfo | URL, opts: RequestInit | undefined) {
     if (typeof req == 'string') {
