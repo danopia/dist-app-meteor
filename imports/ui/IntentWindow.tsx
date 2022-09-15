@@ -1,6 +1,6 @@
 import { Meteor } from "meteor/meteor";
 import { Random } from "meteor/random";
-import { navigate } from "raviger";
+import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useState } from "react";
 import GoogleButton from 'react-google-button';
 import { EntityEngine } from "../engine/EntityEngine";
@@ -39,7 +39,7 @@ export const IntentWindow = (props: {
   //     .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
 
   let children: ReactNode;
-  const [lifecycle, setLifecycle] = useState('initial');
+  const user = useTracker(() => Meteor.user() ?? (Meteor.loggingIn() ? 'waiting' : false), []);
 
   if (props.command.spec.type != 'launch-intent') throw new Error(`TODO: other commands`);
   const { intent } = props.command.spec;
@@ -62,10 +62,8 @@ export const IntentWindow = (props: {
   //@ts-expect-error extras is untyped
   if (intent.action == 'settings.AddAccount' && intent.extras.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
     const startLogin = (loginFunc: typeof Meteor.loginWithGoogle) => {
-      setLifecycle('loading');
       loginFunc({}, (err) => {
         if (err) {
-          setLifecycle('ready');
           alert(err.message ?? err);
         } else {
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
@@ -79,7 +77,7 @@ export const IntentWindow = (props: {
         <h2>Add Platform Account</h2>
         <p>By signing in, your data will be stored on <strong>{new URL(Meteor.absoluteUrl()).origin}</strong>. You will then be able to keep your sessions around for later.</p>
         <div style={{ textAlign: 'center' }}>
-          <GoogleButton style={{ display:'inline-block' }} disabled={lifecycle !== 'initial'}
+          <GoogleButton style={{ display:'inline-block' }} disabled={!!user}
             onClick={() => startLogin(Meteor.loginWithGoogle)} />
         </div>
       </div>
@@ -170,7 +168,7 @@ export const IntentWindow = (props: {
         sizeRules={{maxWidth: 800}}
         onMoved={xy => setFloatingRect({ ...floatingRect, left: xy.left, top: xy.top })}
         onResized={xy => setFloatingRect({ ...floatingRect, width: xy.width, height: xy.height })}
-        showLoader={lifecycle == 'loading'}
+        showLoader={user == 'waiting'}
         zIndex={50}
     >
       <section className="shell-powerbar">

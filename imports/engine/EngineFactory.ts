@@ -5,58 +5,6 @@ import { CommandEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime"
 import { EntityEngine } from "./EntityEngine";
 import { StaticCatalogs } from "./StaticCatalogs";
 
-export class EngineFactory {
-
-  static forGuestSession() {
-    const engine = new EntityEngine();
-
-    engine.addNamespace({
-      name: 'session',
-      spec: {
-        layers: [{
-          mode: 'ReadWrite',
-          accept: [{
-            apiGroup: 'runtime.dist.app',
-          }],
-          storage: {
-            type: 'local-inmemory',
-          },
-        }],
-      }});
-    engine.addNamespace({
-      name: 'profile',
-      spec: {
-        layers: [{
-          mode: 'ReadWrite',
-          accept: [{
-            apiGroup: 'profile.dist.app',
-          }],
-          storage: {
-            type: 'local-inmemory',
-          },
-        }],
-      }});
-
-    insertGuestTemplate(engine, 'main');
-
-    //TODO:
-    // /:namespace/:api@:version/:kind/:name/
-    // engine.fetchEntity('/session/runtime@v1alpha1/Workspace/main/rpc/launch-intent')
-    // const workspace = useBase(engine, '/session/runtime@v1alpha1/Workspace/main');
-
-    // const shell = engine.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
-    // if (!shell) throw new Error(`no shell`);
-
-    // const welcomeActNamespace = localStorage.welcomeAct ?? 'app:welcome';
-    // const welcomeAct = engine.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', welcomeActNamespace, 'main');
-    // if (!welcomeAct) throw new Error(`no welcome act`);
-
-    // shell.createTask(welcomeAct);
-
-    return engine;
-  }
-}
-
 export function insertGuestTemplate(engine: EntityEngine) {
   for (const defaultNamespace of StaticCatalogs.keys()) {
     if (!defaultNamespace.startsWith('app:')) continue;
@@ -92,7 +40,7 @@ export function insertGuestTemplate(engine: EntityEngine) {
     spec: {
       type: 'launch-intent',
       intent: {
-        receiverRef: "entity://profile/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
+        receiverRef: "entity://profile:guest/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
         action: "app.dist.Main",
         category: "app.dist.Launcher",
         // action: 'app.dist.FTUE',

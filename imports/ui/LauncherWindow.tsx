@@ -33,7 +33,7 @@ export const LauncherWindow = () => {
       </section>
       <nav className="activity-contents-wrap">
         {namespaces.map(namespace => (
-          <LauncherSection namespace={namespace} />
+          <LauncherSection key={namespace} namespace={namespace} />
         ))}
       </nav>
     </WindowFrame>

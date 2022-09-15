@@ -1,6 +1,6 @@
 import React, { ReactNode, useMemo } from 'react';
 import { RuntimeContext } from './contexts';
-import { EngineFactory, insertGuestTemplate } from '../engine/EngineFactory';
+import { insertGuestTemplate } from '../engine/EngineFactory';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { EntityEngine } from '../engine/EntityEngine';
