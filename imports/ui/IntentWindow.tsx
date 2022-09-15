@@ -3,6 +3,7 @@ import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useState } from "react";
 import GoogleButton from 'react-google-button';
+import "urlpattern-polyfill";
 import { EntityEngine } from "../engine/EntityEngine";
 import { EntityHandle } from "../engine/EntityHandle";
 
@@ -45,7 +46,6 @@ export const IntentWindow = (props: {
   const { intent } = props.command.spec;
   // console.log('IntentWindow', intent, props.command);
 
-  //@ts-expect-error URLPattern
   if (intent.action == 'app.dist.View' && intent.category == 'app.dist.Browsable' && intent.data && new URLPattern({protocol: 'https:'}).test(intent.data)) {
     children = (
       <nav className="activity-contents-wrap launcher-window">
@@ -108,7 +108,6 @@ export const IntentWindow = (props: {
 
     const receiverUrl = new URL(intent.receiverRef, baseUrl);
     // console.log({receiverUrl})
-    //@ts-expect-error URLPattern
     const match = new URLPattern({
       protocol: 'entity:',
       pathname: "//:namespace/:api@:version/:kind/:name",

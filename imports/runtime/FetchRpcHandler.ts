@@ -1,5 +1,7 @@
 import { OpenAPIV3 } from "openapi-types";
 import { parse } from "yaml";
+import "urlpattern-polyfill";
+
 import { EntityEngine } from "../engine/EntityEngine";
 import { ActivityEntity, ApiEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
@@ -105,7 +107,6 @@ export class FetchRpcHandler {
 
     const pathConfig = Object.entries(apiSpec.paths).filter(x => {
       const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
-      //@ts-expect-error URLPattern not yet typed
       const pat = new URLPattern({pathname: patStr});
       return pat.test(realUrl);
     }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
@@ -113,7 +114,7 @@ export class FetchRpcHandler {
     if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430
 
     secLoop: for (const security of methodConfig.security ?? apiSpec.security ?? []) {
-      const [secType, secScopes] = Object.entries(security)[0];
+      const secType = Object.keys(security)[0];
       const secDef = apiSpec.components?.securitySchemes?.[secType];
       if (!secDef || isReferenceObject(secDef)) throw new Error(`TODO, isReferenceObject`);
       switch (secDef?.type) {

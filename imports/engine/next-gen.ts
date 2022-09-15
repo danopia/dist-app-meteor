@@ -1,5 +1,4 @@
 import { Mongo } from "meteor/mongo";
-import { EntitiesCollection } from "../db/entities";
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
 import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { StaticCatalogs } from "./StaticCatalogs";

@@ -24,6 +24,7 @@
     "react-draggable": "^4",
     "react-error-boundary": "^3",
     "react-spinners": "^0.13",
+    "urlpattern-polyfill": "^5.0.9",
     "yaml": "^2"
   },
   "devDependencies": {
