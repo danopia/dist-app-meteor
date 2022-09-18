@@ -21,6 +21,9 @@ body.shell-workspace-floating #react-target {
 .shell-window.rolled .activity-contents-wrap {
   display: none;
 }
+.shell-window.rolled-loading .activity-contents-wrap:not(.frame-loader) {
+  display: none;
+}
 iframe.activity-contents-wrap {
   justify-self: stretch;
   align-self: stretch;

@@ -61,7 +61,7 @@ export const WindowFrame = (props: {
       onStop={(_evt, data) => props.onMoved({ left: data.x, top: data.y })}
     >
       <div ref={windowRef}
-        className={"shell-window "+props.className + (props.isRolledUp ? ' rolled' : '')}
+        className={"shell-window "+props.className + (props.isRolledUp ? ' rolled' : '') + (props.showLoader ? ' rolled-loading' : '')}
         style={props.layoutMode == 'floating' ? {
           zIndex: props.zIndex,
 
@@ -88,7 +88,7 @@ export const WindowFrame = (props: {
           <div className="activity-contents-wrap" style={{
             backgroundColor: 'rgba(0,0,0,0.5)',
           }} />
-          <GridLoader className="activity-contents-wrap" style={{
+          <GridLoader className="activity-contents-wrap frame-loader" style={{
             alignSelf: 'center',
             justifySelf: 'center',
           }} />
