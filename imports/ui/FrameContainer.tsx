@@ -3,9 +3,9 @@ import React, { ReactNode, useContext, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { FrameEntity, ActivityTaskEntity, CommandEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
-import { IntentWindow } from "./IntentWindow";
-import { LauncherWindow } from "./LauncherWindow";
-import { TaskWindow } from "./TaskWindow";
+import { IntentWindow } from "./frames/IntentWindow";
+import { LauncherWindow } from "./frames/LauncherWindow";
+import { TaskWindow } from "./frames/TaskWindow";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
@@ -16,7 +16,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
   </div>
 );
 
-export const FrameWindow = (props: {
+export const FrameContainer = (props: {
   zIndex?: number;
   sessionNamespace: string;
   workspaceName: string;
@@ -39,7 +39,6 @@ export const FrameWindow = (props: {
     if (kind !== 'ActivityTask' && kind !== 'Command') throw new Error(`TODO: other contentRefs (${frameEntity.spec.contentRef})`);
     return runtime.getEntity<ActivityTaskEntity|CommandEntity>('runtime.dist.app/v1alpha1', kind, props.sessionNamespace, name);
   });
-  const contentEntity = (contentRaw?.kind == 'ActivityTask' ? contentRaw : null);
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
@@ -92,7 +91,7 @@ export const FrameWindow = (props: {
         showLoader={lifeCycle !== 'ready'}
         isRolledUp={frameEntity.spec.placement.rolledWindow}
         onInteraction={() => {
-          shell.runTaskCommand(frameEntity, contentEntity, {
+          shell.runTaskCommand(frameEntity, null, {
             type: 'bring-to-top',
           });
         }}
@@ -103,7 +102,7 @@ export const FrameWindow = (props: {
               Math.floor(placement.floating.height ?? -1) == Math.floor(newSize.height)) {
             return;
           }
-          shell.runTaskCommand(frameEntity, contentEntity, {
+          shell.runTaskCommand(frameEntity, null, {
             type: 'resize-window',
             xAxis: newSize.width,
             yAxis: placement.rolledWindow ? (placement.floating.height ?? 200) : newSize.height,
@@ -112,7 +111,7 @@ export const FrameWindow = (props: {
         onMoved={newPos => {
           const { placement } = frameEntity.spec;
           if (placement.current !== 'floating') return;
-          shell.runTaskCommand(frameEntity, contentEntity, {
+          shell.runTaskCommand(frameEntity, null, {
             type: 'move-window',
             xAxis: newPos.left,
             yAxis: newPos.top,
@@ -120,7 +119,7 @@ export const FrameWindow = (props: {
         }}
       >
       <button className="window-rollup-toggle"
-          onClick={() => shell.runTaskCommand(frameEntity, contentEntity, {
+          onClick={() => shell.runTaskCommand(frameEntity, null, {
             type: 'set-task-rollup',
             state: 'toggle',
           })}>
@@ -130,7 +129,7 @@ export const FrameWindow = (props: {
           {title}
         </ErrorBoundary>
         <nav className="window-buttons">
-          <button onClick={() => shell.runTaskCommand(frameEntity, contentEntity, {
+          <button onClick={() => shell.runTaskCommand(frameEntity, null, {
             type: 'delete-task',
           })}>
             <svg version="1.1" height="20" viewBox="0 0 10 10">

@@ -1,10 +1,11 @@
 import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
-import { ActivityEmbed } from "./ActivityEmbed";
-import { RuntimeContext } from "./contexts";
-import { ActivityTaskEntity, FrameEntity } from "../entities/runtime";
-import { ActivityEntity } from "../entities/manifest";
-import { AppInstallationEntity } from "../entities/profile";
+
+import { ActivityEmbed } from "/imports/ui/ActivityEmbed";
+import { RuntimeContext } from "/imports/ui/contexts";
+import { ActivityEntity } from "/imports/entities/manifest";
+import { AppInstallationEntity } from "/imports/entities/profile";
+import { FrameEntity, ActivityTaskEntity } from "/imports/entities/runtime";
 
 export const TaskWindow = (props: {
   task: FrameEntity,

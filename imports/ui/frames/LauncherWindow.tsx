@@ -2,10 +2,10 @@ import React, { Fragment, useContext, useEffect } from "react";
 import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
 
-import { AppInstallationEntity } from "../entities/profile";
-import { CommandEntity, FrameEntity } from "../entities/runtime";
-import { RuntimeContext } from "./contexts";
-import { LauncherIcon } from "./LauncherIcon";
+import { RuntimeContext } from "/imports/ui/contexts";
+import { LauncherIcon } from "/imports/ui/LauncherIcon";
+import { AppInstallationEntity } from "/imports/entities/profile";
+import { CommandEntity, FrameEntity } from "/imports/entities/runtime";
 
 export const LauncherWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,

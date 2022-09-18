@@ -4,13 +4,13 @@ import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
-import { EntityEngine } from "../engine/EntityEngine";
-import { EntityHandle } from "../engine/EntityHandle";
 
-import { ActivityEntity } from "../entities/manifest";
-import { AppInstallationEntity } from "../entities/profile";
-import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "../entities/runtime";
-import { RuntimeContext } from "./contexts";
+import { EntityEngine } from "/imports/engine/EntityEngine";
+import { EntityHandle } from "/imports/engine/EntityHandle";
+import { ActivityEntity } from "/imports/entities/manifest";
+import { AppInstallationEntity } from "/imports/entities/profile";
+import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
+import { RuntimeContext } from "/imports/ui/contexts";
 
 export const IntentWindow = (props: {
   frame: FrameEntity;

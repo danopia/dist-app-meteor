@@ -5,7 +5,7 @@ import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { RuntimeContext } from './contexts';
 import { ShellTopBar } from './ShellTopBar';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
-import { FrameWindow } from './FrameWindow';
+import { FrameContainer } from './FrameContainer';
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
   <div role="alert">
@@ -48,7 +48,7 @@ export const ActivityShell = (props: {
       <div className="shell-floating-layer" key={floatingLayerKey}>
         {frames.map(task => (
           <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
-            <FrameWindow frame={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} workspaceName={props.workspaceName} sessionNamespace={"session"} />
+            <FrameContainer frame={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} workspaceName={props.workspaceName} sessionNamespace={"session"} />
             </ErrorBoundary>
           ))}
       </div>
