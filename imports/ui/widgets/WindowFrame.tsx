@@ -54,14 +54,14 @@ export const WindowFrame = (props: {
   return (
     <Draggable
       handle=".shell-window-handle"
-      // defaultPosition={{ x: left ?? -100, y: top ?? 500 }}
-      position={{ x: left ?? -100, y: top ?? 500 }}
+      defaultPosition={{ x: left ?? -100, y: top ?? 500 }}
+      // position={{ x: left ?? -100, y: top ?? 500 }}
       // grid={[25, 25]}
       // scale={2}
       onStop={(_evt, data) => props.onMoved({ left: data.x, top: data.y })}
     >
       <div ref={windowRef}
-        className={"shell-window "+props.className}
+        className={"shell-window "+props.className + (props.isRolledUp ? ' rolled' : '')}
         style={props.layoutMode == 'floating' ? {
           zIndex: props.zIndex,
 
@@ -84,7 +84,7 @@ export const WindowFrame = (props: {
 
         {props.children}
 
-        {(props.showLoader && !props.isRolledUp) ? (<Fragment>
+        {(props.showLoader) ? (<Fragment>
           <div className="activity-contents-wrap" style={{
             backgroundColor: 'rgba(0,0,0,0.5)',
           }} />

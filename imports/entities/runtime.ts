@@ -37,6 +37,9 @@ export interface CommandEntity {
     type: 'set-task-rollup';
     state: 'normal' | 'rolled' | 'toggle';
   };
+  status?: {
+    frameName?: string;
+  };
 }
 
 export interface FrameEntity {
@@ -46,6 +49,12 @@ export interface FrameEntity {
   metadata: EntityMetadata;
   spec: {
     contentRef: string;
+    sizeConstraint?: {
+      minWidth?: number;
+      maxWidth?: number;
+      minHeight?: number;
+      maxHeight?: number;
+    };
   // },
   // status: {
     placement: {
@@ -54,8 +63,8 @@ export interface FrameEntity {
       floating: {
         left: number;
         top: number;
-        width: number;
-        height: number;
+        width?: number;
+        height?: number;
       };
       grid: {
         area: 'fullscreen';

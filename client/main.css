@@ -18,6 +18,9 @@ body.shell-workspace-floating #react-target {
 .activity-contents-wrap {
   grid-area: activity;
 }
+.shell-window.rolled .activity-contents-wrap {
+  display: none;
+}
 iframe.activity-contents-wrap {
   justify-self: stretch;
   align-self: stretch;

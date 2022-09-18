@@ -1,7 +1,7 @@
 // import { ActivityEntity } from "../entities/manifest";
 import { Random } from "meteor/random";
 import { AppInstallationEntity } from "../entities/profile";
-import { CommandEntity } from "../entities/runtime";
+import { CommandEntity, FrameEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
 import { StaticCatalogs } from "./StaticCatalogs";
 
@@ -30,11 +30,12 @@ export function insertGuestTemplate(engine: EntityEngine) {
 
   // Add a latent command telling the runtime to process a particular intent
   // when it first starts running (and then not again)
+  const launchCmd = 'launch-welcome-'+Random.id(4);
   engine.insertEntity<CommandEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
     kind: 'Command',
     metadata: {
-      name: 'launch-welcome-'+Random.id(4),
+      name: launchCmd,
       namespace: 'session',
     },
     spec: {
@@ -48,6 +49,29 @@ export function insertGuestTemplate(engine: EntityEngine) {
         // TODO: seems like there needs to be a better way to refer to a particular foreign application.
         // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
       }
+    },
+  });
+
+  engine.insertEntity<FrameEntity>({
+    apiVersion: 'runtime.dist.app/v1alpha1',
+    kind: 'Frame',
+    metadata: {
+      name: launchCmd,
+      namespace: 'session',
+    },
+    spec: {
+      contentRef: '../Command/'+launchCmd,
+      placement: {
+        current: 'floating',
+        grid: {
+          area: 'fullscreen',
+        },
+        floating: {
+          left: 200,
+          top: 200,
+        },
+        rolledWindow: false,
+      },
     },
   });
 }

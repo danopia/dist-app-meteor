@@ -52,6 +52,7 @@ export class ShellSession {
 
       case 'delete-task': {
         if (!taskName) throw new Error('Unknown task name');
+        // TODO: garbage-collect whatever contentRef points to (maybe ownerReferences helps)
         this.runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName);
         this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
           if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
@@ -91,12 +92,39 @@ export class ShellSession {
         // anything else gets offloaded to the async queue
         // e.g. intent launches or unknown commands
         // it's processed (properly, or as an error report) elsewhere async
+        const commandName = Random.id();
         this.runtime.insertEntity<CommandEntity>({
           ...command,
           metadata: {
             ...command.metadata,
-            name: Random.id(),
+            name: commandName,
             namespace: this.namespace,
+          },
+        });
+
+        this.runtime.insertEntity<FrameEntity>({
+          apiVersion: 'runtime.dist.app/v1alpha1',
+          kind: 'Frame',
+          metadata: {
+            name: commandName,
+            namespace: this.namespace,
+          },
+          spec: {
+            contentRef: '../Command/'+commandName,
+            sizeConstraint: {
+              maxWidth: 600, // TODO
+            },
+            placement: {
+              current: 'floating',
+              grid: {
+                area: 'fullscreen',
+              },
+              floating: {
+                left: 200,
+                top: 200,
+              },
+              rolledWindow: false,
+            },
           },
         });
       };

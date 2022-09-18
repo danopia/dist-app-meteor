@@ -4,7 +4,6 @@ import { RuntimeContext } from "./contexts";
 
 export const LauncherIcon = (props: {
   appUri: string;
-  onLaunch: () => void;
 }) => {
   const runtime = useContext(RuntimeContext);
 
@@ -18,17 +17,17 @@ export const LauncherIcon = (props: {
   const [activity] = activities.filter(x => x.spec.intentFilters?.some(y => y.action == 'app.dist.Main' && y.category == 'app.dist.Launcher'));
 
   if (app.spec.icon?.type == 'glyph') return (
-    <button onClick={props.onLaunch}>
+    <React.Fragment>
       <div className="appIcon" style={{
           backgroundColor: app.spec.icon.glyph.backgroundColor,
           color: app.spec.icon.glyph.foregroundColor,
         }}>{app.spec.icon.glyph.text}</div>
       <span>{activity.metadata.title}</span>
-    </button>
+    </React.Fragment>
   );
 
   if (app.spec.icon?.type == 'svg') return (
-    <button onClick={props.onLaunch}>
+    <React.Fragment>
       <div className="appIcon" style={{
           backgroundImage: `url("data:image/svg+xml;base64,${btoa(app.spec.icon.svg.textData)}")`,
           backgroundColor: app.spec.icon.svg.backgroundColor,
@@ -37,12 +36,10 @@ export const LauncherIcon = (props: {
           backgroundSize: '65%',
         }}></div>
       <span>{activity.metadata.title}</span>
-    </button>
+    </React.Fragment>
   );
 
   return (
-    <button onClick={props.onLaunch}>
-      {props.appUri}
-    </button>
+    <div>TODO: {props.appUri}</div>
   );
 }

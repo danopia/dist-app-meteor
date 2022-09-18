@@ -4,7 +4,7 @@ import { insertGuestTemplate } from '../engine/EngineFactory';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { EntityEngine } from '../engine/EntityEngine';
-import { WorkspaceEntity } from '../entities/runtime';
+import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 
 export const RuntimeProvider = (props: {
   children: ReactNode;
@@ -48,7 +48,30 @@ export const RuntimeProvider = (props: {
         namespace: 'session',
       },
       spec: {
-        windowOrder: [],
+        windowOrder: ['launcher'],
+      },
+    });
+
+    runtime.insertEntity<FrameEntity>({
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      kind: 'Frame',
+      metadata: {
+        name: 'launcher',
+        namespace: 'session',
+      },
+      spec: {
+        contentRef: 'internal://launcher',
+        placement: {
+          current: 'floating',
+          floating: {
+            left: 15,
+            top: 15,
+          },
+          grid: {
+            area: 'fullscreen',
+          },
+          rolledWindow: false,
+        },
       },
     });
 

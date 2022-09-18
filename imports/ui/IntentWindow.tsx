@@ -1,7 +1,7 @@
 import { Meteor } from "meteor/meteor";
 import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
-import React, { ReactNode, useContext, useState } from "react";
+import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
 import { EntityEngine } from "../engine/EntityEngine";
@@ -11,22 +11,18 @@ import { ActivityEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
-import { WindowFrame } from "./widgets/WindowFrame";
 
 export const IntentWindow = (props: {
+  frame: FrameEntity;
   command: CommandEntity;
   workspaceName: string;
   // cmdName: string;
   // intent: LaunchIntentEntity['spec'],
+  onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
 }) => {
   const runtime = useContext(RuntimeContext);
 
-  const [floatingRect, setFloatingRect] = useState<{
-    left?: number;
-    top?: number;
-    width?: number;
-    height?: number;
-  }>({left: 100, top: 100, width: 500});
+  useEffect(() => props.onLifecycle('ready'), []);
 
   // const apis = useTracker(() => runtime.getNamespacesServingApi({
   //   apiVersion: 'manifest.dist.app/v1alpha1',
@@ -47,11 +43,12 @@ export const IntentWindow = (props: {
   // console.log('IntentWindow', intent, props.command);
 
   if (intent.action == 'app.dist.View' && intent.category == 'app.dist.Browsable' && intent.data && new URLPattern({protocol: 'https:'}).test(intent.data)) {
-    children = (
+    return (
       <nav className="activity-contents-wrap launcher-window">
         <h2>Open Web URL</h2>
         <a href={intent.data} target="_blank" onClick={() => {
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
+          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
         }}>
           Open {intent.data}
         </a>
@@ -67,12 +64,13 @@ export const IntentWindow = (props: {
           alert(err.message ?? err);
         } else {
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
+          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
           // navigate('/my/new-shell');
         }
       });
     };
 
-    children = (
+    return (
       <div className="activity-contents-wrap" style={{padding: '0 1em 2em'}}>
         <h2>Add Platform Account</h2>
         <p>By signing in, your data will be stored on <strong>{new URL(Meteor.absoluteUrl()).origin}</strong>. You will then be able to keep your sessions around for later.</p>
@@ -124,8 +122,9 @@ export const IntentWindow = (props: {
           const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity);
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
 
-          children = (<div className="activity-contents-wrap">Loading intent...</div>);
+          return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
 
       } else if (api == 'profile.dist.app' && version == 'v1alpha1' && kind == 'AppInstallation') {
@@ -144,44 +143,19 @@ export const IntentWindow = (props: {
           const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity);
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
 
-          children = (<div className="activity-contents-wrap">Loading intent...</div>);
+          return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
       }
     }
   }
 
-  children ??= (
+  return (
     <nav className="activity-contents-wrap launcher-window">
       <h2>TODO: unhandled intent</h2>
       <pre>{JSON.stringify({intent: intent, owner: props.command.metadata.ownerReferences}, null, 2)}</pre>
     </nav>
-  );
-
-  return (
-    <WindowFrame
-        floatingRect={floatingRect}
-        className="intent-frame"
-        layoutMode="floating"
-        resizable={true}
-        sizeRules={{maxWidth: 800}}
-        onMoved={xy => setFloatingRect({ ...floatingRect, left: xy.left, top: xy.top })}
-        onResized={xy => setFloatingRect({ ...floatingRect, width: xy.width, height: xy.height })}
-        showLoader={user == 'waiting'}
-        zIndex={50}
-    >
-      <section className="shell-powerbar">
-        <div className="window-title">Handle Intent</div>
-        <nav className="window-buttons">
-          <button onClick={() => runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name)}>
-            <svg version="1.1" height="20" viewBox="0 0 10 10">
-              <path d="m3 2-1 1 2 2-2 2 1 1 2-2 2 2 1-1-2-2 2-2-1-1-2 2z"/>
-            </svg>
-          </button>
-        </nav>
-      </section>
-      {children}
-    </WindowFrame>
   );
 }
 
@@ -207,11 +181,6 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
       installationNamespace: installationNamespace ?? 'default',
       installationName,
       activityName: firstActivity.metadata.name,
-      // activity: {
-      //   catalogId: firstActivity.metadata.catalogId,
-      //   namespace: firstActivity.metadata.namespace,
-      //   name: firstActivity.metadata.name,
-      // },
     },
     state: {
       appData: {},
@@ -246,9 +215,6 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
         },
       },
       contentRef: `../ActivityTask/${actInstId}`,
-      // stack: [{
-      //   activityTask: actInstId,
-      // }],
     },
   });
 
