@@ -1,4 +1,4 @@
-import React, { DependencyList, Fragment, useContext, useEffect, useMemo, useState } from 'react';
+import React, { DependencyList, Fragment, useContext, useEffect, useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
@@ -7,9 +7,6 @@ import { ShellTopBar } from './ShellTopBar';
 import { CommandEntity, FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { IntentWindow } from './IntentWindow';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
-import { insertGuestTemplate } from '../engine/EngineFactory';
-import { Random } from 'meteor/random';
-import { Meteor } from 'meteor/meteor';
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
   <div role="alert">

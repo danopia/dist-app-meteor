@@ -23,13 +23,13 @@ export class StaticEntityStorage implements EntityStorage {
     return (this.src as ArbitraryEntity[]).find(x =>
       x.apiVersion == apiVersion && x.kind == kind && x.metadata.name == name) as T;
   }
-  insertEntity<T extends ArbitraryEntity>(entity: T): void {
+  insertEntity(): void {
     throw new Error("Method not implemented.");
   }
-  updateEntity<T extends ArbitraryEntity>(newEntity: T): T | Promise<T> {
+  updateEntity<T extends ArbitraryEntity>(): T | Promise<T> {
     throw new Error("Method not implemented.");
   }
-  deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): boolean | Promise<boolean> {
+  deleteEntity(): boolean | Promise<boolean> {
     throw new Error("Method not implemented.");
   }
 }
@@ -53,7 +53,7 @@ export class MongoProfileStorage implements EntityStorage {
   }
   getStorage(apiVersion: string) {
     // TODO: use LayeredNamespace for this logic instead
-    const [apiGroup, version] = apiVersion.split('/');
+    const [apiGroup, _version] = apiVersion.split('/');
     const profile = ProfilesCollection.findOne({ _id: this.profileId });
     if (!profile) return null;
     const layer = profile.layers.find(x => x.apiFilters.some(y => y.apiGroup == apiGroup));
@@ -137,6 +137,7 @@ export class MongoEntityStorage implements EntityStorage {
         generation: (newEntity.metadata.generation ?? 0) + 1,
       },
     });
+    if (count == 0) throw new Error(`updateEntity didn't apply any change`);
     return this.getEntity<T>(newEntity.apiVersion, newEntity.kind, newEntity.metadata.name);
   }
 

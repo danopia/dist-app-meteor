@@ -12,7 +12,7 @@ window.addEventListener('error', evt => {
     const stackParts = stack
       .replace(/([( ])https?:[^ )]+:\/💻app\//g, x => x[0])
       .replace(/([( ])https?:[^ )]+\/packages\/[^ ):]+:\d+:\d+/g, x => x[0]+`meteor`)
-      .replace(/\?hash=[0-9a-f]+:/g, x => ':');
+      .replace(/\?hash=[0-9a-f]+:/g, _ => ':');
     Meteor.call('/v1alpha1/report-error', stackParts);
   } catch (err) {
     console.error(err);

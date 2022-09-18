@@ -4,6 +4,7 @@
   "scripts": {
     "start": "meteor run",
     "start:with-settings": "meteor run --settings settings.json",
+    "tsc": "tsc",
     "build-userland": "./imports/userland/build.fish",
     "build-userland:watch": "echo ./imports/userland/iframe-entrypoint.ts | entr ./imports/userland/build.fish",
     "test": "meteor test --once --driver-package meteortesting:mocha",
@@ -24,7 +25,7 @@
     "react-draggable": "^4",
     "react-error-boundary": "^3",
     "react-spinners": "^0.13",
-    "urlpattern-polyfill": "^5.0.9",
+    "urlpattern-polyfill": "^5",
     "yaml": "^2"
   },
   "devDependencies": {
@@ -37,7 +38,7 @@
     "@types/react-dom": "^18",
     "openapi-types": "^12",
     "react-google-button": "^0.7",
-    "stack-source-map": "^1.0.7",
+    "stack-source-map": "^1",
     "typescript": "^4"
   },
   "meteor": {
