@@ -5,13 +5,13 @@ import "urlpattern-polyfill";
 import { EntityEngine } from "../engine/EntityEngine";
 import { ActivityEntity, ApiEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
-import { ActivityInstanceEntity } from "../entities/runtime";
+import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 
 export class FetchRpcHandler {
   constructor(
     private readonly runtime: EntityEngine,
-    private readonly activityInstance: ActivityInstanceEntity,
+    private readonly activityTask: ActivityTaskEntity,
     private readonly activity: ActivityEntity,
   ) {}
 
@@ -35,12 +35,12 @@ export class FetchRpcHandler {
     const stateKey = decodeURIComponent(rpc.spec.url.split('/')[2]);
     // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
     if (rpc.spec.method == 'GET') {
-      const {appState} = this.runtime.getEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', this.activityInstance.metadata.namespace, this.activityInstance.metadata.name)?.spec ?? {};
-      if (appState?.[stateKey] != null) return {
+      const {appData} = this.runtime.getEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name)?.state ?? {};
+      if (appData?.[stateKey] != null) return {
         kind: 'FetchResponse',
         spec: {
           status: 200,
-          body: appState[stateKey],
+          body: appData[stateKey],
           headers: [['content-type', 'text/plain']],
         },
       };
@@ -54,9 +54,9 @@ export class FetchRpcHandler {
       };
     }
     const newBody = typeof rpc.spec.body == 'string' ? rpc.spec.body : new TextDecoder().decode(rpc.spec.body);
-    this.runtime.mutateEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', this.activityInstance.metadata.namespace, this.activityInstance.metadata.name, actInst => {
-      actInst.spec.appState ??= {};
-      actInst.spec.appState[stateKey] = newBody;
+    this.runtime.mutateEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name, actInst => {
+      actInst.state.appData ??= {};
+      actInst.state.appData[stateKey] = newBody;
     });
     return {
       kind: 'FetchResponse',

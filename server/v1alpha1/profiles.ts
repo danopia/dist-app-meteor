@@ -2,7 +2,7 @@ import { Meteor } from "meteor/meteor";
 import { CatalogsCollection } from "/imports/db/catalogs";
 import { EntitiesCollection } from "../../imports/db/entities";
 import { ProfilesCollection } from "/imports/db/profiles";
-import { TaskEntity, WorkspaceEntity } from "/imports/entities/runtime";
+import { WorkspaceEntity } from "/imports/entities/runtime";
 import { AppInstallationEntity } from "/imports/entities/profile";
 
 // Forcibly reserve a 'system' userId

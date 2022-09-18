@@ -4,16 +4,16 @@ import { html } from 'common-tags';
 import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
-import { ActivityInstanceEntity, TaskEntity } from '../entities/runtime';
+import { ActivityTaskEntity, FrameEntity } from '../entities/runtime';
 import { iframeEntrypointText } from '../userland/iframe-entrypoint-blob';
 import { useObjectURL } from '../lib/use-object-url';
 import { FetchErrorEntity, FetchRequestEntity, LaunchIntentEntity, LifecycleEntity, WriteDebugEventEntity } from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 
 export const ActivityEmbed = (props: {
-  task: TaskEntity;
+  task: FrameEntity;
   workspaceName: string;
-  activityInstance: ActivityInstanceEntity;
+  activityTask: ActivityTaskEntity;
   activity: ActivityEntity;
   className?: string;
   onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;
@@ -30,7 +30,7 @@ export const ActivityEmbed = (props: {
   const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
   if (!shell) throw new Error(`no shell`);
 
-  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityInstance, props.activity), [runtime, props.activityInstance, props.activity]);
+  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity), [runtime, props.activityTask, props.activity]);
 
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, props.activity.spec.implementation]);
   useEffect(() => {
@@ -49,8 +49,8 @@ export const ActivityEmbed = (props: {
       }
     });
     messageHost.addRpcListener<LaunchIntentEntity>('LaunchIntent', ({rpc}) => {
-      console.log('handling', rpc);
-      shell.runTaskCommand(props.task, props.activityInstance, {
+      console.log('handling LaunchIntent', rpc);
+      shell.runTaskCommand(props.task, props.activityTask, {
         type: 'launch-intent',
         intent: rpc.spec,
       });
@@ -68,6 +68,7 @@ export const ActivityEmbed = (props: {
     });
     messageHost.addRpcListener<WriteDebugEventEntity>('WriteDebugEvent', ({rpc}) => {
       // TODO: record the debug events, probably in 'session' but perhaps as 'debug.dist.app' API
+      console.log({ WriteDebugEvent: rpc.spec });
       if (rpc.spec.error) {
         alert('A running dist.app encountered a script error:\n\n' + rpc.spec.error.stack);
       }

@@ -9,7 +9,7 @@ import { EntityHandle } from "../engine/EntityHandle";
 
 import { ActivityEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
-import { ActivityInstanceEntity, CommandEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime";
+import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
 import { WindowFrame } from "./widgets/WindowFrame";
 
@@ -95,10 +95,10 @@ export const IntentWindow = (props: {
     let baseUrl = 'entity://';
     let appInstallation: AppInstallationEntity | null = null;
 
-    const hActivityInstance = hCommand
-      .followOwnerReference<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance');
-    if (hActivityInstance) {
-      appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', hActivityInstance.spec.installationNamespace, hActivityInstance.spec.installationName);
+    const hActivityTask = hCommand
+      .followOwnerReference<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask');
+    if (hActivityTask) {
+      appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', hActivityTask.spec.installationNamespace, hActivityTask.spec.installationName);
       if (appInstallation) {
         const appNamespace = runtime.useRemoteNamespace(appInstallation?.spec.appUri);
         baseUrl = `entity://${appNamespace}/manifest.dist.app@v1alpha1/`;
@@ -191,9 +191,9 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
   const taskId = Random.id();
   const actInstId = Random.id();
 
-  runtime.insertEntity<ActivityInstanceEntity>({
+  runtime.insertEntity<ActivityTaskEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
-    kind: 'ActivityInstance',
+    kind: 'ActivityTask',
     metadata: {
       name: actInstId,
       namespace: 'session',
@@ -213,11 +213,14 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
       //   name: firstActivity.metadata.name,
       // },
     },
+    state: {
+      appData: {},
+    },
   });
 
-  runtime.insertEntity<TaskEntity>({
+  runtime.insertEntity<FrameEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
-    kind: 'Task',
+    kind: 'Frame',
     metadata: {
       name: taskId,
       namespace: 'session',
@@ -242,9 +245,10 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
           area: 'fullscreen',
         },
       },
-      stack: [{
-        activityInstance: actInstId,
-      }],
+      contentRef: `../ActivityTask/${actInstId}`,
+      // stack: [{
+      //   activityTask: actInstId,
+      // }],
     },
   });
 

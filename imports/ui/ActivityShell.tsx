@@ -4,7 +4,7 @@ import { TaskWindow } from './TaskWindow';
 import { LauncherWindow } from './LauncherWindow';
 import { RuntimeContext } from './contexts';
 import { ShellTopBar } from './ShellTopBar';
-import { CommandEntity, TaskEntity, WorkspaceEntity } from '../entities/runtime';
+import { CommandEntity, FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { IntentWindow } from './IntentWindow';
 import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import { insertGuestTemplate } from '../engine/EngineFactory';
@@ -21,7 +21,7 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 
 export const ActivityShell = (props: {
   profileId?: string;
-  workspaceName?: string;
+  workspaceName: string;
   guest: boolean;
 }) => {
   // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
@@ -46,8 +46,8 @@ export const ActivityShell = (props: {
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <LauncherWindow />
         </ErrorBoundary>
-        <ShellTasks workspaceName={"main"} />
-        <ShellCommands workspaceName={"main"} />
+        <ShellTasks workspaceName={props.workspaceName} />
+        <ShellCommands workspaceName={props.workspaceName} />
       </div>
     </Fragment>
   );
@@ -61,7 +61,7 @@ export const ShellTasks = (props: {
   const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
   if (!workspace) throw new Error(`no workspace `+props.workspaceName);
 
-  const tasks = useTracker(() => runtime.listEntities<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', 'session'));
+  const tasks = useTracker(() => runtime.listEntities<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', 'session'));
 
   return (
     <Fragment>

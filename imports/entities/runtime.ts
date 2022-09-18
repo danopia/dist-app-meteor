@@ -39,13 +39,15 @@ export interface CommandEntity {
   };
 }
 
-// TODO: rename to WindowEntity or FrameEntity
-export interface TaskEntity {
+export interface FrameEntity {
   _id?: string;
   apiVersion: "runtime.dist.app/v1alpha1";
-  kind: "Task";
+  kind: "Frame";
   metadata: EntityMetadata;
   spec: {
+    contentRef: string;
+  // },
+  // status: {
     placement: {
       current: 'floating' | 'grid';
       rolledWindow: boolean;
@@ -59,35 +61,27 @@ export interface TaskEntity {
         area: 'fullscreen';
       };
     };
-    stack: Array<{
-      activityInstance: string;
-    }>;
   };
 }
-export interface ActivityInstanceEntity {
+export interface ActivityTaskEntity {
   _id?: string;
   apiVersion: "runtime.dist.app/v1alpha1";
-  kind: "ActivityInstance";
+  kind: "ActivityTask";
   metadata: EntityMetadata;
   spec: {
     // TODO: installationRef
     installationNamespace: string;
     installationName: string;
     activityName: string;
-    // activity: {
-    //   // group?: string; // "dist.app"
-    //   // kind: string; // "Asset"
-    //   catalogId?: string;
-    //   namespace?: string;
-    //   name: string;
-    // };
-    appState?: Record<string, string>;
   };
+  state: {
+    appData?: Record<string, string>;
+  }
 }
 
 export type RuntimeEntity = (
   | WorkspaceEntity
   | CommandEntity
-  | TaskEntity
-  | ActivityInstanceEntity
+  | FrameEntity
+  | ActivityTaskEntity
 );

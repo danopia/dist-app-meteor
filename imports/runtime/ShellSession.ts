@@ -1,6 +1,6 @@
 import { Random } from "meteor/random";
 import { ActivityEntity } from "../entities/manifest";
-import { WorkspaceEntity, CommandEntity, TaskEntity, ActivityInstanceEntity } from "../entities/runtime";
+import { WorkspaceEntity, CommandEntity, FrameEntity, ActivityTaskEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 import { AppInstallationEntity } from "../entities/profile";
 
@@ -14,7 +14,7 @@ export class ShellSession {
   // public readonly manifestCatalog = new SessionCatalog('system:bundled-apps');
 
   handleCommand(command: CommandEntity) {
-    const taskName = command.metadata.ownerReferences?.find(x => x.kind == 'Task')?.name;
+    const taskName = command.metadata.ownerReferences?.find(x => x.kind == 'Frame')?.name;
 
     switch (command.spec.type) {
       // case 'launch-intent': {
@@ -36,7 +36,7 @@ export class ShellSession {
       case 'set-task-rollup': {
         if (!taskName) throw new Error('Unknown task name');
         const { state } = command.spec;
-        this.runtime.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.namespace, taskName, x => {
+        this.runtime.mutateEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName, x => {
           switch (state) {
             case 'normal': x.spec.placement.rolledWindow = false; break;
             case 'rolled': x.spec.placement.rolledWindow = true; break;
@@ -52,7 +52,7 @@ export class ShellSession {
 
       case 'delete-task': {
         if (!taskName) throw new Error('Unknown task name');
-        this.runtime.deleteEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.namespace, taskName);
+        this.runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName);
         this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
           if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
           spaceSnap.spec.windowOrder.unshift(taskName);
@@ -71,7 +71,7 @@ export class ShellSession {
       case 'move-window': {
         if (!taskName) throw new Error('Unknown task name');
         const {xAxis, yAxis} = command.spec;
-        this.runtime.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.namespace, taskName, taskSnap => {
+        this.runtime.mutateEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName, taskSnap => {
           taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, left: xAxis, top: yAxis};
         });
         break;
@@ -79,7 +79,7 @@ export class ShellSession {
       case 'resize-window': {
         if (!taskName) throw new Error('Unknown task name');
         const {xAxis, yAxis} = command.spec;
-        this.runtime.mutateEntity<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.namespace, taskName, taskSnap => {
+        this.runtime.mutateEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName, taskSnap => {
           taskSnap.spec.placement.floating = {...taskSnap.spec.placement.floating, width: xAxis, height: yAxis};
         });
         break;
@@ -107,19 +107,19 @@ export class ShellSession {
     const taskId = Random.id();
     const actInstId = Random.id();
 
-    this.runtime.insertEntity<ActivityInstanceEntity>({
+    this.runtime.insertEntity<ActivityTaskEntity>({
       apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'ActivityInstance',
+      kind: 'ActivityTask',
       metadata: {
         name: actInstId,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'Task',
+          kind: 'Frame',
           name: taskId,
         }],
       },
       spec: {
-        installationNamespace: appInstallation.metadata.namespace,
+        installationNamespace: appInstallation.metadata.namespace ?? 'bug-15612',
         installationName: appInstallation.metadata.name,
         activityName: firstActivity.metadata.name,
         // activity: {
@@ -128,11 +128,14 @@ export class ShellSession {
         //   name: firstActivity.metadata.name,
         // },
       },
+      state: {
+        appData: {},
+      },
     });
 
-    this.runtime.insertEntity<TaskEntity>({
+    this.runtime.insertEntity<FrameEntity>({
       apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Task',
+      kind: 'Frame',
       metadata: {
         name: taskId,
         ownerReferences: [{
@@ -156,16 +159,14 @@ export class ShellSession {
             area: 'fullscreen',
           },
         },
-        stack: [{
-          activityInstance: actInstId,
-        }],
+        contentRef: `../ActivityTask/${actInstId}`,
       },
     });
 
     this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(taskId)});
   }
 
-  runTaskCommand(task: TaskEntity, activityInstance: ActivityInstanceEntity | null, commandSpec: CommandEntity["spec"]) {
+  runTaskCommand(task: FrameEntity, activityTask: ActivityTaskEntity | null, commandSpec: CommandEntity["spec"]) {
     this.handleCommand({
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Command',
@@ -174,14 +175,14 @@ export class ShellSession {
         namespace: task.metadata.namespace,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'Task',
+          kind: 'Frame',
           name: task.metadata.name,
           uid: task.metadata.uid,
-        }, ...(activityInstance ? [{
+        }, ...(activityTask ? [{
           apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'ActivityInstance',
-          name: activityInstance.metadata.name,
-          uid: activityInstance.metadata.uid,
+          kind: 'ActivityTask',
+          name: activityTask.metadata.name,
+          uid: activityTask.metadata.uid,
         }] : [])],
       },
       spec: commandSpec,
@@ -194,6 +195,6 @@ export class ShellSession {
   //   return ent;
   // }
   // getTaskList() {
-  //   return this.runtime.listEntities<TaskEntity>('runtime.dist.app/v1alpha1', 'Task', this.namespace);
+  //   return this.runtime.listEntities<TaskEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace);
   // }
 }

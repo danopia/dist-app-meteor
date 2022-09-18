@@ -3,12 +3,12 @@ import React, { useContext, useState } from "react";
 import { ActivityEmbed } from "./ActivityEmbed";
 import { WindowFrame } from "./widgets/WindowFrame";
 import { RuntimeContext } from "./contexts";
-import { ActivityInstanceEntity, TaskEntity, WorkspaceEntity } from "../entities/runtime";
+import { ActivityTaskEntity, FrameEntity } from "../entities/runtime";
 import { ActivityEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
 
 export const TaskWindow = (props: {
-  task: TaskEntity,
+  task: FrameEntity,
   zIndex?: number;
   workspaceName: string;
   // sessionCatalog: SessionCatalog,
@@ -21,17 +21,25 @@ export const TaskWindow = (props: {
   // const task = runtime.getTask()
 
   // TODO: how does one navigate the stack?
-  const [actInst] = useTracker(() => props.task.spec.stack.map(x => runtime.getEntity<ActivityInstanceEntity>('runtime.dist.app/v1alpha1', 'ActivityInstance', props.task.metadata.namespace, x.activityInstance)).flatMap(x => x ? [x] : []));
+  const actInst = useTracker(() => {
+    const ref = props.task.spec.contentRef;
+    console.log({ref});
+    const [_, kind, name] = ref.split('/');
+    if (kind !== 'ActivityTask') throw new Error(`TODO: other contentRefs`);
+    return runtime.getEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', kind, props.task.metadata.namespace, name);
+  });
+  if (!actInst) throw new Error(`no actInst`);
 
-  const appInstallation = useTracker(() => runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', actInst.spec.installationNamespace, actInst.spec.installationName));
+  const appInstallation = useTracker(() => runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', actInst!.spec.installationNamespace, actInst!.spec.installationName));
   if (!appInstallation) throw new Error(`TODO: no appInstallation`);
 
   const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
 
-  const activity = useTracker(() => runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace, actInst.spec.activityName)) ?? null;
+  const activity = useTracker(() => runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace, actInst!.spec.activityName)) ?? null;
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
+  // TODO: move WindowFrame invocation into ActivityShell?
   return (
     <WindowFrame
         // title={`Task ${props.task.metadata.name}`}
@@ -89,7 +97,7 @@ export const TaskWindow = (props: {
         </nav>
       </section>
       {(activity && !props.task.spec.placement.rolledWindow) ? (
-        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activityInstance={actInst} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
+        <ActivityEmbed key={activity._id} className="activity-contents-wrap" task={props.task} activityTask={actInst} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
       ) : []}
     </WindowFrame>
   );

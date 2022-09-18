@@ -17,11 +17,11 @@ const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
 );
 
 const routes = {
-  '/guest-shell': () => <ActivityShell guest={true} />,
+  '/guest-shell': () => <ActivityShell guest={true} workspaceName="main" />,
   '/my/new-shell': () => <NewShell />,
   '/~:profileId/workspace/:workspaceName': (params: {
     profileId?: string;
-    workspaceName?: string;
+    workspaceName: string;
   }) => <ActivityShell {...params} guest={false} />,
 };
 
