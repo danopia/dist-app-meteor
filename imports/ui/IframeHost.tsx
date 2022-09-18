@@ -10,7 +10,7 @@ import { useObjectURL } from '../lib/use-object-url';
 import { FetchErrorEntity, FetchRequestEntity, LaunchIntentEntity, LifecycleEntity, WriteDebugEventEntity } from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 
-export const ActivityEmbed = (props: {
+export const IframeHost = (props: {
   task: FrameEntity;
   workspaceName: string;
   activityTask: ActivityTaskEntity;
@@ -18,6 +18,9 @@ export const ActivityEmbed = (props: {
   className?: string;
   onLifecycle: (lifecycle: 'loading' | 'connecting' | 'ready' | 'finished') => void;
 }) => {
+  const { implementation } = props.activity.spec;
+  if (implementation.type != 'iframe') throw new Error(`TODO: non-iframe activities`);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [contentWindow, setContentWindow] = useState<Window | null>(null);
   const [iframeKey, setIframeKey] = useState(() => Math.random());
@@ -32,7 +35,7 @@ export const ActivityEmbed = (props: {
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity), [runtime, props.activityTask, props.activity]);
 
-  const messageHost = useMemo(() => new MessageHost(), [contentWindow, props.activity.spec.implementation]);
+  const messageHost = useMemo(() => new MessageHost(), [contentWindow, implementation]);
   useEffect(() => {
     if (contentWindow) {
       console.log('Initiating connection to iframe content');
@@ -74,9 +77,6 @@ export const ActivityEmbed = (props: {
       }
     })
   }, [messageHost]);
-
-  const { implementation } = props.activity.spec;
-  if (implementation.type != 'iframe') throw new Error(`TODO: non-iframe activities`);
 
   const frameSrc = useMemo(() => compileFrameSrc(implementation), [JSON.stringify(implementation)]);
   const frameBlob = useMemo(() => new Blob([frameSrc], {

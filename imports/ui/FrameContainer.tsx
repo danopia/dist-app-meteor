@@ -1,11 +1,14 @@
 import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
+import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
+import { AppInstallationEntity } from "../entities/profile";
 import { FrameEntity, ActivityTaskEntity, CommandEntity } from "../entities/runtime";
 import { RuntimeContext } from "./contexts";
 import { IntentWindow } from "./frames/IntentWindow";
 import { LauncherWindow } from "./frames/LauncherWindow";
-import { TaskWindow } from "./frames/TaskWindow";
+import { IframeHost } from "./IframeHost";
+import { AppIcon } from "./widgets/AppIcon";
 import { WindowFrame } from "./widgets/WindowFrame";
 
 const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
@@ -45,6 +48,7 @@ export const FrameContainer = (props: {
   let content: ReactNode;
   let title: ReactNode = (<div className="window-title">Untitled Frame</div>);
   switch (contentRaw?.kind) {
+
     case 'Launcher': {
       title = (
         <div className="window-title">Launcher</div>
@@ -54,24 +58,52 @@ export const FrameContainer = (props: {
       );
       break;
     }
+
     case "Command": {
       title = (
-        <div className="window-title">TODO: command titlebar. {contentRaw.kind} {contentRaw.metadata.name}</div>
+        <div className="window-title">
+          TODO: command titlebar. {contentRaw.kind} {contentRaw.metadata.name}
+        </div>
       )
       content = (
         <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
       );
       break;
     }
+
     case "ActivityTask": {
+      const runtime = useContext(RuntimeContext);
+
+      const {app, activity} = useTracker(() => {
+        const appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', contentRaw.spec.installationNamespace, contentRaw.spec.installationName);
+        if (!appInstallation) throw new Error(`TODO: no appInstallation`);
+        const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
+
+        return {
+          app: runtime.listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application', appNamespace)[0],
+          activity: runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace, contentRaw.spec.activityName) ?? null,
+        };
+      });
+      if (!activity) throw new Error(`no activity`);
+
       title = (
-        <div className="window-title">TODO: activity titlebar. {contentRaw.kind} {contentRaw.metadata.name}</div>
+        <div className="window-title">
+          <AppIcon className="appIcon" iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
+          <span className="app-name">{activity.metadata.title}</span>
+        </div>
       )
-      content = (
-        <TaskWindow task={frameEntity} activityTask={contentRaw} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
-      );
+
+      switch (activity.spec.implementation.type) {
+        case 'iframe': content = (
+          <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
+        ); break;
+        default: content = (
+          <div>TODO: other implementation types</div>
+        ); break;
+      }
       break;
     }
+
     default: {
       content = (
         <div>Hmm, nothing here.</div>
@@ -102,11 +134,17 @@ export const FrameContainer = (props: {
               Math.floor(placement.floating.height ?? -1) == Math.floor(newSize.height)) {
             return;
           }
-          shell.runTaskCommand(frameEntity, null, {
-            type: 'resize-window',
-            xAxis: newSize.width,
-            yAxis: placement.rolledWindow ? (placement.floating.height ?? 200) : newSize.height,
+          runtime.mutateEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', frameEntity.metadata.namespace, frameEntity.metadata.name, x => {
+            x.spec.placement.floating.width = newSize.width;
+            if (!x.spec.placement.rolledWindow) {
+              x.spec.placement.floating.height = newSize.height;
+            }
           });
+          // shell.runTaskCommand(frameEntity, null, {
+          //   type: 'resize-window',
+          //   xAxis: newSize.width,
+          //   yAxis: placement.rolledWindow ? (placement.floating.height ?? 200) : newSize.height,
+          // });
         }}
         onMoved={newPos => {
           const { placement } = frameEntity.spec;
@@ -138,7 +176,11 @@ export const FrameContainer = (props: {
           </button>
         </nav>
       </section>
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
+      <ErrorBoundary FallbackComponent={(props: FallbackProps) => (
+          <div className="activity-contents-wrap frame-loader">
+            <ErrorFallback {...props} />
+          </div>
+        )}>
         {content}
       </ErrorBoundary>
     </WindowFrame>

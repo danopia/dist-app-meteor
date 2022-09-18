@@ -143,8 +143,6 @@ export const HttpClientCatalog = new Array<Entity>({
           await distApp.reportReady();
         `,
         bodyHtml: stripIndent(html)`
-          <h1>🌐 HTTP Client</h1>
-
           <form @submit.prevent="sendRequest">
             <select name="method" v-model="request.method">
               <option>GET</option>
@@ -250,14 +248,10 @@ export const HttpClientCatalog = new Array<Entity>({
             background-color: #333;
             color: #fff;
             margin: 0;
-            padding: 2em 2em 10em;
+            padding: 0 2em 10em;
             box-sizing: border-box;
             width: 100%;
             font-family: monospace;
-          }
-          h1 {
-            margin: 0.3em 1em;
-            color: #999;
           }
           form {
             display: grid;
@@ -310,7 +304,7 @@ export const HttpClientCatalog = new Array<Entity>({
           }
           @media (max-width: 800px) {
             body {
-              padding: 1em 0 10em;
+              padding: 0 0 10em;
             }
             section {
               margin: 0.8em 0;

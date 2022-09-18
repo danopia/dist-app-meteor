@@ -54,6 +54,7 @@ export const WindowFrame = (props: {
   return (
     <Draggable
       handle=".shell-window-handle"
+      nodeRef={windowRef}
       defaultPosition={{ x: left ?? -100, y: top ?? 500 }}
       // position={{ x: left ?? -100, y: top ?? 500 }}
       // grid={[25, 25]}

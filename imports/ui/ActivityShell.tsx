@@ -49,8 +49,8 @@ export const ActivityShell = (props: {
         {frames.map(task => (
           <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
             <FrameContainer frame={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} workspaceName={props.workspaceName} sessionNamespace={"session"} />
-            </ErrorBoundary>
-          ))}
+          </ErrorBoundary>
+        ))}
       </div>
     </Fragment>
   );

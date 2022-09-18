@@ -28,6 +28,7 @@ iframe.activity-contents-wrap {
   justify-self: stretch;
   align-self: stretch;
   border: 0;
+  border-top: 1px solid #999;
   min-height: 0;
   min-width: 0;
 }
@@ -59,7 +60,7 @@ iframe.activity-contents-wrap {
   /* border: 2px solid gray; */
   display: grid;
   grid-template-areas: "rollupbtn powerbar" "handle activity";
-  grid-template-rows: 1.5em 1fr;
+  grid-template-rows: 2em 1fr;
   grid-template-columns: 1.5em 1fr;
   resize: both;
   min-width: 200px;
@@ -111,12 +112,25 @@ iframe.activity-contents-wrap {
 }
 .window-title {
   flex: 1;
-  margin: 0.1em 0.5em;
+  padding: 0.1em 0.5em;
   align-self: center;
 
   overflow-x: hidden;
   text-overflow: ellipsis;
   white-space: pre;
+
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+.window-title .app-name {
+  font-size: 1.4em;
+  color: rgba(0,0,0,0.7);
+}
+@media (prefers-color-scheme: dark) {
+  .window-title .app-name {
+    color: rgba(255,255,255,0.7);
+  }
 }
 .window-buttons {
   display: flex;
@@ -148,11 +162,16 @@ iframe.activity-contents-wrap {
 
 .appIcon {
   width: 2em;
-  height: 2em;
+  /* height: 2em; */
+  aspect-ratio: 1;
   line-height: 2em;
   border-radius: 50%;
   display: inline-block;
   overflow: hidden;
+  text-align: center;
+}
+.window-title .appIcon {
+  font-size: 1.2em;
 }
 
 .launcher-window {

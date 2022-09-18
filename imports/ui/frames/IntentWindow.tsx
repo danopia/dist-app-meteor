@@ -1,5 +1,4 @@
 import { Meteor } from "meteor/meteor";
-import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
@@ -21,7 +20,6 @@ export const IntentWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
 }) => {
   const runtime = useContext(RuntimeContext);
-
   useEffect(() => props.onLifecycle('ready'), []);
 
   // const apis = useTracker(() => runtime.getNamespacesServingApi({
@@ -119,7 +117,7 @@ export const IntentWindow = (props: {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity);
+          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
           runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
@@ -140,7 +138,7 @@ export const IntentWindow = (props: {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity);
+          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
           console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
           runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
@@ -161,9 +159,14 @@ export const IntentWindow = (props: {
 
 
 
-function createTask(runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity) {
-  const taskId = Random.id();
-  const actInstId = Random.id();
+function createTask(runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
+  const taskId = taskName; // Random.id();
+  const actInstId = taskName; // Random.id();
+
+  if (runtime.getEntity<ActivityTaskEntity>("runtime.dist.app/v1alpha1", 'ActivityTask', 'session', actInstId)) {
+    console.log(`BUG: double createTask`, actInstId);
+    return actInstId;
+  }
 
   runtime.insertEntity<ActivityTaskEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',

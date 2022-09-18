@@ -16,7 +16,7 @@ export class FetchRpcHandler {
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    console.log('ActivityEmbed fetch', rpc);
+    console.log('IframeHost fetch', rpc);
     if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
 
     if (rpc.spec.url.startsWith('/task/state/')) {
@@ -145,7 +145,7 @@ export class FetchRpcHandler {
           url: 'dist-app:/protocolendpoints/openapi/proxy/https/'+realUrl.replace(/^[^:]+:\/\//, ''),
         },
       });
-      console.log('ActivityEmbed server fetch result:', resp);
+      console.log('IframeHost server fetch result:', resp);
       return resp;
     }
 
@@ -165,7 +165,7 @@ export class FetchRpcHandler {
       body = new TextDecoder().decode(body);
       if (body[0] == '{') body = JSON.parse(body);
     }
-    console.log('ActivityEmbed local fetch result:', body);
+    console.log('IframeHost local fetch result:', body);
 
     return {
       kind: 'FetchResponse',
@@ -186,7 +186,7 @@ export class FetchRpcHandler {
 
     // TODO BEGIN
     const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', rpc);
-    console.log('ActivityEmbed profile fetch result:', resp);
+    console.log('IframeHost profile fetch result:', resp);
     // TODO END
 
     return resp;
