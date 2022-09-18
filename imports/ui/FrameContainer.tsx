@@ -4,20 +4,13 @@ import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
 import { FrameEntity, ActivityTaskEntity, CommandEntity } from "../entities/runtime";
+import { ErrorFallback } from "../lib/error-fallback";
 import { RuntimeContext } from "./contexts";
 import { IntentWindow } from "./frames/IntentWindow";
 import { LauncherWindow } from "./frames/LauncherWindow";
 import { IframeHost } from "./IframeHost";
 import { AppIcon } from "./widgets/AppIcon";
 import { WindowFrame } from "./widgets/WindowFrame";
-
-const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
-  <div role="alert">
-    <p>Something went wrong:</p>
-    <pre>{error.message}</pre>
-    <button onClick={resetErrorBoundary}>Reset page</button>
-  </div>
-);
 
 export const FrameContainer = (props: {
   zIndex?: number;

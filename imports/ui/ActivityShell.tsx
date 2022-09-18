@@ -1,44 +1,29 @@
-import React, { DependencyList, Fragment, useContext, useEffect, useState } from 'react';
+import React, { Fragment, useContext, useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
-import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import { RuntimeContext } from './contexts';
 import { ShellTopBar } from './ShellTopBar';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { FrameContainer } from './FrameContainer';
-
-const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
-  <div role="alert">
-    <p>Something went wrong:</p>
-    <pre>{error.message}</pre>
-    <button onClick={resetErrorBoundary}>Reset page</button>
-  </div>
-);
+import { ErrorFallback } from '../lib/error-fallback';
+import { useBodyClass } from '../lib/use-body-class';
 
 export const ActivityShell = (props: {
   profileId?: string;
   workspaceName: string;
   guest: boolean;
 }) => {
-  // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main')
-  // if (!shell) throw new Error(`no shell`);
-
   const [floatingLayerKey, setFloatingLayerKey] = useState(Math.random());
 
-  // const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', 'main');
-  // if (!workspace) throw new Error(`no workspace`);
+  const runtime = useContext(RuntimeContext);
+  const workspace = useTracker(() => runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName), [runtime, props.workspaceName]);
+  const frames = useTracker(() => runtime.listEntities<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', 'session'), [runtime]);
 
+  if (!workspace) throw new Error(`no workspace `+props.workspaceName);
   useBodyClass('shell-workspace-floating');
 
-  const runtime = useContext(RuntimeContext);
-
-  const workspace = useTracker(() => runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName));
-  if (!workspace) throw new Error(`no workspace `+props.workspaceName);
-
-  const frames = useTracker(() => runtime.listEntities<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', 'session'));
-
   // TODO: pass entity handles and APIs down, to parameterize namespace
-
   return (
     <Fragment>
       <ShellTopBar>
@@ -55,12 +40,3 @@ export const ActivityShell = (props: {
     </Fragment>
   );
 };
-
-function useBodyClass(className: string, deps?: DependencyList) {
-  useEffect(() => {
-    document.body.classList.add(className);
-    return () => {
-      document.body.classList.remove(className);
-    };
-  }, deps);
-}

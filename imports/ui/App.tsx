@@ -7,14 +7,7 @@ import { RuntimeProvider } from './RuntimeProvider';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { meteorCallAsync } from '../lib/meteor-call';
-
-const ErrorFallback = ({ error, resetErrorBoundary }: FallbackProps) => (
-  <div role="alert">
-    <p>Something went wrong:</p>
-    <pre>{error.message}</pre>
-    <button onClick={resetErrorBoundary}>Reset page</button>
-  </div>
-);
+import { ErrorFallback } from '../lib/error-fallback';
 
 const routes = {
   '/guest-shell': () => <ActivityShell guest={true} workspaceName="main" />,
