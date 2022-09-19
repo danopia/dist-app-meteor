@@ -1,7 +1,7 @@
+import 'react';
 
-declare namespace React {
-  //@ts-expect-error not sure how to override this correctly
-  interface IframeHTMLAttributes {
+declare module "react" {
+  interface IframeHTMLAttributes<T> {
     csp?: string;
   }
 }
