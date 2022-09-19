@@ -1,7 +1,6 @@
 import { Entity } from "/imports/entities";
 
-import { CounterTaskCatalog } from "../apps/counter-task";
-import { CounterVolatileCatalog } from "../apps/counter-volatile";
+import { CounterTaskCatalog as CounterDemoCatalog } from "../apps/counter-demo";
 import { HttpClientCatalog } from "../apps/http-client";
 import { TimezonesCatalog } from "../apps/timezones";
 import { ToolbeltCatalog } from "../apps/toolbelt";
@@ -10,8 +9,7 @@ import { WorldClockCatalog } from "../apps/world-clock";
 import { ScalewayCatalog } from "../apps/scaleway";
 
 export const StaticCatalogs = new Map<string, Array<Entity>>();
-StaticCatalogs.set("app:counter-task", CounterTaskCatalog);
-StaticCatalogs.set("app:counter-volatile", CounterVolatileCatalog);
+StaticCatalogs.set("app:counter-demo", CounterDemoCatalog);
 StaticCatalogs.set("app:welcome", WelcomeCatalog);
 StaticCatalogs.set("app:toolbelt", ToolbeltCatalog);
 StaticCatalogs.set("app:world-clock", WorldClockCatalog);

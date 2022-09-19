@@ -32,7 +32,7 @@ export const CounterTaskCatalog = new Array<Entity>({
   kind: 'Activity',
   metadata: {
     name: 'main',
-    title: 'Counter (task)',
+    title: 'Counter Demo',
     ownerReferences: [{
       apiVersion: 'manifest.dist.app/v1alpha1',
       kind: 'Application',
