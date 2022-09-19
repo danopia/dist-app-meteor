@@ -1418,6 +1418,16 @@ export const ToolbeltCatalog = new Array<Entity>({
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'ApiBinding',
+  metadata: {
+    name: 'google-dns',
+  },
+  spec: {
+    apiName: 'google-dns',
+    required: false,
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'google-dns',
@@ -1447,10 +1457,6 @@ export const ToolbeltCatalog = new Array<Entity>({
       initialWidth: 800,
       initialHeight: 500,
     },
-    fetchBindings: [{
-      pathPrefix: '/google-dns',
-      apiName: 'google-dns',
-    }],
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
@@ -1756,7 +1762,7 @@ export const ToolbeltCatalog = new Array<Entity>({
               opts.set('name', input.text);
               opts.set('type', input.type);
               opts.set('do', '1');
-              const resp = await distApp.fetch('/binding/google-dns/resolve?'+opts.toString());
+              const resp = await distApp.fetch('/ApiBinding/google-dns/resolve?'+opts.toString());
               const json = await resp.json();
 
               const wrap = document.createElement('div');
