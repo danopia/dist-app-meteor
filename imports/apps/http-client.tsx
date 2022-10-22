@@ -97,11 +97,12 @@ export const HttpClientCatalog = new Array<Entity>({
             ],
             body: '',
           });
+          const history = await useVueState('history', []);
 
           const app = createApp({
             data: () => ({
               request: request(),
-              history: [],
+              history: history(),
             }),
             methods: {
               sendRequest: async function () {
