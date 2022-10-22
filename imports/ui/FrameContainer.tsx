@@ -23,7 +23,7 @@ export const FrameContainer = (props: {
 
   const runtime = useContext(RuntimeContext);
   const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName)
-  if (!shell) throw new Error(`no shell`);
+  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
   // const frameEntity = useTracker(() => runtime.getEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.sessionNamespace, props.frameName));
   // if (!frameEntity) throw new Error(`No Frame entity`);

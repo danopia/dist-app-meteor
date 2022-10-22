@@ -7,6 +7,7 @@ export interface WorkspaceEntity {
   metadata: EntityMetadata;
   spec: {
     windowOrder: Array<string>;
+    savedSessionName?: string;
   };
 }
 

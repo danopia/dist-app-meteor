@@ -30,13 +30,18 @@ export const IframeHost = (props: {
 
   const runtime = useContext(RuntimeContext);
   const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
-  if (!shell) throw new Error(`no shell`);
+  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity), [runtime, props.activityTask, props.activity]);
 
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, implementation]);
   useEffect(() => {
     if (contentWindow) {
+      if (props.activity.spec.implementation.disableCommunication) {
+        props.onLifecycle('ready');
+        console.log('WARN: Disabling communication with activity');
+        return;
+      }
       console.log('Initiating connection to iframe content');
       messageHost.connectTo(contentWindow);
       props.onLifecycle('connecting');
@@ -84,6 +89,27 @@ export const IframeHost = (props: {
 
   const frameUrl = useObjectURL(frameBlob);
   useEffect(() => frameUrl.setObject(frameBlob), [frameBlob]);
+
+  if (implementation.source.type == 'internet-url') {
+    const parsed = new URL(implementation.source.url);
+    if (parsed.protocol !== 'https:') throw new Error(`Only HTTPS allowed`);
+    return (
+      <iframe ref={iframeRef} key={iframeKey}
+          className={props.className}
+          src={implementation.source.url}
+          sandbox={implementation.sandboxing?.join(' ') ?? ""}
+          // csp={[
+          //   `default-src 'self'`,
+          //   `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${(implementation.securityPolicy?.scriptSrc ?? []).join(' ')}`,
+          //   `style-src 'self' 'unsafe-inline'`,
+          //   `connect-src 'self' ${(implementation.securityPolicy?.connectSrc ?? []).join(' ')}`,
+          // ].join('; ')}
+          onLoad={evt => {
+            setContentWindow(evt.currentTarget.contentWindow);
+          }}
+        />
+    );
+  }
 
   if (!frameUrl.objectURL) return (
     <div className={props.className}></div>

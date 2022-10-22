@@ -18,6 +18,9 @@ body.shell-workspace-floating #react-target {
 .activity-contents-wrap {
   grid-area: activity;
 }
+.activity-contents-wrap:not(iframe) {
+  overflow-y: auto;
+}
 .shell-window.rolled .activity-contents-wrap {
   display: none;
 }
@@ -178,8 +181,9 @@ iframe.activity-contents-wrap {
   padding: 0.5em;
   box-sizing: border-box;
   overflow-y: scroll;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-evenly; /* TODO: different on narrow and wide */
   gap: 0.5em;
   margin: 0;
 }
@@ -189,6 +193,7 @@ iframe.activity-contents-wrap {
   }
 }
 .launcher-window button {
+  flex-basis: 10em;
   display: grid;
   justify-items: center;
   background: none;

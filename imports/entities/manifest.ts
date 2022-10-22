@@ -47,11 +47,13 @@ export interface IframeImplementationSpec {
     | 'allow-forms'
     | 'allow-popups'
     | 'allow-modals'
+    | 'allow-same-origin'
   >;
   securityPolicy?: {
     scriptSrc?: Array<string>;
     connectSrc?: Array<string>;
   };
+  disableCommunication?: boolean;
   source: {
     type: 'internet-url';
     url: string;

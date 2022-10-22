@@ -32,7 +32,7 @@ export class FetchRpcHandler {
 
   // async handleInner(req: Request): Promise<Response> {
   async handleTaskState(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    const stateKey = decodeURIComponent(rpc.spec.url.split('/')[2]);
+    const stateKey = decodeURIComponent(rpc.spec.url.split('/')[3]);
     // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
     if (rpc.spec.method == 'GET') {
       const {appData} = this.runtime.getEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name)?.state ?? {};

@@ -7,6 +7,7 @@ import { ToolbeltCatalog } from "../apps/toolbelt";
 import { WelcomeCatalog } from "../apps/welcome";
 import { WorldClockCatalog } from "../apps/world-clock";
 import { ScalewayCatalog } from "../apps/scaleway";
+import { PuterCatalog } from "../apps/puter";
 
 export const StaticCatalogs = new Map<string, Array<Entity>>();
 StaticCatalogs.set("app:counter-demo", CounterDemoCatalog);
@@ -16,6 +17,7 @@ StaticCatalogs.set("app:world-clock", WorldClockCatalog);
 StaticCatalogs.set("app:http-client", HttpClientCatalog);
 StaticCatalogs.set("app:timezones", TimezonesCatalog);
 StaticCatalogs.set("app:scaleway", ScalewayCatalog);
+StaticCatalogs.set("app:puter", PuterCatalog);
 
 for (const [name, cat] of StaticCatalogs) {
   for (const entity of cat) {

@@ -5,7 +5,7 @@ import { CommandEntity, FrameEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
 import { StaticCatalogs } from "./StaticCatalogs";
 
-export function insertGuestTemplate(engine: EntityEngine) {
+export function insertGuestProfileTemplate(engine: EntityEngine) {
   for (const defaultNamespace of StaticCatalogs.keys()) {
     if (!defaultNamespace.startsWith('app:')) continue;
     engine.insertEntity<AppInstallationEntity>({
@@ -25,7 +25,9 @@ export function insertGuestTemplate(engine: EntityEngine) {
       },
     });
   }
+}
 
+export function insertGuestWelcomeSession(engine: EntityEngine) {
   // const workspaceName = Random.id();
 
   // Add a latent command telling the runtime to process a particular intent
@@ -52,6 +54,9 @@ export function insertGuestTemplate(engine: EntityEngine) {
     },
   });
 
+  // TODO: we currently need to create a frame that "runs" the command
+  //   The command makes the real frame and deletes this "command" frame
+  //   Instead, commands should run (and appear in UI) without a full-ass Frame
   engine.insertEntity<FrameEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
     kind: 'Frame',
