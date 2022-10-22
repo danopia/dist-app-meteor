@@ -26,6 +26,11 @@ globalThis.DistApp = class DistApp {
       .catch(err => console
         .error(err)));
 
+    window.addEventListener('unhandledrejection', evt => this
+      .handleError(evt.reason)
+      .catch(err => console
+        .error(err)));
+
     fetchProtocols.set('dist-app:', (input, init) => this
       .fetch(input, init));
   }
