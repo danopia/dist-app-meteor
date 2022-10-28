@@ -44,8 +44,8 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
       headers: Array<[string,string]>;
       body?: string;
     }} = JSON.parse(req.spec.body);
-    // if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
-    //   `This domain is not reachable for the current user`);
+    if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
+      `This domain is not reachable for the current user`);
 
     try {
       const resp = await fetch(spec.input.url, {
