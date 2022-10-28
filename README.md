@@ -1,3 +1,9 @@
+## disclaimer
+this is a proof of concept. do not invest in it, emotionally or otherwise.
+
+## screenshot
+![image](https://user-images.githubusercontent.com/40628/198750200-7356c469-bd5a-4428-b7a3-f4d1fe6beab6.png)
+
 ## system architecture
 
 ```mermaid
