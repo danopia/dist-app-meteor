@@ -56,6 +56,14 @@ export const IntentWindow = (props: {
 
   //@ts-expect-error extras is untyped
   if (intent.action == 'settings.AddAccount' && intent.extras.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
+
+    if (user) return (
+      <div className="activity-contents-wrap" style={{padding: '0 1em 2em'}}>
+        <h2>Add Platform Account</h2>
+        <p>You are already logged in to <strong>{new URL(Meteor.absoluteUrl()).origin}</strong>!</p>
+      </div>
+    );
+
     const startLogin = (loginFunc: typeof Meteor.loginWithGoogle) => {
       loginFunc({}, (err) => {
         if (err) {
