@@ -112,6 +112,7 @@ iframe.activity-contents-wrap {
   grid-area: rollupbtn;
   margin: 0.5em;
   padding: 0;
+  aspect-ratio: 1;
 }
 .window-title {
   flex: 1;
