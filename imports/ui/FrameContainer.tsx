@@ -164,7 +164,7 @@ export const FrameContainer = (props: {
             type: 'delete-task',
           })}>
             <svg version="1.1" height="20" viewBox="0 0 10 10">
-              <path d="m3 2-1 1 2 2-2 2 1 1 2-2 2 2 1-1-2-2 2-2-1-1-2 2z"/>
+              <path d="m3 2-1 0 0 1 2 2-2 2 0 1 1 0 2-2 2 2 1 0 0-1-2-2 2-2 0-1-1 0-2 2z"/>
             </svg>
           </button>
         </nav>
