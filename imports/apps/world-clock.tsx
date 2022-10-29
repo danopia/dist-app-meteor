@@ -72,7 +72,7 @@ export const WorldClockCatalog = new Array<Entity>({
             </div-->
 
             <div class="clock">
-              <a class="location" target="_blank" rel="nofollow"
+              <a class="location" target="_blank" rel="nofollow" id="time_is_link"
                   href="https://time.is/Berlin">Berlin</a>
               <div id="Berlin_z704"></div>
             </div>
@@ -148,13 +148,11 @@ export const WorldClockCatalog = new Array<Entity>({
           else pw=W+"-րդ շաբաթ"}else pw=p["W"].replace(".n",W)
           var g={t:t.getUTCHours(),r:c["v"][3],s:c["v"][5]},h={}
           for(j in g){h[j]=l0(g[j])
-          console.log({g,t})
           h[j+"H"]=h[j]
           h[j+"M"]="AM"
           if(11<h[j]){h[j+"M"]="PM"
           h[j]=l0(h[j]-12)}
           if(h[j]=="00")h[j]=12}
-          console.log(h);
           d=c["template"].replace("srhour",h["rH"]).replace("sr12hour",h["r"]).replace("srAMPM",h["rM"]).replace("srminute",l0(c["v"][4])).replace("sshour",h["sH"]).replace("ss12hour",h["s"]).replace("ssAMPM",h["sM"]).replace("ssminute",l0(c["v"][6])).replace("dlhours",c["v"][7]).replace("dlminutes",c["v"][8]).replace("%h",h["t"]).replace("%H",h["tH"]).replace("%i",l0(t.getUTCMinutes())).replace("%s",l0(t.getUTCSeconds())).replace("%A",h["tM"]).replace("%j",t.getUTCDate()).replace("%d",l0(t.getUTCDate())).replace("%W",pw).replace("%n",m).replace("%m",l0(m)).replace("%y",y.substr(2,2)).replace("%Y",y).replace("%F",p["n"][13+m]).replace("%l",p["n"][t.getUTCDay()]).replace("%D",p["n"][7+t.getUTCDay()]).replace("%z",dn)
           j=d.indexOf(">")
           d=d.substr(0,j+1)+d.substr(j+1,1).toUpperCase()+d.substr(j+2,d.length-1)

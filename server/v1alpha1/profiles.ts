@@ -25,19 +25,20 @@ Meteor.startup(async () => {
   });
 });
 
-export async function getUserDefaultProfile(userId: string) {
+export async function getUserDefaultProfile(userId: string): Promise<string> {
 
   // Maybe the user already has a personal profile and we can return that.
   const existingProfile = ProfilesCollection.findOne({
-    members: {
+    members: { $elemMatch: {
       basicRole: 'Owner',
       userId: userId,
-    },
+    } },
   });
   if (existingProfile) {
-    // TODO: actually look up the default workspace
-    return {profileId: existingProfile._id, workspaceName: 'first-workspace'};
+    console.log('existing profile for', userId);
+    return existingProfile._id;
   }
+  console.log('new profile for', userId);
 
   // Register an empty profile
   const profileId = ProfilesCollection.insert({
@@ -91,20 +92,20 @@ export async function getUserDefaultProfile(userId: string) {
     },
   });
 
-  // Add a default workspace
-  EntitiesCollection.insert({
-    catalogId: sessionsCatalogId,
-    ...(<WorkspaceEntity>{
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Workspace',
-      metadata: {
-        name: 'first-workspace',
-        namespace: 'default',
-      },
-      spec: {
-        windowOrder: [],
-      },
-    })});
+  // // Add a default workspace
+  // EntitiesCollection.insert({
+  //   catalogId: sessionsCatalogId,
+  //   ...(<WorkspaceEntity>{
+  //     apiVersion: 'runtime.dist.app/v1alpha1',
+  //     kind: 'Workspace',
+  //     metadata: {
+  //       name: 'first-workspace',
+  //       namespace: 'default',
+  //     },
+  //     spec: {
+  //       windowOrder: [],
+  //     },
+  //   })});
 
   // Install the welcome app
   EntitiesCollection.insert({
@@ -138,5 +139,5 @@ export async function getUserDefaultProfile(userId: string) {
       },
     },
   });
-  return {profileId, workspaceName: 'first-workspace'};
+  return profileId;
 }

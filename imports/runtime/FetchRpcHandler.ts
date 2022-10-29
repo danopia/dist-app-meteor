@@ -3,7 +3,7 @@ import { parse } from "yaml";
 import "urlpattern-polyfill";
 
 import { EntityEngine } from "../engine/EntityEngine";
-import { ActivityEntity, ApiEntity } from "../entities/manifest";
+import { ActivityEntity, ApiBindingEntity, ApiEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
@@ -23,7 +23,7 @@ export class FetchRpcHandler {
       return await this.handleTaskState(rpc);
     }
 
-    if (rpc.spec.url.startsWith('/binding/')) {
+    if (rpc.spec.url.startsWith('/ApiBinding/')) {
       return await this.handleBinding(rpc);
     }
 
@@ -32,7 +32,7 @@ export class FetchRpcHandler {
 
   // async handleInner(req: Request): Promise<Response> {
   async handleTaskState(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    const stateKey = decodeURIComponent(rpc.spec.url.split('/')[2]);
+    const stateKey = decodeURIComponent(rpc.spec.url.split('/')[3]);
     // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
     if (rpc.spec.method == 'GET') {
       const {appData} = this.runtime.getEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name)?.state ?? {};
@@ -69,20 +69,21 @@ export class FetchRpcHandler {
   }
 
   async handleBinding(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    const slashIdx = rpc.spec.url.indexOf('/', '/binding/'.length);
-    const bindingName = rpc.spec.url.slice('/binding'.length, slashIdx);
+    const slashIdx = rpc.spec.url.indexOf('/', '/ApiBinding/'.length);
+    const bindingName = rpc.spec.url.slice('/ApiBinding/'.length, slashIdx);
     const subPath = rpc.spec.url.slice(slashIdx+1);
 
-    const binding = this.activity.spec.fetchBindings?.find(x => x.pathPrefix == bindingName);
+    const binding = this.runtime.getEntity<ApiBindingEntity>('manifest.dist.app/v1alpha1', 'ApiBinding', this.activity.metadata.namespace, bindingName);
     if (!binding) return {
       kind: 'FetchResponse',
       spec: {
         status: 404,
-        body: `No binding ${JSON.stringify(bindingName)} exists`,
+        body: `No b ${JSON.stringify(bindingName)} exists`,
         headers: [['content-type', 'text/plain']],
       },
     };
-    const apiEntity = this.runtime.getEntity<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', this.activity.metadata.namespace, binding.apiName);
+
+    const apiEntity = this.runtime.getEntity<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', this.activity.metadata.namespace, binding.spec.apiName);
     if (!apiEntity) return {
       kind: 'FetchResponse',
       spec: {
@@ -91,6 +92,10 @@ export class FetchRpcHandler {
         headers: [['content-type', 'text/plain']],
       },
     };
+
+    if (apiEntity.spec.type !== 'openapi') throw new Error(
+      `TODO: non-openapi Api entity: ${JSON.stringify(apiEntity.spec.type)}`);
+
     const apiSpec: OpenAPIV3.Document = parse(apiEntity.spec.definition);
     const server = apiSpec.servers?.[0];
     if (!server || !server.url.startsWith('https://')) return {
@@ -108,7 +113,7 @@ export class FetchRpcHandler {
     const pathConfig = Object.entries(apiSpec.paths).filter(x => {
       const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
       const pat = new URLPattern({pathname: patStr});
-      return pat.test(realUrl);
+      return pat.test(new URL('/'+subPath, 'https://.'));
     }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
     const methodConfig = pathConfig?.[rpc.spec.method.toLowerCase() as 'get'];
     if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430

@@ -3,9 +3,10 @@ import { Entity } from "/imports/entities";
 import { ArbitraryEntity } from "../entities/core";
 import { ProfilesCollection } from "../db/profiles";
 import { EntitiesCollection } from "../db/entities";
+import { meteorCallAsync } from "../lib/meteor-call";
 
 export interface EntityStorage {
-  insertEntity<T extends ArbitraryEntity>(entity: T): void;
+  insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[];
   // watchEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]);
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null;
@@ -36,33 +37,38 @@ export class StaticEntityStorage implements EntityStorage {
 
 export class MongoProfileStorage implements EntityStorage {
   constructor(public readonly profileId: string) {}
-  insertEntity<T extends ArbitraryEntity>(entity: T): void {
-    return this.getStorage(entity.apiVersion)!.insertEntity(entity);
+  insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void> {
+    return this.getStorage(entity.apiVersion, true)!.insertEntity(entity);
   }
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[] {
-    return this.getStorage(apiVersion)?.listEntities(apiVersion, kind) ?? [];
+    return this.getStorage(apiVersion, false)?.listEntities(apiVersion, kind) ?? [];
   }
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null {
-    return this.getStorage(apiVersion)!.getEntity(apiVersion, kind, name);
+    return this.getStorage(apiVersion, false)?.getEntity(apiVersion, kind, name) ?? null;
   }
   updateEntity<T extends ArbitraryEntity>(newEntity: T): T | Promise<T> {
-    return this.getStorage(newEntity.apiVersion)!.updateEntity(newEntity);
+    return this.getStorage(newEntity.apiVersion, true)!.updateEntity(newEntity);
   }
   deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): boolean | Promise<boolean> {
-    return this.getStorage(apiVersion)!.deleteEntity(apiVersion, kind, name);
+    return this.getStorage(apiVersion, true)!.deleteEntity(apiVersion, kind, name);
   }
-  getStorage(apiVersion: string) {
+  getStorage(apiVersion: string, required: boolean) {
     // TODO: use LayeredNamespace for this logic instead
     const [apiGroup, _version] = apiVersion.split('/');
     const profile = ProfilesCollection.findOne({ _id: this.profileId });
-    if (!profile) return null;
+    if (!profile) {
+      if (!required) return null;
+      throw new Error(`No storage matched profile ${this.profileId}`);
+    }
     const layer = profile.layers.find(x => x.apiFilters.some(y => y.apiGroup == apiGroup));
-    if (!layer) return null;
+    if (!layer) {
+      if (!required) return null;
+      throw new Error(`No storage matched api filter ${apiGroup}`);
+    }
     const banner = 'local-catalog:';
     if (layer.backingUrl.startsWith(banner)) {
       const catalogId = layer.backingUrl.slice(banner.length);
-      return new MongoEntityStorage({
-        collection: EntitiesCollection,
+      return new MeteorEntityStorage({
         catalogId: catalogId,
       });
     }
@@ -78,7 +84,14 @@ export class MongoEntityStorage implements EntityStorage {
   }) {}
 
   insertEntity<T extends ArbitraryEntity>(entity: T) {
-    const _id = [this.props.catalogId, this.props.namespace, entity.apiVersion, entity.kind, entity.metadata.name].join('_');
+    const _id = [
+      this.props.catalogId,
+      this.props.namespace,
+      entity.apiVersion,
+      entity.kind,
+      entity.metadata.name,
+    ].join('_');
+
     this.props.collection.insert({
       ...entity,
       catalogId: this.props.catalogId,
@@ -90,6 +103,17 @@ export class MongoEntityStorage implements EntityStorage {
       },
       _id,
     });
+  }
+
+  listAllEntities() {
+    return this.props.collection.find({
+      catalogId: this.props.catalogId,
+    }, {
+      fields: {
+        _id: 0,
+        catalogId: 0,
+      },
+    }).fetch();
   }
 
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
@@ -152,4 +176,36 @@ export class MongoEntityStorage implements EntityStorage {
     return count > 0;
   }
 
+}
+
+export class MeteorEntityStorage implements EntityStorage {
+  constructor(private readonly props: {
+    catalogId: string;
+  }) {
+    this.readStorage = new MongoEntityStorage({
+      collection: EntitiesCollection,
+      catalogId: props.catalogId,
+    })
+  }
+  private readonly readStorage: MongoEntityStorage;
+
+  listAllEntities() {
+    return this.readStorage.listAllEntities();
+  }
+  listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
+    return this.readStorage.listEntities(apiVersion, kind);
+  }
+  getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
+    return this.readStorage.getEntity(apiVersion, kind, name);
+  }
+
+  async insertEntity<T extends ArbitraryEntity>(entity: T) {
+    await meteorCallAsync('/v1alpha1/Entity/insert', this.props.catalogId, entity);
+  }
+  async updateEntity<T extends ArbitraryEntity>(newEntity: T) {
+    return await meteorCallAsync<T>('/v1alpha1/Entity/update', this.props.catalogId, newEntity);
+  }
+  async deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
+    return await meteorCallAsync<boolean>('/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
+  }
 }

@@ -33,11 +33,11 @@ export interface NamespaceEntity {
   spec: {
     layers: Array<{
       mode: 'ReadOnly' | 'ReadWrite' | 'WriteOnly';
-      accept: [{
+      accept: Array<{
         apiGroup?: string;
         apiVersion?: string;
         kind?: string;
-      }];
+      }>;
       storage: {
         type: 'local-inmemory';
       } | {

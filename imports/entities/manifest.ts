@@ -47,11 +47,13 @@ export interface IframeImplementationSpec {
     | 'allow-forms'
     | 'allow-popups'
     | 'allow-modals'
+    | 'allow-same-origin'
   >;
   securityPolicy?: {
     scriptSrc?: Array<string>;
     connectSrc?: Array<string>;
   };
+  disableCommunication?: boolean;
   source: {
     type: 'internet-url';
     url: string;
@@ -81,13 +83,6 @@ export interface ActivityEntity {
       action: 'app.dist.Main';
       category: 'app.dist.Launcher';
     }>;
-    fetchBindings?: Array<{
-      pathPrefix: string;
-      apiName: string;
-      // validation?: boolean;
-      // kind: "Api";
-      // name: string;
-    }>;
     implementation: ImplementationSpec;
     windowSizing?: {
       initialWidth: number;
@@ -112,13 +107,6 @@ export interface FacilityEntity {
   kind: "Facility";
   metadata: EntityMetadata;
   spec: {
-    fetchBindings?: Array<{
-      pathPrefix: string;
-      apiName: string;
-      // validation?: boolean;
-      // kind: "Api";
-      // name: string;
-    }>;
     providesApis: Array<string>;
     implementation: ImplementationSpec;
   };
@@ -136,6 +124,20 @@ export interface ApiEntity {
       crossOriginResourceSharing?: 'restricted' | 'open';
       definition: string;
     // };
+  };
+}
+
+export interface ApiBindingEntity {
+  apiVersion: 'manifest.dist.app/v1alpha1';
+  kind: 'ApiBinding';
+  metadata: EntityMetadata;
+  spec: {
+    apiName: string;
+    required: boolean;
+    auth?: {
+      required: boolean;
+      accountTypeId: string;
+    };
   };
 }
 
@@ -186,6 +188,7 @@ export type ManifestEntity = (
   | ApplicationEntity
   | ActivityEntity
   | ApiEntity
+  | ApiBindingEntity
 
   // | EndpointEntity
   // | ServiceEntity

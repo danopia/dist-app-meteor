@@ -21,6 +21,16 @@ export const TimezonesCatalog = new Array<Entity>({
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'ApiBinding',
+  metadata: {
+    name: 'world-time',
+  },
+  spec: {
+    apiName: 'world-time-api',
+    required: true,
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'main',
@@ -36,10 +46,6 @@ export const TimezonesCatalog = new Array<Entity>({
       action: 'app.dist.Main',
       category: 'app.dist.Launcher',
     }],
-    fetchBindings: [{
-      pathPrefix: '/world-time',
-      apiName: 'world-time-api',
-    }],
     windowSizing: {
       initialWidth: 500,
       minWidth: 200,
@@ -51,17 +57,11 @@ export const TimezonesCatalog = new Array<Entity>({
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts'],
-      securityPolicy: {
-        scriptSrc: ['https://widget.time.is'],
-      },
       source: {
         type: 'piecemeal',
         htmlLang: 'en',
         metaCharset: 'utf-8',
-        headTitle: 'time.is squares',
-        scriptUrls: [
-          // 'https://widget.time.is/en.js',
-        ],
+        headTitle: 'timezones demo',
         bodyHtml: stripIndent(html)`
           <div class="grid">
             Hey!!!
@@ -71,45 +71,18 @@ export const TimezonesCatalog = new Array<Entity>({
           body {
             background-color: #fff;
             color: #444;
-            margin: 0;
-            font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
           }
-          .grid {
-            display: flex;
-            height: 100vh;
-          }
-          .clock {
-            padding: 0.5em; flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-evenly;
-          }
-          .clock:hover { background-color: rgba(120,120,120,0.1); }
-          .grid > div { text-align: center; }
-          .location { font-size: 1.25em; color: #666; }
-          .time { font-size: 3em; }
-          .sun { font-size: 1.5em; }
-          .sunrise { color: #696; }
-          .sunset { color: #966; }
-          .divider { color: #999; padding: 0 0.2em; font-size: 0.8em; }
-          a { color: inherit; }
-
           @media (prefers-color-scheme: dark) {
             body {
               background-color: rgb(25, 25, 25);
               color: rgba(255, 255, 255, 0.87);
             }
-            .clock:hover { background-color: rgba(170,170,170,0.1); }
-            .location { color: #ccc; }
-            .sunrise { color: #9c9; }
-            .sunset { color: #c99; }
-            .divider { color: #999; }
           }
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
 
-          const allZones = await distApp.fetch('/binding/world-time/timezone');
+          const allZones = await distApp.fetch('/ApiBinding/world-time/timezone');
           console.log(await allZones.json());
 
           await distApp.reportReady();

@@ -1,4 +1,5 @@
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
+import { ReactiveMap } from "../lib/reactive-map";
 // import { AsyncCache, AsyncKeyedCache } from "../runtime/async-cache";
 import { ShellSession } from "../runtime/ShellSession";
 import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
@@ -31,7 +32,7 @@ export class EntityEngine {
     // primaryCatalog
   ) { }
 
-  namespaces = new Map<string, LayeredNamespace>();
+  namespaces = new ReactiveMap<string, LayeredNamespace>();
   loadedMap = new Map<string, ShellSession>();
   // loader = new AsyncKeyedCache<ArbitraryEntity, string, | ShellSession>({
   //   keyFunc: x => [x.metadata.namespace, x.apiVersion, x.kind, x.metadata.name].join('_'),
@@ -69,7 +70,7 @@ export class EntityEngine {
     kind: T["kind"];
     op: 'Read' | 'Write';
   }) {
-    return Array.from(this.namespaces).filter(x => x[1].selectLayer({
+    return Array.from(this.namespaces.entries()).filter(x => x[1].selectLayer({
       op: props.op,
       apiGroup: props.apiVersion.split('/')[0],
       apiVersion: props.apiVersion.split('/')[1],
@@ -108,7 +109,7 @@ export class EntityEngine {
     kind: string;
     op: 'Read' | 'Write';
   }): Generator<[string, MongoEntityStorage | MongoProfileStorage | StaticEntityStorage]> {
-    for (const [name, ns] of this.namespaces) {
+    for (const [name, ns] of this.namespaces.entries()) {
       const layer = ns.selectLayer({
         op: props.op,
         apiGroup: props.apiVersion.split('/')[0],
@@ -192,7 +193,7 @@ export class EntityEngine {
     // return await this.loader.get(entity);
   }
 
-  updateEntity<T extends ArbitraryEntity>(newEntity: T) {
+  async updateEntity<T extends ArbitraryEntity>(newEntity: T) {
     const layer = this.selectNamespaceLayer({
       apiVersion: newEntity.apiVersion,
       kind: newEntity.kind,
@@ -200,13 +201,13 @@ export class EntityEngine {
       op: 'Write',
     });
 
-    const count = layer.impl.updateEntity(newEntity);
+    const count = await layer.impl.updateEntity(newEntity);
     if (!count)
       throw new Error(`TODO: Update applied to zero entities`);
   }
 
   // Mutation helper
-  mutateEntity<T extends ArbitraryEntity>(
+  async mutateEntity<T extends ArbitraryEntity>(
     apiVersion: T["apiVersion"],
     kind: T["kind"],
     namespace: string | undefined,
@@ -226,7 +227,7 @@ export class EntityEngine {
     if (result == Symbol.for('no-op'))
       return;
 
-    layer.impl.updateEntity(entity);
+    await layer.impl.updateEntity(entity);
   }
 
   deleteEntity<T extends ArbitraryEntity>(

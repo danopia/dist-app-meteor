@@ -22,6 +22,20 @@ export const ScalewayCatalog = new Array<Entity>({
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'ApiBinding',
+  metadata: {
+    name: 'scw',
+  },
+  spec: {
+    apiName: 'instance-api',
+    required: true,
+    auth: {
+      required: true,
+      accountTypeId: 'api.scaleway.com',
+    },
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'main',
@@ -36,10 +50,6 @@ export const ScalewayCatalog = new Array<Entity>({
     intentFilters: [{
       action: 'app.dist.Main',
       category: 'app.dist.Launcher',
-    }],
-    fetchBindings: [{
-      pathPrefix: '/scw',
-      apiName: 'instance-api',
     }],
     windowSizing: {
       initialWidth: 350,
@@ -76,12 +86,12 @@ export const ScalewayCatalog = new Array<Entity>({
               dashboard,
               servers,
             ] = await Promise.all([
-              distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/dashboard').then(async resp => {
+              distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/dashboard').then(async resp => {
                 if (!resp.ok) throw new Error("dashboard load failed: HTTP "+resp.status);
                 const {dashboard} = await resp.json();
                 return dashboard;
               }),
-              distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/servers').then(async resp => {
+              distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/servers').then(async resp => {
                 if (!resp.ok) throw new Error("servers load failed: HTTP "+resp.status);
                 const {servers} = await resp.json();
                 console.log('scaleway servers:', servers);
@@ -120,11 +130,11 @@ export const ScalewayCatalog = new Array<Entity>({
               },
               async handleIpChange(server, wantsIp) {
                 if (server.public_ip && wantsIp == false) {
-                  const resp = await distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/ips/'+server.public_ip.id, {method: 'DELETE'});
+                  const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/ips/'+server.public_ip.id, {method: 'DELETE'});
                   if (!resp.ok) throw new Error("delete IP failed: HTTP "+resp.status);
                   console.log('IP deleted!');
                 } else if (!server.public_ip && wantsIp == true) {
-                  const resp = await distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/ips', {
+                  const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/ips', {
                     method: 'POST',
                     headers: {
                       'content-type': 'application/json',
@@ -141,7 +151,7 @@ export const ScalewayCatalog = new Array<Entity>({
                 this.reloadData();
               },
               async doAction(serverId, actionId) {
-                const resp = await distApp.fetch('/binding/scw/instance/v1/zones/fr-par-2/servers/'+serverId+'/action', {
+                const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/servers/'+serverId+'/action', {
                   method: 'POST',
                   headers: {
                     'content-type': 'application/json',

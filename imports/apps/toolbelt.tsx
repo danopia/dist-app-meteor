@@ -1,4 +1,5 @@
 import { html, stripIndent } from "common-tags";
+import { useVueState } from "./_vue";
 import { Entity } from "/imports/entities";
 
 export const ToolbeltCatalog = new Array<Entity>({
@@ -231,22 +232,21 @@ export const ToolbeltCatalog = new Array<Entity>({
             <section class="intro">
               <ul>
                 <li><strong>example lookups</strong></li>
-                <li><a href="#amazon.com">amazon.com</a> (the online store)</li>
-                <li><a href="#console.aws.amazon.com">console.aws.amazon.com</a></li>
-                <li><a href="#status.aws.amazon.com">status.aws.amazon.com</a></li>
-                <li><a href="#slack.com">slack.com</a> (CloudFront)</li>
-                <li><a href="#api.spotify.com">api.spotify.com</a> (Google Cloud)</li>
-                <li><a href="#heroku.com">heroku.com</a></li>
-                <li><a href="#github.scopely.io">github.scopely.io</a> (dual region!)</li>
-                <li><a href="#collector.scopely.io">collector.scopely.io</a> (IPv6)</li>
-                <li><a href="#bethesda.net">bethesda.net</a> (CloudFront)</li>
-                <li><a href="#cloudycluster.com">cloudycluster.com</a> (S3)</li>
-                <li><a href="#cloudping.co">cloudping.co</a></li>
-                <li><a href="#pepedev.com">pepedev.com</a></li>
-                <li><a href="#fortunecookie-vpn.scopely.io">fortunecookie-vpn.scopely.io</a></li>
-                <li><a href="#status.github.com">status.github.com</a></li>
-                <li><a href="#en.wikipedia.org">en.wikipedia.org</a> (non-AWS)</li>
-                <li><a href="#8.8.8.8">Cloudflare DNS</a> (non-AWS)</li>
+                <li><a href="#" onClick="go('amazon.com')">amazon.com</a> (the online store)</li>
+                <li><a href="#" onClick="go('console.aws.amazon.com')">console.aws.amazon.com</a></li>
+                <li><a href="#" onClick="go('status.aws.amazon.com')">status.aws.amazon.com</a></li>
+                <li><a href="#" onClick="go('slack.com')">slack.com</a> (CloudFront)</li>
+                <li><a href="#" onClick="go('api.spotify.com')">api.spotify.com</a> (Google Cloud)</li>
+                <li><a href="#" onClick="go('heroku.com')">heroku.com</a></li>
+                <li><a href="#" onClick="go('github.scopely.io')">github.scopely.io</a> (dual region!)</li>
+                <li><a href="#" onClick="go('collector.scopely.io')">collector.scopely.io</a> (IPv6)</li>
+                <li><a href="#" onClick="go('bethesda.net')">bethesda.net</a> (CloudFront)</li>
+                <li><a href="#" onClick="go('cloudycluster.com')">cloudycluster.com</a> (S3)</li>
+                <li><a href="#" onClick="go('cloudping.co')">cloudping.co</a></li>
+                <li><a href="#" onClick="go('pepedev.com')">pepedev.com</a></li>
+                <li><a href="#" onClick="go('status.github.com')">status.github.com</a></li>
+                <li><a href="#" onClick="go('en.wikipedia.org')">en.wikipedia.org</a> (non-AWS)</li>
+                <li><a href="#" onClick="go('8.8.8.8')">Cloudflare DNS</a> (non-AWS)</li>
               </ul>
               <ol>
                 <li>Enter an Internet IPv4, hostname, or URL</li>
@@ -385,6 +385,7 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           const historyCol = document.querySelector('#history-col');
           function addEntry () {
@@ -525,8 +526,9 @@ export const ToolbeltCatalog = new Array<Entity>({
             entry.deeplink(input.text);
             existingQueries.set(input.text, entry);
 
-            if (andSetHash)
-              window.location.hash = \`#\${encodeURI(input.text)}\`;
+            if (andSetHash) {
+              setState('input', input.text);
+            }
 
             return entry.promise(managersPromise.then(async managers => {
               let header = '';
@@ -621,6 +623,7 @@ export const ToolbeltCatalog = new Array<Entity>({
             evt.preventDefault();
             const {ipaddr} = evt.target;
             const rawInput = ipaddr.value;
+            setState('input', rawInput);
             queryInput(ParseInput(rawInput), true)
               .then(() => ipaddr.value = '');
           });
@@ -636,16 +639,15 @@ export const ToolbeltCatalog = new Array<Entity>({
             }
           });
 
-          function readHash() {
-            const hash = window.location.hash;
-            if (hash && hash.length > 1) {
-              queryInput(ParseInput(decodeURI(hash.slice(1))));
-            }
-          }
-          window.onhashchange = readHash;
-          // readHash();
+          globalThis.go = (str) => {
+            queryInput(ParseInput(str), true);
+          };
 
-          await distApp.reportReady();
+          getState('input').then(rawInput => {
+            if (rawInput) {
+              queryInput(ParseInput(rawInput), false);
+            }
+          }).finally(() => distApp.reportReady());
         `,
       },
     },
@@ -734,6 +736,7 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           function rawToBytes(raw) {
             const bytes = [];
@@ -745,29 +748,50 @@ export const ToolbeltCatalog = new Array<Entity>({
 
           document.querySelector('#decode').addEventListener('submit', evt => {
             evt.preventDefault();
-            try {
-              const encoded = evt.target.encoded.value;
-              const decoded = atob(encoded);
-              evt.target.decoded.value = decoded;
-              evt.target.bytes.value = rawToBytes(decoded);
-            } catch (err) {
-              alert(err);
-            }
+            setState('decode-input', evt.target.encoded.value);
+            runDecode(evt.target);
           });
+          function runDecode(form) {
+            const encoded = form.encoded.value;
+            const decoded = atob(encoded);
+            form.decoded.value = decoded;
+            form.bytes.value = rawToBytes(decoded);
+          }
 
           document.querySelector('#encode').addEventListener('submit', evt => {
-            try {
-              evt.preventDefault();
-              const decoded = evt.target.decoded.value;
-              const encoded = btoa(decoded);
-              evt.target.encoded.value = encoded;
-              evt.target.bytes.value = rawToBytes(decoded);
-            } catch (err) {
-              alert(err);
-            }
+            evt.preventDefault();
+            setState('encode-input', evt.target.decoded.value);
+            runEncode(evt.target);
           });
+          function runEncode(form) {
+            const decoded = form.decoded.value;
+            const encoded = btoa(decoded);
+            form.encoded.value = encoded;
+            form.bytes.value = rawToBytes(decoded);
+          }
 
-          await distApp.reportReady();
+          const loads = [
+            getState('decode-input').then(value => {
+              if (value) {
+                const form = document.querySelector('form#decode');
+                form.encoded.value = value;
+                runDecode(form);
+              }
+            }),
+            getState('encode-input').then(value => {
+              if (value) {
+                const form = document.querySelector('form#encode');
+                form.decoded.value = value;
+                runEncode(form);
+              }
+            }),
+            getState('display-format').then(value => {
+              if (value) {
+                outputFormatSelect.value = value;
+              }
+            }),
+          ];
+          Promise.all(loads).finally(() => distApp.reportReady());
         `,
       },
     },
@@ -849,6 +873,7 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           const jwtBox = document.querySelector('[name=token]');
           const form = document.querySelector('form');
@@ -871,24 +896,29 @@ export const ToolbeltCatalog = new Array<Entity>({
 
           form.addEventListener('submit', evt => {
             evt.preventDefault();
-            try {
-              decodeJWT(jwtBox.value);
-            } catch (err) {
-              alert(err);
-            }
+            setState('input', stripSignature(jwtBox.value));
+            decodeJWT(jwtBox.value);
           });
 
           jwtBox.focus();
           jwtBox.addEventListener('paste', evt => {
-            try {
-              jwtBox.value = '';
-              decodeJWT(evt.clipboardData.getData('text'));
-            } catch (err) {
-              alert(err);
-            }
+            jwtBox.value = '';
+            const pasteText = evt.clipboardData.getData('text');
+            setState('input', stripSignature(pasteText));
+            decodeJWT(pasteText);
           });
 
-          await distApp.reportReady();
+          function stripSignature(jwt) {
+            return jwt.split('.').slice(0,2).concat('[signature_redacted]').join('.');
+          }
+
+          getState('input').then(input => {
+            if (input) {
+              jwtBox.value = input;
+              // TODO: should the output box have its own storage?
+              decodeJWT(input);
+            }
+          }).finally(() => distApp.reportReady());
         `,
       },
     },
@@ -970,6 +1000,7 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           const inputBox = document.querySelector('[name=input]');
           const outputBox = document.querySelector('[name=output]');
@@ -982,7 +1013,7 @@ export const ToolbeltCatalog = new Array<Entity>({
             // useful feature when extracting JSON from a parent JSON document
             if (input.constructor === String) {
               // TODO: nicer messaging
-              alert("Automatically parsing contents of JSON string as JSON");
+              // alert("Automatically parsing contents of JSON string as JSON");
               input = JSON.parse(input);
             }
 
@@ -991,24 +1022,25 @@ export const ToolbeltCatalog = new Array<Entity>({
 
           form.addEventListener('submit', evt => {
             evt.preventDefault();
-            try {
-              prettify(inputBox.value);
-            } catch (err) {
-              alert(err);
-            }
+            prettify(inputBox.value);
+            setState('input', inputBox.value);
           });
 
           inputBox.focus();
           inputBox.addEventListener('paste', evt => {
-            try {
-              inputBox.value = '';
-              prettify(evt.clipboardData.getData('text'));
-            } catch (err) {
-              alert(err);
-            }
+            inputBox.value = '';
+            const pasteText = evt.clipboardData.getData('text');
+            prettify(pasteText);
+            setState('input', pasteText);
           });
 
-          await distApp.reportReady();
+          getState('input').then(input => {
+            if (input) {
+              inputBox.value = input;
+              // TODO: should the output box have its own storage?
+              prettify(input);
+            }
+          }).finally(() => distApp.reportReady());
         `,
       },
     },
@@ -1032,7 +1064,7 @@ export const ToolbeltCatalog = new Array<Entity>({
     },
     implementation: {
       type: 'iframe',
-      sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
+      sandboxing: ['allow-scripts'],
       securityPolicy: {
         scriptSrc: ['https://cdnjs.cloudflare.com'],
       },
@@ -1186,6 +1218,7 @@ export const ToolbeltCatalog = new Array<Entity>({
         `,
         inlineScript: stripIndent(html)`
           const distApp = await DistApp.connect();
+          ${useVueState}
 
           const currentEpoch = document.querySelector('#current-epoch input');
           let isCurrentFocused = false;
@@ -1233,13 +1266,16 @@ export const ToolbeltCatalog = new Array<Entity>({
               switch (inputStr.length) {
                 // seconds
                 case 10:
-                  return inputInt * 1000;
+                  return inputInt * 1_000;
                 // millis
                 case 13:
                   return inputInt;
                 // micros - JS will trim precision
                 case 16:
-                  return inputInt / 1000;
+                  return inputInt / 1_000;
+                // nanos - JS will trim precision
+                case 19:
+                  return inputInt / 1_000_000;
               }
               throw new Error("Epoch timestamps with "+inputStr.length+" digits doesn't make sense");
             }
@@ -1269,10 +1305,14 @@ export const ToolbeltCatalog = new Array<Entity>({
               epochError.innerText = err.message;
             }
           };
-          inputEpoch.addEventListener('input', fromEpoch);
+          inputEpoch.addEventListener('input', () => {
+            setState('input', inputEpoch.value);
+            fromEpoch();
+          });
           inputEpoch.addEventListener('paste', evt => {
             evt.target.value = '';
           });
+
 
           moment.tz.names().forEach(name => {
             const opt = document.createElement('option');
@@ -1281,17 +1321,45 @@ export const ToolbeltCatalog = new Array<Entity>({
             outputTzSelect.add(opt);
           });
           outputTzSelect.value = moment.tz.guess();
-          outputTzSelect.addEventListener('input', fromEpoch);
-
-          outputFormatSelect.addEventListener('input', fromEpoch);
-
-          // if the browser didn't restore into the box, let's set a default
-          if (!inputEpoch.value) {
-            inputEpoch.value = Math.round(new Date()/1000);
+          outputTzSelect.addEventListener('input', () => {
+            setState('display-tz', outputTzSelect.value);
             fromEpoch();
-          }
+          });
 
-          await distApp.reportReady();
+          outputFormatSelect.addEventListener('input', () => {
+            setState('display-format', outputFormatSelect.value);
+            fromEpoch();
+          });
+
+          const loads = [
+            getState('input').then(input => {
+              if (input) {
+                inputEpoch.value = input;
+              }
+            }),
+            getState('display-tz').then(tz => {
+              if (tz) {
+                outputTzSelect.value = tz;
+              }
+            }),
+            getState('display-format').then(value => {
+              if (value) {
+                outputFormatSelect.value = value;
+              }
+            }),
+          ];
+          Promise.all(loads).finally(() => {
+
+            // if the browser didn't restore into the box, let's set a default
+            if (!inputEpoch.value) {
+              inputEpoch.value = Math.round(new Date()/1000);
+              setState('input', inputEpoch.value);
+            }
+
+            fromEpoch();
+
+            distApp.reportReady();
+          });
         `,
       },
     },
@@ -1418,6 +1486,16 @@ export const ToolbeltCatalog = new Array<Entity>({
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'ApiBinding',
+  metadata: {
+    name: 'google-dns',
+  },
+  spec: {
+    apiName: 'google-dns',
+    required: false,
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'google-dns',
@@ -1447,10 +1525,6 @@ export const ToolbeltCatalog = new Array<Entity>({
       initialWidth: 800,
       initialHeight: 500,
     },
-    fetchBindings: [{
-      pathPrefix: '/google-dns',
-      apiName: 'google-dns',
-    }],
     implementation: {
       type: 'iframe',
       sandboxing: ['allow-scripts', 'allow-forms', 'allow-modals'],
@@ -1756,7 +1830,7 @@ export const ToolbeltCatalog = new Array<Entity>({
               opts.set('name', input.text);
               opts.set('type', input.type);
               opts.set('do', '1');
-              const resp = await distApp.fetch('/binding/google-dns/resolve?'+opts.toString());
+              const resp = await distApp.fetch('/ApiBinding/google-dns/resolve?'+opts.toString());
               const json = await resp.json();
 
               const wrap = document.createElement('div');

@@ -1,16 +1,40 @@
 import { check } from "meteor/check";
 import { Meteor } from "meteor/meteor";
+import { Promise } from "meteor/promise";
+import { deleteEntity, insertEntity, updateEntity } from "./entity-crud";
 import { fetchRequestEntity } from "./fetch";
 import { getUserDefaultProfile } from "./profiles";
+import { ArbitraryEntity } from "/imports/entities/core";
 import { FetchRequestEntity } from "/imports/entities/protocol";
 
 Meteor.methods({
 
-  async '/v1alpha1/create user workspace'() {
+
+  '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
+    check(catalogId, String);
+    check(entity, Object);
+    return Promise.await(insertEntity(this.userId, catalogId, entity as ArbitraryEntity));
+  },
+
+  '/v1alpha1/Entity/update'(catalogId: unknown, newEntity: unknown) {
+    check(catalogId, String);
+    check(newEntity, Object);
+    return Promise.await(updateEntity(this.userId, catalogId, newEntity as ArbitraryEntity));
+  },
+
+  '/v1alpha1/Entity/delete'(catalogId: unknown, apiVersion: unknown, kind: unknown, name: unknown) {
+    check(catalogId, String);
+    check(apiVersion, String);
+    check(kind, String);
+    check(name, String);
+    return Promise.await(deleteEntity(this.userId, catalogId, apiVersion, kind, name));
+  },
+
+
+  '/v1alpha1/get user profile'() {
     const userId = Meteor.userId();
     if (!userId) throw new Meteor.Error(`logged-out`, `Log in to start a profile.`);
-    console.log('new workspace for', userId);
-    return await getUserDefaultProfile(userId);
+    return Promise.await(getUserDefaultProfile(userId));
   },
 
   async 'poc-FetchRequestEntity'(req: FetchRequestEntity) {
