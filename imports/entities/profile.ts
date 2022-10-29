@@ -15,21 +15,30 @@ export interface AppInstallationEntity {
   };
 }
 
-export interface FetchBindingEntity {
+export interface ApiCredentialEntity {
   _id?: string;
   apiVersion: "profile.dist.app/v1alpha1";
-  kind: "FetchBinding";
+  kind: "ApiCredential";
   metadata: EntityMetadata;
   spec: {
+    accountTypeId: string;
+    authType: 'http-basic' | 'http-digest' | 'api-key' | 'oauth2' | 'oidc';
     exit: {
-      type: 'Internet';
+      type: 'internet';
       targetUrl: string;
       corsAllowed?: boolean;
     };
     validation: 'None' | 'CheckOnly' | 'Enforced';
     logging: 'None' | 'MetadataOnly' | 'Full';
   };
+  status?: {
+    lifecycle: 'Pending' | 'Available' | 'Expired';
+    health: 'Unknown' | 'Passing' | 'Failed';
+    validUntil?: Date;
+  };
   secret?: {
+    username?: string;
+    password?: string;
     accessToken?: string;
     refreshToken?: string;
   };
@@ -59,7 +68,7 @@ export interface SavedSessionEntity {
 
 export type RuntimeEntity = (
   | AppInstallationEntity
-  | FetchBindingEntity
-  | TaskEntity
+  | ApiCredentialEntity
+  // | TaskEntity
   | SavedSessionEntity
 );

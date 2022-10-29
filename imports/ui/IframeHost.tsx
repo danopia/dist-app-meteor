@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { ActivityEntity } from '../entities/manifest';
+import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { ActivityTaskEntity, FrameEntity } from '../entities/runtime';
@@ -119,12 +119,7 @@ export const IframeHost = (props: {
         className={props.className}
         src={frameUrl.objectURL}
         sandbox={implementation.sandboxing?.join(' ') ?? ""}
-        csp={[
-          `default-src 'self'`,
-          `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${(implementation.securityPolicy?.scriptSrc ?? []).join(' ')}`,
-          `style-src 'self' 'unsafe-inline'`,
-          `connect-src 'self' ${(implementation.securityPolicy?.connectSrc ?? []).join(' ')}`,
-        ].join('; ')}
+        csp={buildCsp(implementation)}
         onLoad={evt => {
           setContentWindow(evt.currentTarget.contentWindow);
         }}
@@ -133,3 +128,17 @@ export const IframeHost = (props: {
 
   throw new Error(`TODO: unimpl`);
 };
+
+function buildCsp(impl: IframeImplementationSpec) {
+  return [
+    `default-src 'self'`,
+    `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${(impl.securityPolicy?.scriptSrc ?? []).join(' ')}`,
+    `style-src 'self' 'unsafe-inline'`,
+    ...(impl.securityPolicy?.connectSrc?.length ? [
+      `connect-src 'self' ${impl.securityPolicy.connectSrc.join(' ')}`,
+    ] : []),
+    ...(impl.securityPolicy?.imgSrc?.length ? [
+      `img-src 'self' ${impl.securityPolicy.imgSrc.join(' ')}`,
+    ] : []),
+  ].join('; ');
+}

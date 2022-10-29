@@ -51,6 +51,7 @@ export interface IframeImplementationSpec {
   >;
   securityPolicy?: {
     scriptSrc?: Array<string>;
+    imgSrc?: Array<string>;
     connectSrc?: Array<string>;
   };
   disableCommunication?: boolean;
@@ -68,8 +69,20 @@ export interface IframeImplementationSpec {
     bodyHtml?: string;
   };
 }
+export interface IsolateImplementationSpec {
+  type: 'isolate';
+  engines: Record<string, string>; // e.g. v8, deno
+  source: {
+    type: 'internet-url';
+    url: string;
+  } | {
+    type: 'inline-module';
+    source: string;
+  };
+}
 export type ImplementationSpec =
 | IframeImplementationSpec
+| IsolateImplementationSpec
 ;
 
 export interface ActivityEntity {

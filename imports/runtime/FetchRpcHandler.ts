@@ -78,7 +78,7 @@ export class FetchRpcHandler {
       kind: 'FetchResponse',
       spec: {
         status: 404,
-        body: `No b ${JSON.stringify(bindingName)} exists`,
+        body: `No ApiBinding ${JSON.stringify(bindingName)} exists`,
         headers: [['content-type', 'text/plain']],
       },
     };
@@ -88,7 +88,7 @@ export class FetchRpcHandler {
       kind: 'FetchResponse',
       spec: {
         status: 404,
-        body: `Binding ${JSON.stringify(bindingName)} lacks extant Api entity`,
+        body: `ApiBinding ${JSON.stringify(bindingName)} lacks extant Api entity`,
         headers: [['content-type', 'text/plain']],
       },
     };
