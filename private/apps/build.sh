@@ -2,7 +2,7 @@
 
 #./node_modules/.bin/tsc private/apps/src/market/build.ts --outDir private/apps/build
 
-node_modules/.bin/tsc \
+meteor node node_modules/.bin/tsc \
   -p private/apps/tsconfig.json \
   --outDir private/apps/build
 
