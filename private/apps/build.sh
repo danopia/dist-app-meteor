@@ -9,6 +9,6 @@ meteor node node_modules/.bin/tsc \
 meteor node \
   private/apps/build/private/apps/src/market/build.js \
 | tee imports/apps/market.ts \
-| cut -c-$COLUMNS
+| cut -c-${COLUMNS:-80}
 
 echo 'Recompiled apps.'
