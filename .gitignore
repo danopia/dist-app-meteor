@@ -1,2 +1,5 @@
 node_modules/
 settings.json
+imports/apps/
+private/apps/build
+private/apps/swc

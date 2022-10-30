@@ -1,0 +1,39 @@
+<div v-if="!state.selectedApp" id="history-col">
+  <section class="intro">
+    <ul>
+      <li>this market lists several known applications which you can install.</li>
+      <li>some applications will ask for configuration or credentials.</li>
+      <li>also keep in mind that this whole thing is currently in Alpha.</li>
+    </ul>
+  </section>
+  <section v-if="!state.selectedApp" class="listing-row" v-for="entry in listings">
+    <img :src="entry.iconUrl" class="app-icon" />
+    <div class="text-area">
+      <h3>{{ entry.title }}</h3>
+      <p>{{ entry.description }}</p>
+      <p>App URL: {{ entry.url }}</h3>
+    </div>
+    <button type="button" @click="state.selectedApp = entry">View</button>
+  </section>
+  <section class="footer">
+    <div>
+      and that's it for now
+    </div>
+  </section>
+</div>
+<div v-if="state.selectedApp" id="detail-page">
+  <section class="intro">
+    <ul>
+      <li><button type="button" @click="state.selectedApp = null">Back to directory</button></li>
+    </ul>
+  </section>
+  <section class="listing-row">
+    <img :src="state.selectedApp.iconUrl" class="app-icon" />
+    <div class="text-area">
+      <h3>{{ state.selectedApp.title }}</h3>
+      <p>{{ state.selectedApp.description }}</p>
+      <p>App URL: {{ state.selectedApp.url }}</h3>
+    </div>
+    <button type="button" @click="alert('todo')">Install</button>
+  </section>
+</div>

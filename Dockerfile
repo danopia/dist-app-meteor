@@ -16,6 +16,10 @@ COPY server ./server
 COPY tests ./tests
 COPY public ./public
 COPY tsconfig.json ./tsconfig.json
+
+COPY private ./private
+RUN private/apps/build.sh
+
 RUN meteor build --directory /opt/bundle --server-only
 
 

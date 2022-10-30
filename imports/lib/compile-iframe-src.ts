@@ -1,4 +1,5 @@
 import { html } from "common-tags";
+import { useVueState } from "../apps/_vue";
 import { IframeImplementationSpec } from "../entities/manifest";
 import { iframeEntrypointText } from "../userland/iframe-entrypoint-blob";
 
@@ -34,7 +35,9 @@ export function compileIframeSrc(implementation: IframeImplementationSpec): stri
       `<script type="module">${iframeEntrypointText.replace('{ORIGIN}', JSON.stringify(location.origin).slice(1, -1))}</script>`,
       ...(implementation.source.inlineScript ? [
         `  <script type="module" defer>`,
-        implementation.source.inlineScript.replace(/^/gm, '    '),
+        implementation.source.inlineScript
+          .replace('\n"useVueState";\n', `\n${useVueState}\n`) // TODO: this sucks
+          .replace(/^/gm, '    '),
         `  </script>`,
       ] : []),
 

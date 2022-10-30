@@ -17,6 +17,9 @@ StaticCatalogs.set("app:http-client", HttpClientCatalog);
 StaticCatalogs.set("app:timezones", TimezonesCatalog);
 StaticCatalogs.set("app:scaleway", ScalewayCatalog);
 
+import { AppCatalog as market } from "../apps/market";
+StaticCatalogs.set("app:market", market);
+
 for (const [name, cat] of StaticCatalogs) {
   for (const entity of cat) {
     entity.metadata.namespace = name;
