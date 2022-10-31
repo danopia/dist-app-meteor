@@ -34,6 +34,15 @@
       <p>{{ state.selectedApp.description }}</p>
       <p>App URL: {{ state.selectedApp.url }}</h3>
     </div>
-    <button type="button" @click="alert('todo')">Install</button>
+  </section>
+  <section class="listing-row" v-for="profile in profiles">
+    <div></div>
+    <div class="text-area">
+      <h3>{{ profile.title }}</h3>
+      <p>{{ profile.namespace }}</p>
+    </div>
+    <button v-if="state.selectedApp.installedProfiles.includes(profile.namespace)"
+        type="button" @click="openApp(profile.namespace)">Open</button>
+    <button v-else type="button" @click="installApp(profile.namespace)">Install</button>
   </section>
 </div>

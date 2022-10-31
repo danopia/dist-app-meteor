@@ -7,6 +7,7 @@ import { ActivityEntity, ApiBindingEntity, ApiEntity } from "../entities/manifes
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
+import { serveMarketApi } from "./system-apis/market";
 
 export class FetchRpcHandler {
   constructor(
@@ -82,6 +83,14 @@ export class FetchRpcHandler {
         headers: [['content-type', 'text/plain']],
       },
     };
+
+    // TODO: proper registry of these
+    if (binding.spec.apiName == 'market.v1alpha1.dist.app') {
+      return {
+        kind: 'FetchResponse',
+        spec: await serveMarketApi({request: rpc.spec, path: subPath, context: this }),
+      };
+    }
 
     const apiEntity = this.runtime.getEntity<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', this.activity.metadata.namespace, binding.spec.apiName);
     if (!apiEntity) return {

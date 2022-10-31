@@ -4,11 +4,26 @@ import { execFileSync } from 'node:child_process';
 
 import type {
   ActivityEntity,
+  ApiBindingEntity,
   ApplicationEntity,
   IframeImplementationSpec,
 } from "../../../imports/entities/manifest";
 
 export class AppBuilder {
+  apiBinding(name: string, opts: {
+    labels?: Record<string,string>;
+    spec: ApiBindingEntity['spec'];
+  }) {
+    console.log('  '+JSON.stringify({
+      apiVersion: 'manifest.dist.app/v1alpha1',
+      kind: 'ApiBinding',
+      metadata: {
+        name,
+        labels: opts.labels,
+      },
+      spec: opts.spec,
+    })+',');
+  }
   piecemealSourceFromFiles(dirname: string, filePrefix: string): IframeImplementationSpec['source'] {
     const subDir = relative(__dirname, dirname);
     const assetDir = joinPath('apps', 'src', subDir);

@@ -41,4 +41,18 @@ builder.activity('main', {
   },
 });
 
+builder.apiBinding('host', {
+  // labels: {
+  //   'keychain.dist.app/auth-mode': 'required',
+  // },
+  spec: {
+    apiName: 'market.v1alpha1.dist.app',
+    required: true,
+    auth: {
+      required: false,
+      accountTypeId: 'profile.v1alpha1.dist.app',
+    },
+  },
+});
+
 builder.done();
