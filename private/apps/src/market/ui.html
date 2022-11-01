@@ -11,7 +11,6 @@
     <div class="text-area">
       <h3>{{ entry.title }}</h3>
       <p>{{ entry.description }}</p>
-      <p>App URL: {{ entry.url }}</h3>
     </div>
     <button type="button" @click="state.selectedApp = entry">View</button>
   </section>
@@ -21,7 +20,7 @@
     </div>
   </section>
 </div>
-<div v-if="state.selectedApp" id="detail-page">
+<div v-if="state.selectedApp" class="detail-page">
   <section class="intro">
     <ul>
       <li><button type="button" @click="state.selectedApp = null">Back to directory</button></li>
@@ -32,17 +31,18 @@
     <div class="text-area">
       <h3>{{ state.selectedApp.title }}</h3>
       <p>{{ state.selectedApp.description }}</p>
-      <p>App URL: {{ state.selectedApp.url }}</h3>
     </div>
-  </section>
-  <section class="listing-row" v-for="profile in profiles">
-    <div></div>
-    <div class="text-area">
-      <h3>{{ profile.title }}</h3>
-      <p>{{ profile.namespace }}</p>
-    </div>
-    <button v-if="state.selectedApp.installedProfiles.includes(profile.namespace)"
-        type="button" @click="openApp(profile.namespace)">Open</button>
-    <button v-else type="button" @click="installApp(profile.namespace)">Install</button>
+    <template v-for="profile in profiles">
+      <div style="grid-column: 2 / 5;"><hr></div>
+      <div class="text-area" style="grid-column: 2 / 3;">
+        <h3>{{ profile.title }}</h3>
+        <p>{{ profile.namespace }}</p>
+      </div>
+      <template v-if="selectedAppHasInstallations(profile.namespace)">
+        <button type="button" style="grid-column: 3 / 4;" @click="openApp(profile.namespace)">Open</button>
+        <button type="button" style="grid-column: 4 / 5;">v</button>
+      </template>
+      <button v-else type="button" style="grid-column: 3 / 5;" @click="installApp(profile.namespace)">Install</button>
+    </template>
   </section>
 </div>

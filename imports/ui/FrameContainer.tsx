@@ -38,6 +38,7 @@ export const FrameContainer = (props: {
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
+  let className: string | undefined;
   let content: ReactNode;
   let title: ReactNode = (<div className="window-title">Untitled Frame</div>);
   switch (contentRaw?.kind) {
@@ -53,6 +54,7 @@ export const FrameContainer = (props: {
     }
 
     case "Command": {
+      className = "intent-frame";
       title = (
         <div className="window-title">
           TODO: command titlebar. {contentRaw.kind} {contentRaw.metadata.name}
@@ -108,6 +110,7 @@ export const FrameContainer = (props: {
   return (
     <WindowFrame
         // title={`Task ${frameEntity.metadata.name}`}
+        className={className}
         floatingRect={frameEntity.spec.placement.floating}
         sizeRules={frameEntity.spec.sizeConstraint}
         layoutMode={frameEntity.spec.placement.current}

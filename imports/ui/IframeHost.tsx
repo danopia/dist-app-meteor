@@ -9,6 +9,7 @@ import * as protocol from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 import { compileIframeSrc } from '../lib/compile-iframe-src';
 
+// TODO: rename AppWindow or IframeWindow, put in frames/
 export const IframeHost = (props: {
   task: FrameEntity;
   workspaceName: string;

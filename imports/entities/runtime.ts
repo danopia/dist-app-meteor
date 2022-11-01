@@ -22,6 +22,7 @@ export interface CommandEntity {
       action?: string;
       category?: string;
       receiverRef?: string;
+      dataRef?: string;
       data?: string;
       activity?: {
         name: string;
