@@ -17,7 +17,12 @@ export class FetchRpcHandler {
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    console.log('IframeHost fetch', rpc);
+    const response = await this.handleInner(rpc).catch(makeErrorResponse);
+    console.log('IframeHost:', response.spec.status, 'from', rpc.spec.method, rpc.spec.url, {request: rpc.spec, response: response.spec});
+    return response;
+  }
+
+  async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
 
     if (rpc.spec.url.startsWith('/task/state/')) {
@@ -35,38 +40,45 @@ export class FetchRpcHandler {
   async handleTaskState(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const stateKey = decodeURIComponent(rpc.spec.url.split('/')[3]);
     // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
+
     if (rpc.spec.method == 'GET') {
-      const {appData} = this.runtime.getEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name)?.state ?? {};
-      if (appData?.[stateKey] != null) return {
-        kind: 'FetchResponse',
-        spec: {
-          status: 200,
-          body: appData[stateKey],
-          headers: [['content-type', 'text/plain']],
-        },
-      };
-      return {
-        kind: 'FetchResponse',
-        spec: {
-          status: 404,
-          body: `no state exists here yet (TODO)`,
-          headers: [['content-type', 'text/plain']],
-        },
-      };
+      const { appData } = this.runtime.getEntity<ActivityTaskEntity>(
+        'runtime.dist.app/v1alpha1', 'ActivityTask',
+        this.activityTask.metadata.namespace, this.activityTask.metadata.name,
+      )?.state ?? {};
+
+      if (appData?.[stateKey] != null) {
+        return makeTextResponse(200, appData[stateKey]);
+      }
+      return makeStatusResponse(404, `no state exists here yet (TODO)`);
     }
-    const newBody = typeof rpc.spec.body == 'string' ? rpc.spec.body : new TextDecoder().decode(rpc.spec.body);
-    this.runtime.mutateEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name, actInst => {
-      actInst.state.appData ??= {};
-      actInst.state.appData[stateKey] = newBody;
-    });
-    return {
-      kind: 'FetchResponse',
-      spec: {
-        status: 200,
-        body: `ok`,
-        headers: [['content-type', 'text/plain']],
-      },
-    };
+
+    const newBody = typeof rpc.spec.body == 'string'
+      ? rpc.spec.body
+      : new TextDecoder().decode(rpc.spec.body);
+    await this.runtime.mutateEntity<ActivityTaskEntity>(
+      'runtime.dist.app/v1alpha1', 'ActivityTask',
+      this.activityTask.metadata.namespace, this.activityTask.metadata.name,
+      actInst => {
+        actInst.state.appData ??= {};
+        actInst.state.appData[stateKey] = newBody;
+      });
+    return makeTextResponse(200, `ok`);
+  }
+
+  async handleSystemBinding(rpc: FetchRequestEntity, apiName: string, subPath: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
+    const impl = ({
+      'market.v1alpha1.dist.app': serveMarketApi,
+    })[apiName];
+    if (!impl) return makeStatusResponse(404,
+      `System API ${JSON.stringify(apiName)} not found`);
+
+    return await impl({
+      request: rpc.spec,
+      path: subPath,
+      context: this,
+    }).then<Omit<FetchResponseEntity, 'origId'>>(x => ({kind: 'FetchResponse', spec: x}))
+      .catch(makeErrorResponse);
   }
 
   async handleBinding(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -74,47 +86,29 @@ export class FetchRpcHandler {
     const bindingName = rpc.spec.url.slice('/ApiBinding/'.length, slashIdx);
     const subPath = rpc.spec.url.slice(slashIdx+1);
 
-    const binding = this.runtime.getEntity<ApiBindingEntity>('manifest.dist.app/v1alpha1', 'ApiBinding', this.activity.metadata.namespace, bindingName);
-    if (!binding) return {
-      kind: 'FetchResponse',
-      spec: {
-        status: 404,
-        body: `No ApiBinding ${JSON.stringify(bindingName)} exists`,
-        headers: [['content-type', 'text/plain']],
-      },
-    };
+    const binding = this.runtime.getEntity<ApiBindingEntity>(
+      'manifest.dist.app/v1alpha1', 'ApiBinding',
+      this.activity.metadata.namespace, bindingName);
+    if (!binding) return makeStatusResponse(404,
+      `ApiBinding ${JSON.stringify(bindingName)} not found`);
 
-    // TODO: proper registry of these
-    if (binding.spec.apiName == 'market.v1alpha1.dist.app') {
-      return {
-        kind: 'FetchResponse',
-        spec: await serveMarketApi({request: rpc.spec, path: subPath, context: this }),
-      };
+    if (binding.spec.apiName.endsWith('.v1alpha1.dist.app')) {
+      return await this.handleSystemBinding(rpc, binding.spec.apiName, subPath);
     }
 
-    const apiEntity = this.runtime.getEntity<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', this.activity.metadata.namespace, binding.spec.apiName);
-    if (!apiEntity) return {
-      kind: 'FetchResponse',
-      spec: {
-        status: 404,
-        body: `ApiBinding ${JSON.stringify(bindingName)} lacks extant Api entity`,
-        headers: [['content-type', 'text/plain']],
-      },
-    };
+    const apiEntity = this.runtime.getEntity<ApiEntity>(
+      'manifest.dist.app/v1alpha1', 'Api',
+      this.activity.metadata.namespace, binding.spec.apiName);
+    if (!apiEntity) return makeStatusResponse(404,
+      `ApiBinding ${JSON.stringify(bindingName)} lacks extant Api entity`);
 
     if (apiEntity.spec.type !== 'openapi') throw new Error(
       `TODO: non-openapi Api entity: ${JSON.stringify(apiEntity.spec.type)}`);
 
     const apiSpec: OpenAPIV3.Document = parse(apiEntity.spec.definition);
     const server = apiSpec.servers?.[0];
-    if (!server || !server.url.startsWith('https://')) return {
-      kind: 'FetchResponse',
-      spec: {
-        status: 404,
-        body: `Binding ${JSON.stringify(bindingName)} has no server available`,
-        headers: [['content-type', 'text/plain']],
-      },
-    };
+    if (!server || !server.url.startsWith('https://')) return makeStatusResponse(404,
+      `ApiBinding ${JSON.stringify(bindingName)} has no server available`);
 
     const realUrl = new URL(subPath, server.url).toString();
     if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
@@ -211,4 +205,16 @@ function isReferenceObject(ref: unknown): ref is OpenAPIV3.ReferenceObject {
   if (!ref || typeof ref !== 'object') return false;
   const refObj = ref as Record<string,unknown>;
   return typeof refObj.$ref == 'string';
+}
+
+const makeErrorResponse = (err: Error) => makeTextResponse(500, err.stack ?? `Server Error`);
+const makeStatusResponse = (status: number, message: string) => makeTextResponse(status, `${status}: ${message}`);
+function makeTextResponse(status: number, body: string): Omit<FetchResponseEntity, 'origId'> {
+  return {
+    kind: 'FetchResponse',
+    spec: {
+      status, body,
+      headers: [['content-type', 'text/plain']],
+    },
+  };
 }
