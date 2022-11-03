@@ -8,12 +8,13 @@ import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
+import { serveSessionApi } from "./system-apis/session";
 
 export class FetchRpcHandler {
   constructor(
-    private readonly runtime: EntityEngine,
-    private readonly activityTask: ActivityTaskEntity,
-    private readonly activity: ActivityEntity,
+    public readonly runtime: EntityEngine,
+    public readonly activityTask: ActivityTaskEntity,
+    public readonly activity: ActivityEntity,
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -69,6 +70,7 @@ export class FetchRpcHandler {
   async handleSystemBinding(rpc: FetchRequestEntity, apiName: string, subPath: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const impl = ({
       'market.v1alpha1.dist.app': serveMarketApi,
+      'session.v1alpha1.dist.app': serveSessionApi,
     })[apiName];
     if (!impl) return makeStatusResponse(404,
       `System API ${JSON.stringify(apiName)} not found`);

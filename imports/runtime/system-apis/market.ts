@@ -4,6 +4,14 @@ import { StaticCatalogs } from "/imports/engine/StaticCatalogs";
 import { ApplicationEntity } from "/imports/entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
 
+/**
+ * # session.v1alpha1.dist.app
+ *
+ * This API is used by:
+ *   - market (bundled app)
+ *       This API provides the network and runtime access
+ *       to explore the available applications and any existing installations.
+ */
 export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], path: string, context: FetchRpcHandler }): Promise<FetchResponseEntity['spec']> {
   console.log('MARKET:', rpc);
 

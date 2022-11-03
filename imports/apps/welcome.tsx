@@ -21,6 +21,23 @@ export const WelcomeCatalog = new Array<Entity>({
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'ApiBinding',
+  metadata: {
+    name: 'session',
+    labels: {
+      'keychain.dist.app/auth-mode': 'required',
+    },
+  },
+  spec: {
+    apiName: 'session.v1alpha1.dist.app',
+    required: true,
+    auth: {
+      required: false,
+      accountTypeId: 'profile.v1alpha1.dist.app',
+    },
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
   kind: 'Activity',
   metadata: {
     name: 'main',
@@ -58,18 +75,31 @@ export const WelcomeCatalog = new Array<Entity>({
             This platform offers an experimental way of launching web-based applications.
             The principles of least-privilege, stateless programming, and single-purpose program units are leveraged together to reduce individual application complexity.
           </p>
-          <p>
-            This is a Guest shell, which means that the session data stays on this browser.
-            Your session can be kept for next time by signing in with your Google account.
-          </p>
-          <p style="text-align: center;">
-            <button onclick="signIn()">Sign in to dist.app</button>
-          </p>
-          <p>
-            To try out some demo applications, please look through the on-screen app tray.
-          </p>
+          <div class="resume-section">
+            <h2>Recent Sessions</h2>
+            <p>Pick up where you left off by restoring a previous session.</p>
+            <ul id="resume-list"></ul>
+          </div>
+          <div class="guest-section">
+            <p>
+              This is a Guest shell, which means that the session data stays on this browser.
+              Your session can be kept for next time by signing in with your Google account.
+            </p>
+            <p style="text-align: center;">
+              <button onclick="signIn()">Sign in to dist.app</button>
+            </p>
+            <p>
+              To try out some demo applications, please look through the on-screen app tray.
+            </p>
+          </div>
         `,
         inlineStyle: stripIndent`
+          body:not(.has-user) .resume-section {
+            display: none;
+          }
+          body.has-user .guest-section {
+            display: none;
+          }
           html {
             height: 100%;
             display: grid;
@@ -110,6 +140,41 @@ export const WelcomeCatalog = new Array<Entity>({
               },
             });
           };
+
+          async function updateUi() {
+            // const userId = await distApp.fetch('/ApiBinding/session/current-user-id').then(x => x.text());
+            // console.log({userId});
+
+            const sessions = await distApp.fetch('/ApiBinding/session/recent-sessions').then(x => x.ok ? x.json() : null);
+
+            if (sessions) {
+              const uiList = document.querySelector('#resume-list');
+              while (uiList.firstChild) uiList.removeChild(uiList.firstChild);
+
+              document.body.classList.add('has-user');
+
+              for (const session of sessions) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.addEventListener('click', () => restoreSession(session.metadata));
+                button.innerText = session.metadata.title || session.metadata.name;
+                const root = document.createElement('li');
+                root.appendChild(button);
+                uiList.appendChild(root);
+              }
+            } else {
+              document.body.classList.remove('has-user');
+            }
+          }
+          await updateUi();
+          setTimeout(updateUi, 1000);
+          setInterval(updateUi, 5000); // TODO: prevent parallel runs, also instead do proper eventing.
+
+          async function restoreSession(metadata) {
+            await distApp.fetch('/ApiBinding/session/by-name/'+metadata.name+'/restore', {
+              method: 'POST',
+            });
+          }
 
           await distApp.reportReady();
         `,
