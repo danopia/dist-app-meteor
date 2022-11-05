@@ -99,6 +99,7 @@ export class MongoEntityStorage implements EntityStorage {
         // namespace: this.props.namespace,
         ...entity.metadata,
         // catalogId: this.props.catalogId,
+        creationTimestamp: new Date(),
         generation: 1,
       },
       _id,
@@ -158,6 +159,7 @@ export class MongoEntityStorage implements EntityStorage {
       catalogId: this.props.catalogId,
       metadata: {
         ...newEntity.metadata,
+        updateTimestamp: new Date(),
         generation: (newEntity.metadata.generation ?? 0) + 1,
       },
     });

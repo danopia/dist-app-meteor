@@ -4,6 +4,8 @@ export interface EntityMetadata {
   catalogId?: string;
   uid?: string;
   generation?: number;
+  creationTimestamp?: Date;
+  updateTimestamp?: Date;
   title?: string;
   description?: string;
   labels?: Record<string,string|undefined>;
