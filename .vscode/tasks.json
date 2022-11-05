@@ -23,9 +23,15 @@
       "type": "shell",
       "command": "echo ./imports/userland/iframe-entrypoint.ts | entr ./imports/userland/build.fish",
       "isBackground": true,
-      // "dependsOn": [
-      //   "npm install"
-      // ],
+      "problemMatcher": [
+        "$tsc-watch"
+      ],
+    },
+    {
+      "label": "bundled app build",
+      "type": "shell",
+      "command": "find private/apps/src | entr ./private/apps/build.sh",
+      "isBackground": true,
       "problemMatcher": [
         "$tsc-watch"
       ],
@@ -36,9 +42,6 @@
       "command": "meteor",
       "args": ["--settings", "settings.json"],
       "isBackground": true,
-      "dependsOn": [
-        "npm install"
-      ],
       "options": {
         "env": {
           "ROOT_URL": "https://d64f80e0-432a-4e70-a740-d7ad8c1fc1cc.pub.instances.scw.cloud"
