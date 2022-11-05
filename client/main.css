@@ -31,7 +31,7 @@ iframe.activity-contents-wrap {
   justify-self: stretch;
   align-self: stretch;
   border: 0;
-  border-top: 1px solid #999;
+  /* border-top: 1px solid #999; */
   min-height: 0;
   min-width: 0;
 }
@@ -99,14 +99,35 @@ iframe.activity-contents-wrap {
   grid-area: powerbar;
   display: flex;
   margin: 0;
-  background-color: #333;
-  color: #eee;
+  background-color: #eee;
+  color: #333;
   overflow: hidden;
+  border-bottom: 1px solid #ccc;
 }
 .shell-powerbar select, .shell-powerbar button {
-  background-color: #333;
-  color: #eee;
+  background-color: #eee;
+  color: #333;
   padding: 0 1em;
+  border: 1px solid #ccc;
+  border-width: 0 1px 0 1px;
+}
+.shell-powerbar select:hover, .shell-powerbar button:hover {
+  background-color: #ddd;
+}
+@media (prefers-color-scheme: dark) {
+  .shell-powerbar { /* TODO: rename to window-bar or something*/
+    background-color: #333;
+    color: #eee;
+    border-bottom-color: #555;
+  }
+  .shell-powerbar select, .shell-powerbar button {
+    background-color: #333;
+    color: #eee;
+    border-color: #555;
+  }
+  .shell-powerbar select:hover, .shell-powerbar button:hover {
+    background-color: #444;
+  }
 }
 .window-rollup-toggle {
   grid-area: rollupbtn;
