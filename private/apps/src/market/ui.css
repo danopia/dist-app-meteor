@@ -15,13 +15,19 @@
 }
 
 body {
-  background-color: #333;
-  color: #fff;
+  background-color: #fff;
+  color: #111;
   margin: 0;
   padding: 0 2em 10em;
   box-sizing: border-box;
   width: 100%;
   font-family: monospace;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #333;
+    color: #fff;
+  }
 }
 form {
   display: grid;
@@ -38,24 +44,42 @@ input, textarea, select, button {
   border: 1px solid #999;
 }
 input, textarea, select {
-  background-color: #222;
-  color: #fff;
+  background-color: #eee;
+  color: #000;
   font-size: 1em;
   /*overflow-y: hidden;*/
 }
 input[readonly], textarea[readonly] {
   border-width: 0;
-  background-color: #555;
-  color: #fff;
+  background-color: #ccc;
+  color: #000;
 }
 button {
-  background-color: #444;
-  color: #fff;
+  background-color: #ddd;
+  color: #000;
   cursor: pointer;
 }
 button:hover, button:focus {
-  border: 1px solid #ccc;
-  background-color: #666;
+  border: 1px solid #444;
+  background-color: #bbb;
+}
+@media (prefers-color-scheme: dark) {
+  input, textarea, select {
+    background-color: #222;
+    color: #fff;
+  }
+  input[readonly], textarea[readonly] {
+    background-color: #555;
+    color: #fff;
+  }
+  button {
+    background-color: #444;
+    color: #fff;
+  }
+  button:hover, button:focus {
+    border-color: #ccc;
+    background-color: #666;
+  }
 }
 button.primary {
   font-size: 1.2em;
