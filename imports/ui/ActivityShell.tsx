@@ -18,13 +18,25 @@ export const ActivityShell = (props: {
   const workspaceName = "main";
 
   const runtime = useContext(RuntimeContext);
-  const workspace = useTracker(() => runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName), [runtime, workspaceName]);
-  const frames = useTracker(() => runtime.listEntities<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', 'session'), [runtime]);
+  const workspace = useTracker(() => runtime.getEntity<WorkspaceEntity>(
+    'runtime.dist.app/v1alpha1', 'Workspace',
+    'session', workspaceName,
+  ), [runtime, workspaceName]);
+  const frames = useTracker(() => runtime.listEntities<FrameEntity>(
+    'runtime.dist.app/v1alpha1', 'Frame',
+    'session',
+  ), [runtime]);
 
-  if (!workspace) throw new Error(`no workspace `+workspaceName);
   useBodyClass('shell-workspace-floating');
 
-  console.log({old:  workspace,  prop: props.savedSessionName})
+  if (!workspace) {
+    throw new Error(`no workspace `+workspaceName);
+    return (
+      <div>BUG: no workspace {workspaceName}</div>
+    );
+  }
+
+  // console.log({old:  workspace,  prop: props.savedSessionName})
 
   // TODO: pass entity handles and APIs down, to parameterize namespace
   return (
