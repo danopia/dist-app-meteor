@@ -37,7 +37,7 @@ export const ActivityShell = (props: {
         <div className="shell-floating-layer" key={floatingLayerKey}>
           {frames.map(task => (
             <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
-              <FrameContainer frame={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} workspaceName={workspaceName} sessionNamespace={"session"} />
+              <FrameContainer frame={task} zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)} className={workspace.spec.windowOrder.indexOf(task.metadata.name) == 0 ? 'topmost' : null} workspaceName={workspaceName} sessionNamespace={"session"} />
             </ErrorBoundary>
           ))}
         </div>

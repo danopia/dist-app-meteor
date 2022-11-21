@@ -70,6 +70,16 @@ iframe.activity-contents-wrap {
   min-height: 50px;
   box-shadow: 2px 4px 16px 2px rgba(0,0,0,0.3), 2px 4px 8px 2px rgba(0,0,0,0.2);
 }
+.shell-window.topmost {
+  box-shadow:
+    2px 4px 56px 4px rgba(0,0,0,0.4),
+    2px 4px 32px 4px rgba(0,0,0,0.3),
+    2px 4px 16px 2px rgba(0,0,0,0.2),
+    2px 4px 8px 2px rgba(0,0,0,0.2);
+}
+.shell-window:not(.topmost) > iframe {
+  pointer-events: none;
+}
 .shell-window-handle {
   grid-area: powerbar / handle / handle / handle;
   background-color: #87b3f3;
