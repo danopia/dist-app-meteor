@@ -1,4 +1,4 @@
-import React, { Fragment, useContext } from "react";
+import React, { useContext } from "react";
 import { ApplicationEntity, ActivityEntity } from "../entities/manifest";
 import { RuntimeContext } from "./contexts";
 import { AppIcon } from "./widgets/AppIcon";

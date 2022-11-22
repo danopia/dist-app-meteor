@@ -2,6 +2,7 @@ import { stripIndent } from "common-tags";
 import { FetchRpcHandler } from "../FetchRpcHandler";
 import { StaticCatalogs } from "/imports/engine/StaticCatalogs";
 import { ApplicationEntity } from "/imports/entities/manifest";
+import { AppInstallationEntity } from "/imports/entities/profile";
 import { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
 
 /**
@@ -17,9 +18,32 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
 
   if (rpc.path == 'list-available-apps' && rpc.request.method == 'GET') {
 
+    // Find places where we can find the user's existing installations
+    const namespaces = Array
+      .from(rpc.context.runtime
+        .getNamespacesServingApi({
+          apiVersion: 'profile.dist.app/v1alpha1',
+          kind: 'AppInstallation',
+          op: 'Read',
+        })
+        .keys());
+    console.log({ namespaces });
+
+    // Find existing installations
+    const installations = namespaces
+      .flatMap(x => rpc.context.runtime
+        .listEntities<AppInstallationEntity>(
+          'profile.dist.app/v1alpha1', 'AppInstallation', x)
+        .map(entity => ({ ns: x, entity })));
+
     const bundledApps = Array.from(StaticCatalogs.entries()).map(([id, catalog]) => {
       const appRes: ApplicationEntity | undefined = catalog.flatMap(x => x.kind == 'Application' ? [x] : [])[0];
-      // console.log({appRes});
+
+      // Know where the app is already present
+      const appInstalls = installations.filter(x => {
+        return x.entity.spec.appUri == 'bundled:'+encodeURIComponent(id);
+      });
+
       return {
         id: 'bundled:'+id.slice(4),
         // url: 'bundled:'+encodeURIComponent(id),
@@ -39,10 +63,10 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
               <image x="25" y="15" width="30" height="30" href="data:image/svg+xml,${encodeURIComponent(appRes.spec.icon.svg.textData)}" />
             </svg>`)}`
         : null),
-        currentInstallations: [{
-          profileNamespace: 'profile:guest',
-          appInstallName: `bundledguestapp-${id}`,
-        }],
+        currentInstallations: appInstalls.map(x => ({
+          profileNamespace: x.ns,
+          appInstallName: x.entity.metadata.name,
+        })),
       };
     });
 

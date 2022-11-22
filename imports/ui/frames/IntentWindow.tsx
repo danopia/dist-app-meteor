@@ -95,31 +95,40 @@ export const IntentWindow = (props: {
     }).exec(intent.dataRef);
     if (match) {
       const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
-      console.log({api, kind, name, namespace, version});
+      console.log({intent, api, kind, name, namespace, version});
 
       if (intent.action == 'app.dist.InstallApp' && namespace == 'bundled' && kind == 'Application') {
-        console.log('Want to install', name);
+        // @ts-expect-error extras is not typed yet
+        const targetNamespace = intent.extras?.['target-profile'] ?? 'profile:guest';
+        console.log('Want to install', name, 'into', targetNamespace);
 
+        if (runtime.getEntity<AppInstallationEntity>(
+          'profile.dist.app/v1alpha1', 'AppInstallation',
+          targetNamespace, `bundledinstall-${props.command.metadata.name}`
+        )) {
+          console.log('Nvm, already installed.');
 
-    runtime.insertEntity<AppInstallationEntity>({
-      apiVersion: 'profile.dist.app/v1alpha1',
-      kind: 'AppInstallation',
-      metadata: {
-        name: `bundledinstall-${Math.random().toString(16).slice(2)}`,
-        namespace: 'profile:guest',
-      },
-      spec: {
-        appUri: `${encodeURIComponent(namespace)}:${name}`,
-        // isInLauncher: true,
-        launcherIcons: [{
-          action: 'app.dist.Main',
-        }],
-        preferences: {},
-      },
-    });
+        } else {
+          runtime.insertEntity<AppInstallationEntity>({
+            apiVersion: 'profile.dist.app/v1alpha1',
+            kind: 'AppInstallation',
+            metadata: {
+              name: `bundledinstall-${props.command.metadata.name}`,
+              namespace: targetNamespace,
+            },
+            spec: {
+              appUri: `${encodeURIComponent(namespace)}:${name}`,
+              // isInLauncher: true,
+              launcherIcons: [{
+                action: 'app.dist.Main',
+              }],
+              preferences: {},
+            },
+          });
 
-        runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-        runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+        }
 
         return (<div className="activity-contents-wrap">Loading intent...</div>);
       }

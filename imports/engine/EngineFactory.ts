@@ -3,10 +3,10 @@ import { Random } from "meteor/random";
 import { AppInstallationEntity } from "../entities/profile";
 import { CommandEntity, FrameEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
-import { StaticCatalogs } from "./StaticCatalogs";
+import { GuestCatalogs } from "./StaticCatalogs";
 
 export function insertGuestProfileTemplate(engine: EntityEngine) {
-  for (const defaultNamespace of StaticCatalogs.keys()) {
+  for (const defaultNamespace of GuestCatalogs) {
     if (!defaultNamespace.startsWith('app:')) continue;
     engine.insertEntity<AppInstallationEntity>({
       apiVersion: 'profile.dist.app/v1alpha1',

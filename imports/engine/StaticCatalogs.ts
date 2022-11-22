@@ -21,6 +21,15 @@ StaticCatalogs.set("app:scaleway", ScalewayCatalog);
 StaticCatalogs.set("app:notion", NotionCatalog);
 StaticCatalogs.set("app:market", MarketCatalog);
 
+export const GuestCatalogs = new Set([
+  'app:counter-demo',
+  'app:welcome',
+  'app:toolbelt',
+  'app:world-clock',
+  'app:http-client',
+  'app:market',
+]);
+
 for (const [name, cat] of StaticCatalogs) {
   for (const entity of cat) {
     entity.metadata.namespace = name;
