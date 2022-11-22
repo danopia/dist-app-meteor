@@ -7,6 +7,7 @@ export interface ApplicationEntity {
   metadata: EntityMetadata;
   spec: {
     icon?: IconSpec;
+    brandImageUrl?: string;
   };
 }
 
