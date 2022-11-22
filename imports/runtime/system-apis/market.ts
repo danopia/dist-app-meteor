@@ -32,6 +32,12 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
               <circle cx="40" cy="30" r="25" fill="${appRes.spec.icon.glyph.backgroundColor}" />
               <text x="40" y="1.5em" font-size="25" text-anchor="middle">${appRes.spec.icon.glyph.text}</text>
             </svg>`)}`
+        : appRes.spec.icon?.type == 'svg'
+        ? `data:image/svg+xml,${encodeURIComponent(stripIndent`
+            <svg width="800" height="600" version="1.1" viewBox="0 0 80 60" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="40" cy="30" r="25" fill="${appRes.spec.icon.svg.backgroundColor}" />
+              <image x="25" y="15" width="30" height="30" href="data:image/svg+xml,${encodeURIComponent(appRes.spec.icon.svg.textData)}" />
+            </svg>`)}`
         : null),
         currentInstallations: [{
           profileNamespace: 'profile:guest',
