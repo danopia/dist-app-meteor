@@ -10,6 +10,9 @@ export const ScalewayCatalog = new Array<Entity>({
     title: 'Scaleway',
     description: `Toggle Scaleway servers on/off`,
     tags: ['poc'],
+    labels: {
+      'manifest.dist.app/primary-web-account': 'api.scaleway.com',
+    },
   },
   spec: {
     icon: {
@@ -20,6 +23,20 @@ export const ScalewayCatalog = new Array<Entity>({
       },
     },
     brandImageUrl: 'data:image/svg+xml,%3Csvg width="429.1" height="320.7" version="1.1" viewBox="0 0 429.1 320.7" xmlns="http://www.w3.org/2000/svg"%3E%3Cpath d="m395.5 230.3c-.4-.6-1.2-1-1.9-1h-5.4c-1 0-1.8.6-2.2 1.5l-11.2 28.9-10.6-28.9c-.4-.9-1.2-1.5-2.2-1.5h-6c-.8 0-1.5.4-1.9 1s-.5 1.5-.2 2.2l15.6 41.1c-.5 1.8-1.2 3.1-2.3 3.8-1.5 1-4.2 1.1-5.7 1.2-1.3.1-2.4 1.2-2.4 2.5v4c0 1.4 1.1 2.5 2.5 2.5 2.4 0 6.3.2 9.4-1.4 6.3-3.3 7.2-7.4 9-12.1l15.8-41.6c.2-.7.1-1.5-.3-2.2zm-163 29.3c-1.1-.8-2.6-.6-3.4.5-1 1.2-2.3 2.6-3.7 3.4-1.9 1-4.3 1.6-7.3 1.6-3.5 0-6.1-1.1-8.1-3.5-1.6-1.9-2.6-4.1-3.1-6.6h29.9c1.2 0 2.2-.9 2.3-2.1.1-.6.1-1.5.1-2.7 0-4.1-.9-7.9-2.7-11.2-1.8-3.4-4.4-6.1-7.6-8-3.2-2-6.9-3-10.9-3-4.2 0-8 1-11.3 3s-5.9 4.9-7.8 8.4c-1.8 3.5-2.8 7.6-2.8 12s.9 8.5 2.8 12c1.9 3.6 4.5 6.4 7.9 8.4 3.3 2 7.2 3 11.4 3 4.5 0 8.6-.9 11.9-2.8 3.5-1.9 5.7-4.3 7-6 .9-1.2.6-2.8-.6-3.7zm-21.8-18.9c1.9-1.9 4.3-2.8 7.4-2.8 3.2 0 5.6.8 7.4 2.5 1.3 1.2 2.3 3 2.9 5.2h-20.7c.6-1.9 1.6-3.5 3-4.9zm116.1 34.2c-4.2 0-8-1-11.4-3-3.3-2-6-4.9-7.9-8.4s-2.8-7.6-2.8-12.1c0-4.4.9-8.4 2.8-11.9s4.5-6.4 7.8-8.4 7.1-3 11.3-3c3.2 0 6.3.7 9 2.2.9.5 1.8 1 2.6 1.7v-.2c0-1.3 1-2.3 2.3-2.3h5.8c1.3 0 2.3 1 2.3 2.3v39.6c0 1.3-1 2.3-2.3 2.3h-5.8c-1.3 0-2.3-1-2.3-2.3v-.1c-.8.6-1.7 1.2-2.6 1.6-2.6 1.3-5.6 2-8.8 2zm-.1-37c-2.2 0-4.1.5-5.8 1.7-1.7 1.1-3.1 2.7-4.1 4.7-1 2.1-1.5 4.5-1.5 7.1 0 2.7.5 5.2 1.5 7.3s2.3 3.6 4.1 4.7c1.7 1.1 3.6 1.7 5.8 1.7 2.3 0 4.2-.5 6-1.7 1.8-1.1 3.1-2.7 4.1-4.7 1-2.1 1.5-4.5 1.5-7.2s-.5-5.1-1.5-7.2c-1-2-2.4-3.6-4.1-4.7-1.8-1.2-3.8-1.7-6-1.7zm-44.4 35.7c-1 0-1.9-.7-2.2-1.6l-7.5-23.6-8.1 23.7c-.3.9-1.2 1.6-2.2 1.6h-5.8c-1 0-1.9-.6-2.2-1.6l-13-39.6c-.3-1 .1-2.2 1-2.7.4-.2.8-.3 1.3-.3h6c1 0 1.9.6 2.2 1.6l7.9 24.6 8.1-24.7c.3-1 1.2-1.6 2.2-1.6h5.6c1 0 1.9.7 2.2 1.6l7.8 24.4 7.8-24.4c.3-1 1.2-1.6 2.2-1.6h5.5c.3 0 .6 0 .9.2 1.2.5 1.7 1.8 1.3 2.9l-12.8 39.5c-.3 1-1.2 1.6-2.2 1.6zm-100.4-.2c-1.3 0-2.3-1-2.3-2.3v-59c0-1.3 1-2.3 2.3-2.3h5.8c1.3 0 2.3 1 2.3 2.3v59c0 1.3-1 2.3-2.3 2.3zm-31.7 1.5c-4.2 0-8-1-11.4-3-3.3-2-6-4.9-7.9-8.4s-2.8-7.6-2.8-12.1c0-4.4.9-8.4 2.8-11.9s4.5-6.4 7.8-8.4 7.1-3 11.3-3c3.2 0 6.3.7 9 2.2.9.5 1.8 1 2.6 1.7v-.2c0-1.3 1-2.3 2.3-2.3h5.8c1.3 0 2.3 1 2.3 2.3v39.6c0 1.3-1 2.3-2.3 2.3h-5.7c-1.3 0-2.3-1-2.3-2.3v-.1c-.8.6-1.7 1.2-2.6 1.6-2.7 1.3-5.7 2-8.9 2zm-.1-37c-2.2 0-4.1.5-5.8 1.7-1.7 1.1-3.1 2.7-4.1 4.7-1 2.1-1.5 4.5-1.5 7.1 0 2.7.5 5.2 1.5 7.3s2.3 3.6 4.1 4.7c1.7 1.1 3.6 1.7 5.8 1.7 2.3 0 4.2-.5 6-1.7 1.8-1.1 3.1-2.7 4.1-4.7 1-2.1 1.5-4.5 1.5-7.2s-.5-5.1-1.5-7.2c-1-2-2.4-3.6-4.1-4.7-1.8-1.2-3.8-1.7-6-1.7zm-42.8 37c-4.2 0-8.1-1-11.4-3s-6-4.9-7.9-8.4-2.8-7.6-2.8-12 .9-8.4 2.8-12 4.5-6.4 7.8-8.4 7.2-3 11.4-3c3.6 0 6.8.8 9.6 2.4 2.6 1.5 5.1 3.7 7.2 6.5.8 1 .6 2.5-.4 3.3l-4.2 3.3c-.4.3-.9.5-1.4.5h-.4c-.6-.1-1.2-.5-1.6-1-2.3-3.4-5.2-5-8.8-5-2.2 0-4.1.5-5.9 1.7-1.7 1.1-3.1 2.7-4.1 4.7-1 2.1-1.5 4.5-1.5 7.2s.5 5.1 1.5 7.2 2.3 3.6 4.1 4.7c1.7 1.1 3.7 1.7 5.9 1.7 2.3 0 4.2-.4 5.6-1.1 1.5-.8 2.8-1.9 4-3.5.4-.6 1.1-.9 1.8-.9.5 0 .9.1 1.3.4l4.5 3.1c.5.4.9.9 1 1.6.1.6-.1 1.3-.5 1.8-2.1 2.6-4.6 4.6-7.7 6.2-3.1 1.2-6.4 2-9.9 2zm-49.5-.2c-4.6 0-9.1-1.2-13.4-3.4-4.3-2.3-7.9-5.4-10.8-9.3-.7-1-.6-2.3.3-3.1l5.2-4.6c.4-.4 1-.6 1.5-.6h.3c.7.1 1.3.5 1.6 1.1 1.8 2.9 4.2 5.2 7 6.9s5.8 2.5 9 2.5c3.4 0 6-.7 7.6-2.1 1.6-1.3 2.3-3.1 2.3-5.5 0-2.6-.8-4.5-2.5-5.8-2-1.6-5.3-3-9.8-4.3-13.3-3.3-20-9.6-20-18.8 0-5.7 1.9-10.2 5.7-13.4 3.7-3 8.8-4.6 15.1-4.6 4.6 0 8.7.9 12.4 2.6s7 4.4 9.8 7.9c.8 1 .7 2.4-.3 3.2l-5 4.2c-.4.4-1 .6-1.5.6h-.3c-.6-.1-1.2-.4-1.6-.9-1.8-2.5-3.8-4.3-5.9-5.5-2.1-1.1-4.6-1.7-7.6-1.7s-5.5.7-7.3 2c-1.6 1.2-2.4 2.8-2.4 4.9 0 2.2.7 3.9 2.3 5.2 1.8 1.5 5 2.8 9.6 3.9 6.2 1.7 11.1 4 14.6 7 3.8 3.2 5.7 7.7 5.7 13.4 0 3.6-.9 6.7-2.8 9.5-1.8 2.7-4.4 4.9-7.8 6.4-2.9 1.5-6.7 2.3-11 2.3zm166.2-225.1c19.2 0 34.9 15.7 34.9 34.9v67.1c-.8 4.6-4.5 8.2-9.2 8.8h-44.6c-19.3 0-34.9-15.6-34.9-34.9v-65.1c0-6 4.8-10.8 10.8-10.8h43m0-16.4h-43.1c-15 0-27.2 12.2-27.2 27.2v65.1c0 28.3 23 51.3 51.3 51.3h45.4c13-1.1 23.5-11.3 24.8-24.2v-68.1c.1-28.4-22.8-51.3-51.2-51.3zm-4 32.9h-23.7c-5.2.6-9.2 4.9-9.4 10.1v34.2c0 2.3.9 4.3 2.4 5.8s3.5 2.4 5.8 2.4c4.5 0 8.2-3.7 8.2-8.2v-21.7c0-3.4 2.8-6.2 6.2-6.2h10.7c2.3 0 4.3-.9 5.8-2.4s2.4-3.6 2.4-5.9c0-4.5-3.9-8.1-8.4-8.1zm-10.7 78h23.7c5.2-.6 9.2-4.9 9.4-10.1v-34.2c0-2.3-.9-4.3-2.4-5.8s-3.5-2.4-5.8-2.4c-4.5 0-8.2 3.7-8.2 8.2v21.7c0 3.4-2.8 6.2-6.2 6.2h-10.7c-2.3 0-4.3.9-5.8 2.4s-2.4 3.6-2.4 5.9c.1 4.5 3.9 8.1 8.4 8.1z" fill="%234f0599"/%3E%3C/svg%3E',
+  },
+}, {
+  apiVersion: 'manifest.dist.app/v1alpha1',
+  kind: 'WebAccountType',
+  metadata: {
+    name: 'api-token',
+    links: [{
+      type: 'management-console',
+      url: 'https://console.scaleway.com/project/credentials',
+    }],
+  },
+  spec: {
+    vendorDomain: 'api.scaleway.com',
+    credentialScheme: 'ApiKeyOnly',
   },
 }, {
   apiVersion: 'manifest.dist.app/v1alpha1',
@@ -75,27 +92,29 @@ export const ScalewayCatalog = new Array<Entity>({
         metaCharset: 'utf-8',
         headTitle: 'scaleway remote',
         inlineScript: stripIndent(html)`
-          import { createApp, reactive, watchEffect } from "https://unpkg.com/vue@3.2.37/dist/vue.esm-browser.js";
+          import { createApp, reactive, watchEffect } from "https://unpkg.com/vue@3.2.45/dist/vue.esm-browser.js";
           const distApp = await DistApp.connect();
-          ${useVueState}
 
+          ${useVueState}
           const context = await useVueState('context', {
             region: 'fr-par-2',
             // resourceList: 'instances',
             // resourceId: null,
           });
 
+          const scwApi = await distApp.mountApiBinding('scw');
+
           async function loadData() {
             const [
               dashboard,
               servers,
             ] = await Promise.all([
-              distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/dashboard').then(async resp => {
+              scwApi.fetch('/instance/v1/zones/fr-par-2/dashboard').then(async resp => {
                 if (!resp.ok) throw new Error("dashboard load failed: HTTP "+resp.status);
                 const {dashboard} = await resp.json();
                 return dashboard;
               }),
-              distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/servers').then(async resp => {
+              scwApi.fetch('/instance/v1/zones/fr-par-2/servers').then(async resp => {
                 if (!resp.ok) throw new Error("servers load failed: HTTP "+resp.status);
                 const {servers} = await resp.json();
                 console.log('scaleway servers:', servers);
@@ -134,11 +153,11 @@ export const ScalewayCatalog = new Array<Entity>({
               },
               async handleIpChange(server, wantsIp) {
                 if (server.public_ip && wantsIp == false) {
-                  const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/ips/'+server.public_ip.id, {method: 'DELETE'});
+                  const resp = await scwApi.fetch('/instance/v1/zones/fr-par-2/ips/'+server.public_ip.id, {method: 'DELETE'});
                   if (!resp.ok) throw new Error("delete IP failed: HTTP "+resp.status);
                   console.log('IP deleted!');
                 } else if (!server.public_ip && wantsIp == true) {
-                  const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/ips', {
+                  const resp = await scwApi.fetch('/instance/v1/zones/fr-par-2/ips', {
                     method: 'POST',
                     headers: {
                       'content-type': 'application/json',
@@ -155,7 +174,7 @@ export const ScalewayCatalog = new Array<Entity>({
                 this.reloadData();
               },
               async doAction(serverId, actionId) {
-                const resp = await distApp.fetch('/ApiBinding/scw/instance/v1/zones/fr-par-2/servers/'+serverId+'/action', {
+                const resp = await scwApi.fetch('/instance/v1/zones/fr-par-2/servers/'+serverId+'/action', {
                   method: 'POST',
                   headers: {
                     'content-type': 'application/json',
@@ -323,6 +342,7 @@ export const ScalewayCatalog = new Array<Entity>({
     }],
   },
   spec: {
+    vendorDomain: 'api.scaleway.com',
     type: 'openapi',
     crossOriginResourceSharing: 'restricted',
     definition: stripIndent`

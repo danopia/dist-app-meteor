@@ -74,6 +74,7 @@ export interface FrameEntity {
     };
   };
 }
+
 export interface ActivityTaskEntity {
   _id?: string;
   apiVersion: "runtime.dist.app/v1alpha1";
@@ -87,7 +88,14 @@ export interface ActivityTaskEntity {
   };
   state: {
     appData?: Record<string, string>;
-  }
+    caps?: Record<string, {
+      type: 'HttpClient';
+      // apiBindingName: string;
+      baseUrl?: string;
+      apiBindingRef?: string;
+      apiCredentialRef?: string;
+    }>;
+  };
 }
 
 export type RuntimeEntity = (

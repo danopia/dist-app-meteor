@@ -28,6 +28,7 @@ export interface ApiCredentialEntity {
       targetUrl: string;
       corsAllowed?: boolean;
     };
+    exportable?: boolean;
     validation: 'None' | 'CheckOnly' | 'Enforced';
     logging: 'None' | 'MetadataOnly' | 'Full';
   };

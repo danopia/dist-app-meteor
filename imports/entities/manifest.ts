@@ -135,6 +135,7 @@ export interface ApiEntity {
   kind: "Api";
   metadata: EntityMetadata;
   spec: {
+    vendorDomain?: string;
     // endpoints: {}
     // schema: {
       type: "openapi";
@@ -155,6 +156,16 @@ export interface ApiBindingEntity {
       required: boolean;
       accountTypeId: string;
     };
+  };
+}
+
+export interface WebAccountTypeEntity {
+  apiVersion: 'manifest.dist.app/v1alpha1';
+  kind: 'WebAccountType';
+  metadata: EntityMetadata;
+  spec: {
+    vendorDomain: string;
+    credentialScheme: 'UsernameAndPassword' | 'OAuthToken' | 'ApiKeyOnly';
   };
 }
 
@@ -206,7 +217,7 @@ export type ManifestEntity = (
   | ActivityEntity
   | ApiEntity
   | ApiBindingEntity
-
+  | WebAccountTypeEntity
   // | EndpointEntity
   // | ServiceEntity
   // | DatabaseEntity

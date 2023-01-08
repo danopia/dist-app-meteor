@@ -26,6 +26,7 @@ export const ActivityShell = (props: {
     'runtime.dist.app/v1alpha1', 'Frame',
     'session',
   ), [runtime]);
+  // TODO: also list debug event entities and indicate them on their frames
 
   useBodyClass('shell-workspace-floating');
 

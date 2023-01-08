@@ -75,6 +75,9 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
       headers: [
         ['content-type', 'application/json'],
       ],
+      // bodyStrea: (async function*() {
+      //   return '';
+      // }),
       body: JSON.stringify({
         profiles: [{
           namespace: 'profile:user',

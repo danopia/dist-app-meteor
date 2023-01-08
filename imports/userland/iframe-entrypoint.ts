@@ -9,8 +9,7 @@ globalThis.fetch = async (req, opts) => {
   return await handler(req, opts);
 };
 
-//@ts-ignore
-globalThis.DistApp = class DistApp {
+class DistApp {
   private nextPromise = 0;
   private readonly promises = new Map<number, [(data: ProtocolEntity) => void, (error: Error) => void]>();
   constructor(
@@ -70,7 +69,17 @@ globalThis.DistApp = class DistApp {
       },
     });
   }
-  async fetch(req: RequestInfo | URL, opts: RequestInit | undefined) {
+  async mountApiBinding(apiBindingName: string) {
+    const tokenResp = await this.fetch(`/ApiBinding/${apiBindingName}/mount`, {
+      method: 'POST',
+    });
+    if (!tokenResp.ok) throw new Error(
+      `ApiBinding Mount of ${JSON.stringify(apiBindingName)} not OK:` +
+      `HTTP ${tokenResp.status} - ${await tokenResp.text()}`);
+    const token = await tokenResp.text();
+    return new ApiBindingMount(this, apiBindingName, token);
+  }
+  async fetch(req: RequestInfo | URL, opts?: RequestInit) {
     if (typeof req == 'string') {
       return await this.handleFetch({
         method: opts?.method || 'GET',
@@ -143,6 +152,8 @@ globalThis.DistApp = class DistApp {
     // dist-app:/protocolendpoints/http/invoke
   }
 }
+//@ts-expect-error globalThis is untyped
+globalThis.DistApp = DistApp;
 
 function receiveMessagePort() {
   return new Promise<MessagePort>((ok, reject) => {
@@ -179,4 +190,21 @@ function receiveMessagePort() {
     }
     window.addEventListener("message", handleEvent, false);
   });
+}
+
+class ApiBindingMount {
+  constructor(
+    private readonly distApp: DistApp,
+    public readonly apiBindingName: string,
+    private readonly token: string,
+  ) {}
+
+  async fetch(req: string, opts?: RequestInit) {
+    const headers = new Headers(opts?.headers);
+    headers.append('Authorization', `Bearer ${this.token}`);
+    await this.distApp.fetch(`/ApiBinding/${this.apiBindingName}/${req.slice(1)}`, {
+      ...opts,
+      headers,
+    });
+  }
 }

@@ -3,12 +3,16 @@ import { parse } from "yaml";
 import "urlpattern-polyfill";
 
 import { EntityEngine } from "../engine/EntityEngine";
-import { ActivityEntity, ApiBindingEntity, ApiEntity } from "../entities/manifest";
+import { ActivityEntity, ApiBindingEntity, ApiEntity, WebAccountTypeEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
 import { serveSessionApi } from "./system-apis/session";
+import { ApiCredentialEntity } from "../entities/profile";
+import { stripIndent } from "common-tags";
+
+// This whole file is basically a list of TODOs as I try different things.
 
 export class FetchRpcHandler {
   constructor(
@@ -26,11 +30,13 @@ export class FetchRpcHandler {
   async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
 
+    // TODO: task-state can be a system API
     if (rpc.spec.url.startsWith('/task/state/')) {
       return await this.handleTaskState(rpc);
     }
 
     if (rpc.spec.url.startsWith('/ApiBinding/')) {
+      // TODO: maybe these need to be bound
       return await this.handleBinding(rpc);
     }
 
@@ -83,6 +89,112 @@ export class FetchRpcHandler {
       .catch(makeErrorResponse);
   }
 
+  async handleMountBinding(rpc: FetchRequestEntity, binding: ApiBindingEntity, apiEntity: ApiEntity, apiSpec: OpenAPIV3.Document, defaultServer: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
+    console.warn(`TODO: /mount`, {rpc, binding, apiEntity, apiSpec, defaultServer});
+
+    const securitySchemes = apiSpec.components?.securitySchemes;
+    if (!securitySchemes) return makeStatusResponse(400,
+      `No securitySchemes found in API definition`);
+    const securitySchemeList = Object.entries(securitySchemes).map(x => {
+      if ('$ref' in x[1]) throw new Error(`TODO: $ref`);
+      return { def: x[1], id: x[0] };
+    });
+
+    const accountTypes = this.runtime.listEntities<WebAccountTypeEntity>(
+      'manifest.dist.app/v1alpha1', 'WebAccountType',
+      this.activity.metadata.namespace);
+    for (const accountType of accountTypes) {
+      if (accountType.spec.vendorDomain !== apiEntity.spec.vendorDomain) continue;
+
+      if (accountType.spec.credentialScheme == 'ApiKeyOnly') {
+        const tokenScheme = securitySchemeList.find(x => x.def.type == 'apiKey');
+        if (tokenScheme?.def.type != 'apiKey') throw new Error('apiKey securityScheme not found');
+
+        // TODO!!: there should really be a 'choose account' intent that shows UI
+
+        // Find places where we can find the user's existing credentials
+        const namespaces = Array
+          .from(this.runtime
+            .getNamespacesServingApi({
+              apiVersion: 'profile.dist.app/v1alpha1',
+              kind: 'ApiCredential',
+              op: 'Read',
+            })
+            .keys());
+
+        // Find existing api credentials
+        const credentials = namespaces
+          .flatMap(x => this.runtime
+            .listEntities<ApiCredentialEntity>(
+              'profile.dist.app/v1alpha1', 'ApiCredential', x)
+            .map(entity => ({ ns: x, entity })));
+
+        // const apiCredentials = this.runtime.listEntities<ApiCredentialEntity>(
+        //   'profile.dist.app/v1alpha1', 'ApiCredential',
+        //   this.activityTask.metadata.namespace);
+        if (!credentials.length) {
+          console.info('No ApiCredentials found for scaleway');
+
+          if (!namespaces.includes('profile:user')) {
+            throw new Error(`Cannot store credential without user profile`);
+          }
+
+          const knownApiKey = prompt(stripIndent`
+            Enter an apiKey for ${defaultServer}
+            Will be stored in user profile!
+            (as ${accountType.spec.vendorDomain})`);
+          if (!knownApiKey) throw new Error(`TODO: no apikey given`);
+          const credential: ApiCredentialEntity = {
+            apiVersion: 'profile.dist.app/v1alpha1',
+            kind: 'ApiCredential',
+            metadata: {
+              namespace: 'profile:user',
+              name: accountType.spec.vendorDomain+'-'+crypto.randomUUID().split('-')[1],
+            },
+            spec: {
+              accountTypeId: accountType.spec.vendorDomain,
+              authType: 'api-key',
+              exit: {
+                type: 'internet',
+                targetUrl: defaultServer,
+              },
+              logging: 'MetadataOnly',
+              validation: 'Enforced',
+              exportable: false,
+            },
+          };
+          await this.runtime.insertEntity<ApiCredentialEntity>(credential);
+
+          credentials.push({ns: credential.metadata.namespace!, entity: credential});
+        }
+
+        if (credentials.length == 1) {
+          const usingCred = credentials[0];
+
+          const capId = crypto.randomUUID().split('-')[0];
+          await this.runtime.mutateEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name, ent => {
+            ent.state.caps ??= {};
+            if (capId in ent.state.caps) throw new Error(`cap ${capId} already taken??`);
+            ent.state.caps[capId] = {
+              type: 'HttpClient',
+              apiBindingRef: `${binding.metadata.namespace}/${binding.metadata.name}`,
+              apiCredentialRef: `${usingCred.ns}/${usingCred.entity.metadata.name}`,
+              baseUrl: defaultServer,
+            };
+          });
+
+          console.log('Returning', {capId});
+          return makeStatusResponse(200, capId);
+        }
+
+        console.log({scheme: tokenScheme.def, accountType, credentials });
+      }
+    }
+
+    return makeStatusResponse(420,
+      `Sober up and implement this`);
+  }
+
   async handleBinding(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const slashIdx = rpc.spec.url.indexOf('/', '/ApiBinding/'.length);
     const bindingName = rpc.spec.url.slice('/ApiBinding/'.length, slashIdx);
@@ -112,6 +224,10 @@ export class FetchRpcHandler {
     if (!server || !server.url.startsWith('https://')) return makeStatusResponse(404,
       `ApiBinding ${JSON.stringify(bindingName)} has no server available`);
 
+    if (subPath == 'mount') {
+      return this.handleMountBinding(rpc, binding, apiEntity, apiSpec, server.url);
+    }
+
     const realUrl = new URL(subPath, server.url).toString();
     if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
 
@@ -123,6 +239,7 @@ export class FetchRpcHandler {
     const methodConfig = pathConfig?.[rpc.spec.method.toLowerCase() as 'get'];
     if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430
 
+    // TODO: replace this with proper ApiCredential stuff
     secLoop: for (const security of methodConfig.security ?? apiSpec.security ?? []) {
       const secType = Object.keys(security)[0];
       const secDef = apiSpec.components?.securitySchemes?.[secType];
@@ -173,7 +290,7 @@ export class FetchRpcHandler {
     let body: Uint8Array | string = respBody;
     if (realResp.headers.get('content-type')?.startsWith('text/') && body.length < (1*1024*1024)) {
       body = new TextDecoder().decode(body);
-      if (body[0] == '{') body = JSON.parse(body);
+      if (body[0] == '{' || body[0] == '[') body = JSON.parse(body);
     }
     console.log('IframeHost local fetch result:', body);
 
