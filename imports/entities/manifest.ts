@@ -64,6 +64,9 @@ export interface IframeImplementationSpec {
     htmlLang?: string;
     metaCharset?: string;
     headTitle?: string;
+    importMap?: {
+      imports: Record<string,string>;
+    };
     scriptUrls?: Array<string>;
     inlineScript?: string;
     inlineStyle?: string;

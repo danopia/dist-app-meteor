@@ -29,6 +29,12 @@ export function compileIframeSrc(implementation: IframeImplementationSpec): stri
         `  </style>`,
       ] : []),
 
+      ...(implementation.source.importMap ? [
+        `<script type="importmap">`,
+        JSON.stringify(implementation.source.importMap, null, 2),
+        `</script>`,
+      ] : []),
+
       ...(implementation.source.scriptUrls?.flatMap(url => [
         html`<script src="${url}"></script>`,
       ]) ?? []),
