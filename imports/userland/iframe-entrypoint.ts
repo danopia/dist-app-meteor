@@ -152,7 +152,8 @@ function receiveMessagePort() {
       if (typeof event.data.protocol !== 'string') return;
 
       window.removeEventListener("message", handleEvent);
-      window.addEventListener("message", () => {
+      window.addEventListener("message", (secondEvent: MessageEvent) => {
+        if (secondEvent.origin !== "{ORIGIN}") return;
         console.error("Received a second protocol initiation?? Reloading");
         try {
           const entity: LifecycleEntity = {
