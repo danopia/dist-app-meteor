@@ -1,4 +1,5 @@
-import { EntityMetadata } from "./core";
+//@ts-expect-error .ts file extension
+import { EntityMetadata } from "./core.ts";
 
 export interface ApplicationEntity {
   _id?: string;
