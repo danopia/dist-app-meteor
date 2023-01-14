@@ -1,5 +1,6 @@
 import { stripIndent } from "common-tags";
 
+// TODO: a better way of passing this into apps etc
 export const useVueState = stripIndent`
   async function getState(key) {
     const resp = await distApp.fetch('/task/state/'+encodeURIComponent(key), {
