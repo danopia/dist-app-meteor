@@ -80,29 +80,41 @@ export const FrameContainer = (props: {
           activity: runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace, contentRaw.spec.activityName) ?? null,
         };
       });
-      if (!activity) throw new Error(`no activity`);
 
-      title = (
-        <div className="window-title">
-          <AppIcon className="appIcon" iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
-          <span className="app-name">{activity.metadata.title}</span>
-        </div>
-      )
+      if (!activity) {
+        content = (
+          <div style={{gridArea: 'activity'}}>
+            Hmm, activity not found: {contentRaw.spec.activityName} in {contentRaw.spec.installationNamespace}/{contentRaw.spec.installationName}.
+          </div>
+        );
 
-      switch (activity.spec.implementation.type) {
-        case 'iframe': content = (
-          <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
-        ); break;
-        default: content = (
-          <div>TODO: other implementation types</div>
-        ); break;
+      } else {
+        title = (
+          <div className="window-title">
+            <AppIcon className="appIcon" iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
+            <span className="app-name">{activity.metadata.title}</span>
+          </div>
+        )
+
+        switch (activity.spec.implementation.type) {
+          case 'iframe': content = (
+            <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
+          ); break;
+          default: content = (
+            <div style={{gridArea: 'activity'}}>
+              TODO: other implementation types
+            </div>
+          ); break;
+        }
       }
       break;
     }
 
     default: {
       content = (
-        <div>Hmm, nothing here.</div>
+        <div style={{gridArea: 'activity'}}>
+          Hmm, nothing here.
+        </div>
       );
     }
   }
