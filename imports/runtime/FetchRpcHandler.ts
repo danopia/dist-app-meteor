@@ -3,7 +3,7 @@ import { parse } from "yaml";
 import "urlpattern-polyfill";
 
 import { EntityEngine } from "../engine/EntityEngine";
-import { ActivityEntity, ApiBindingEntity, ApiEntity, WebAccountTypeEntity } from "../entities/manifest";
+import { ActivityEntity, ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
@@ -12,7 +12,7 @@ import { serveSessionApi } from "./system-apis/session";
 import { ApiCredentialEntity } from "../entities/profile";
 import { stripIndent } from "common-tags";
 
-// This whole file is basically a list of TODOs as I try different things.
+// TODO: This whole file is basically a list of TODOs as I try different things.
 
 export class FetchRpcHandler {
   constructor(
@@ -28,7 +28,7 @@ export class FetchRpcHandler {
   }
 
   async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    if (rpc.spec.bodyStream != null) throw new Error(`TODO: stream`);
+    if (rpc.spec.bodyStream != null) throw new Error(`TODO: streaming request body`);
 
     // TODO: task-state can be a system API
     if (rpc.spec.url.startsWith('/task/state/')) {
@@ -38,6 +38,10 @@ export class FetchRpcHandler {
     if (rpc.spec.url.startsWith('/ApiBinding/')) {
       // TODO: maybe these need to be bound
       return await this.handleBinding(rpc);
+    }
+
+    if (rpc.spec.url.startsWith('/cap/')) {
+      return await this.handleCap(rpc);
     }
 
     return await this.handlePocTodo(rpc);
@@ -93,8 +97,10 @@ export class FetchRpcHandler {
     console.warn(`TODO: /mount`, {rpc, binding, apiEntity, apiSpec, defaultServer});
 
     const securitySchemes = apiSpec.components?.securitySchemes;
-    if (!securitySchemes) return makeStatusResponse(400,
-      `No securitySchemes found in API definition`);
+    if (!securitySchemes) {
+      return await this.createCap(binding, defaultServer, null);
+    }
+
     const securitySchemeList = Object.entries(securitySchemes).map(x => {
       if ('$ref' in x[1]) throw new Error(`TODO: $ref`);
       return { def: x[1], id: x[0] };
@@ -123,6 +129,7 @@ export class FetchRpcHandler {
             .keys());
 
         // Find existing api credentials
+        // TODO: why is namespace kept as a separate field?
         const credentials = namespaces
           .flatMap(x => this.runtime
             .listEntities<ApiCredentialEntity>(
@@ -162,6 +169,9 @@ export class FetchRpcHandler {
               validation: 'Enforced',
               exportable: false,
             },
+            secret: {
+              accessToken: knownApiKey,
+            },
           };
           await this.runtime.insertEntity<ApiCredentialEntity>(credential);
 
@@ -169,30 +179,114 @@ export class FetchRpcHandler {
         }
 
         if (credentials.length == 1) {
-          const usingCred = credentials[0];
-
-          const capId = crypto.randomUUID().split('-')[0];
-          await this.runtime.mutateEntity<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask', this.activityTask.metadata.namespace, this.activityTask.metadata.name, ent => {
-            ent.state.caps ??= {};
-            if (capId in ent.state.caps) throw new Error(`cap ${capId} already taken??`);
-            ent.state.caps[capId] = {
-              type: 'HttpClient',
-              apiBindingRef: `${binding.metadata.namespace}/${binding.metadata.name}`,
-              apiCredentialRef: `${usingCred.ns}/${usingCred.entity.metadata.name}`,
-              baseUrl: defaultServer,
-            };
-          });
-
-          console.log('Returning', {capId});
-          return makeStatusResponse(200, capId);
+          return await this.createCap(binding, defaultServer, credentials[0].entity);
         }
 
+        // TODO:
         console.log({scheme: tokenScheme.def, accountType, credentials });
       }
     }
 
     return makeStatusResponse(420,
       `Sober up and implement this`);
+  }
+
+  async createCap(binding: ApiBindingEntity, defaultServer: string, usingCred: ApiCredentialEntity | null) {
+    const [app] = this.runtime.listEntities<ApplicationEntity>(
+      'manifest.dist.app/v1alpha1', 'Application',
+      binding.metadata.namespace);
+
+    const message = [
+      `NETWORK ACCESS REQUEST:\n`,
+      `Application ${JSON.stringify(app.metadata.title)}`,
+      `AppBinding ${JSON.stringify(binding.metadata.name)}\n`,
+    ];
+
+    const serverUrl = usingCred
+      ? usingCred.spec.exit.targetUrl
+      : defaultServer;
+    const credRef = usingCred
+      ? `${usingCred?.metadata.namespace}/${usingCred?.metadata.name}`
+      : undefined;
+
+    if (usingCred) {
+      message.push(`Credential ${credRef}`);
+      message.push(`Server ${serverUrl}\n`);
+      message.push(`Allow this application to use your credential (!) and access that server through your network?`);
+    } else {
+      message.push(`Server ${serverUrl}\n`);
+      message.push(`Allow this application access that server through your network?`);
+    }
+
+    const gonogo = confirm(message.join('\n'));
+    if (!gonogo) return makeStatusResponse(403, 'Mount access denied');
+
+    const capId = crypto.randomUUID().split('-')[0];
+    await this.runtime.mutateEntity<ActivityTaskEntity>(
+      'runtime.dist.app/v1alpha1', 'ActivityTask',
+      this.activityTask.metadata.namespace, this.activityTask.metadata.name,
+      ent => {
+        ent.state.caps ??= {};
+        if (capId in ent.state.caps) throw new Error(`cap ${capId} already taken??`);
+        // TODO: separate Capability kind?
+        ent.state.caps[capId] = {
+          type: 'HttpClient',
+          apiBindingRef: `${binding.metadata.namespace}/${binding.metadata.name}`,
+          apiCredentialRef: credRef,
+          baseUrl: serverUrl,
+        };
+      });
+
+    console.log('Returning cap', {capId, server: serverUrl, usingCred: credRef});
+    return makeTextResponse(200, capId);
+  }
+
+  async handleCap(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
+    const slashIdx = rpc.spec.url.indexOf('/', '/cap/'.length);
+    const capId = rpc.spec.url.slice('/cap/'.length, slashIdx);
+    const subPath = rpc.spec.url.slice(slashIdx+1);
+
+    const actTask = this.runtime.getEntity<ActivityTaskEntity>(
+      'runtime.dist.app/v1alpha1', 'ActivityTask',
+      this.activityTask.metadata.namespace, this.activityTask.metadata.name);
+    const cap = actTask?.state.caps?.[capId];
+
+    // console.log({capId, subPath, cap});
+    if (cap?.type !== 'HttpClient') throw new Error(`TODO: other cap types`);
+
+    const realUrl = new URL(subPath, cap.baseUrl);
+    const netRequest: FetchRequestEntity = {
+      ...rpc,
+      spec: {
+        ...rpc.spec,
+        url: 'dist-app:/protocolendpoints/openapi/proxy/https/'+realUrl.toString().replace(/^[^:]+:\/\//, ''),
+        headers: [...rpc.spec.headers ?? []],
+      },
+    };
+
+    const apiCredRef = cap.apiCredentialRef?.split('/');
+    if (apiCredRef) {
+      const credential = this.runtime.getEntity<ApiCredentialEntity>(
+        'profile.dist.app/v1alpha1', 'ApiCredential',
+        apiCredRef[0], apiCredRef[1],
+      );
+      if (!credential) return makeStatusResponse(404, `The referenced credential was not found`);
+
+      if (credential.spec.authType !== 'api-key') throw new Error(
+        `TODO: other auth-types from cap cred`);
+
+      const { accessToken } = credential.secret ?? {};
+      if (accessToken) {
+        // TODO: use securitySchemes to figure out how to insert the token
+        // this was already impl'd elsewhere in the file
+        netRequest.spec.headers!.push(['x-auth-token', accessToken]);
+      }
+      // return makeStatusResponse(420, 'TODEO');
+    }
+
+    const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', netRequest);
+    // console.log('IframeHost cap server fetch result:', rpc, resp);
+    return resp;
   }
 
   async handleBinding(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -227,6 +321,7 @@ export class FetchRpcHandler {
     if (subPath == 'mount') {
       return this.handleMountBinding(rpc, binding, apiEntity, apiSpec, server.url);
     }
+    return makeStatusResponse(512, 'Deprecated - update to mount API');
 
     const realUrl = new URL(subPath, server.url).toString();
     if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);

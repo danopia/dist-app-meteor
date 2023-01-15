@@ -27,7 +27,7 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
       };
     } catch (obj) {
       const err = obj as Error;
-      console.log('Proxied Fetch error:', err.message);
+      console.log(`Proxied Fetch error from ${realUrl}: ${err.stack}`);
       return {
         kind: 'FetchError',
         origId: -1,
@@ -72,7 +72,7 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
       };
     } catch (obj) {
       const err = obj as Error;
-      console.log('Proxied Fetch error:', err.message);
+      console.log('Proxied Fetch error 2:', err.message);
       return {
         kind: 'FetchError',
         origId: -1,
@@ -88,7 +88,7 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
     kind: 'FetchResponse',
     origId: -1,
     spec: {
-      status: 429,
+      status: 418,
       headers: [],
       body: 'im a teapot',
     },

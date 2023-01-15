@@ -73,11 +73,15 @@ class DistApp {
     const tokenResp = await this.fetch(`/ApiBinding/${apiBindingName}/mount`, {
       method: 'POST',
     });
+    if (tokenResp.status == 403) return null;
     if (!tokenResp.ok) throw new Error(
-      `ApiBinding Mount of ${JSON.stringify(apiBindingName)} not OK:` +
-      `HTTP ${tokenResp.status} - ${await tokenResp.text()}`);
+      `ApiBinding Mount of ${JSON.stringify(apiBindingName)} not OK ` +
+      `(HTTP ${tokenResp.status})\n\n`+
+      `Upstream response body:\n${await tokenResp.text()}`);
     const token = await tokenResp.text();
-    return new ApiBindingMount(this, apiBindingName, token);
+    console.log({token})
+    return token;
+    // return new ApiBindingMount(this, apiBindingName, token);
   }
   async fetch(req: RequestInfo | URL, opts?: RequestInit) {
     if (typeof req == 'string') {
@@ -200,11 +204,13 @@ class ApiBindingMount {
   ) {}
 
   async fetch(req: string, opts?: RequestInit) {
-    const headers = new Headers(opts?.headers);
-    headers.append('Authorization', `Bearer ${this.token}`);
-    await this.distApp.fetch(`/ApiBinding/${this.apiBindingName}/${req.slice(1)}`, {
+    // const headers = new Headers(opts?.headers);
+    // headers.append('Authorization', `Bearer ${this.token}`);
+    return await this.distApp.fetch(`/cap/${this.token}/${req.slice(1)}`, {
       ...opts,
-      headers,
+      // headers,
     });
   }
 }
+//@ts-expect-error globalThis is untyped
+globalThis.ApiBindingMount = ApiBindingMount;
