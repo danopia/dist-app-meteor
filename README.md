@@ -29,3 +29,52 @@ graph LR
     sw --> dagd[https://oauth.reddit.com]
     sw --> weather[some weather api probably]
 ```
+
+## entity relationships
+
+```mermaid
+graph LR
+    subgraph runtime.dist.app/v1alpha1
+        Impl[either]:::either
+    end
+    subgraph manifest.dist.app/v1alpha1
+        Application
+        WebAccount
+        Facility -.-> ApiBinding
+        Activity -.-> ApiBinding
+        Facility --> Api
+        ApiBinding --> Api
+        Impl ---> Activity
+        Impl --> Facility
+    end
+    subgraph profile.dist.app/v1alpha1
+        SavedSession
+        AppInstallation --> Application
+        WebCredential --> WebAccount
+        NetworkEndpoint
+    end
+    subgraph runtime.dist.app/v1alpha1
+        AppTask --> AppInstallation
+        AppTask --- Impl
+        Frame --> AppTask
+        Frame --> Command
+        AppTask -.-> Capability
+        Capability -.-> WebCredential
+        Capability --> ApiBinding
+        Capability --> NetworkEndpoint
+        Workspace -.-> SavedSession
+        AppTask --> Workspace
+        Command
+    end
+    subgraph protocol.dist.app/v1alpha1
+        Lifecycle:::dashed --> Frame
+        LaunchIntent:::dashed -.-> AppTask
+        WriteDebugEvent:::dashed -.-> Frame
+        FetchRequest:::dashed --> AppTask
+        FetchResponse:::dashed --> AppTask
+        FetchBodyChunk:::dashed
+        FetchError:::dashed
+    end
+    classDef either stroke: none, fill: none
+    classDef dashed stroke-dasharray: 5 5
+```
