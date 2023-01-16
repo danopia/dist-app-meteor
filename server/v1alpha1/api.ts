@@ -7,8 +7,9 @@ import { getUserDefaultProfile } from "./profiles";
 import { ArbitraryEntity } from "/imports/entities/core";
 import { FetchRequestEntity } from "/imports/entities/protocol";
 
-Meteor.methods({
+import './publications';
 
+Meteor.methods({
 
   '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
     check(catalogId, String);

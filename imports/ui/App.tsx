@@ -1,12 +1,10 @@
-import React, { useEffect } from 'react';
-import { navigate, useRedirect, useRoutes } from 'raviger';
-import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
+import React from 'react';
+import { useRedirect, useRoutes } from 'raviger';
+import { ErrorBoundary } from 'react-error-boundary';
 
 import { ActivityShell } from './ActivityShell';
 import { RuntimeProvider } from './RuntimeProvider';
-import { useTracker } from 'meteor/react-meteor-data';
-import { Meteor } from 'meteor/meteor';
-import { meteorCallAsync } from '../lib/meteor-call';
+import { useSubscribe } from 'meteor/react-meteor-data';
 import { ErrorFallback } from '../lib/error-fallback';
 // import { ShellSelector } from './ShellSelector';
 
@@ -23,6 +21,7 @@ const routes = {
 
 export const App = () => {
   useRedirect('/', '/desktop/guest', {replace: true});
+  useSubscribe('/v1alpha1/all-my-stuff');
   const route = useRoutes(routes) || (
     <section>
       <h2>Page Not Found</h2>
