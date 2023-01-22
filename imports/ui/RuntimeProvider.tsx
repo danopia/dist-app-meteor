@@ -1,9 +1,8 @@
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { RuntimeContext } from './contexts';
-import { insertGuestProfileTemplate, insertGuestWelcomeSession } from '../engine/EngineFactory';
+import { insertGuestWelcomeSession, newEngineWithGuestProfile } from '../engine/EngineFactory';
 import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
-import { EntityEngine } from '../engine/EntityEngine';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { meteorCallAsync } from '../lib/meteor-call';
 
@@ -11,36 +10,7 @@ export const RuntimeProvider = (props: {
   children: ReactNode;
 }) => {
   const runtime = useMemo(() => {
-    const runtime = new EntityEngine();
-
-    runtime.addNamespace({
-      name: 'session',
-      spec: {
-        layers: [{
-          mode: 'ReadWrite',
-          accept: [{
-            apiGroup: 'runtime.dist.app',
-          }],
-          storage: {
-            type: 'local-inmemory',
-          },
-        }],
-      }});
-
-    runtime.addNamespace({
-      name: 'profile:guest',
-      spec: {
-        layers: [{
-          mode: 'ReadWrite',
-          accept: [{
-            apiGroup: 'profile.dist.app',
-          }],
-          storage: {
-            type: 'local-inmemory',
-          },
-        }],
-      }});
-    insertGuestProfileTemplate(runtime);
+    const runtime = newEngineWithGuestProfile();
 
     runtime.insertEntity<WorkspaceEntity>({
       apiVersion: 'runtime.dist.app/v1alpha1',

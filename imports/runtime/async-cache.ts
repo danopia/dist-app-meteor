@@ -31,9 +31,9 @@ export class AsyncKeyedCache<TInput,TKey,TValue> {
     const key = this.keyFunc(input);
     //console.log('cache is using key', key)
     if (this.entities.has(key))
-      return this.entities.get(key);
+      return this.entities.get(key)!;
     if (this.promises.has(key))
-      return this.promises.get(key);
+      return this.promises.get(key)!;
 
     const promise = this.load(key, input, loadFunc);
     this.set(key, promise);

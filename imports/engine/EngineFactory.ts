@@ -5,6 +5,41 @@ import { CommandEntity, FrameEntity } from "../entities/runtime";
 import { EntityEngine } from "./EntityEngine";
 import { GuestCatalogs } from "./StaticCatalogs";
 
+export function newEngineWithGuestProfile() {
+  const runtime = new EntityEngine();
+
+  runtime.addNamespace({
+    name: 'session',
+    spec: {
+      layers: [{
+        mode: 'ReadWrite',
+        accept: [{
+          apiGroup: 'runtime.dist.app',
+        }],
+        storage: {
+          type: 'local-inmemory',
+        },
+      }],
+    }});
+
+  runtime.addNamespace({
+    name: 'profile:guest',
+    spec: {
+      layers: [{
+        mode: 'ReadWrite',
+        accept: [{
+          apiGroup: 'profile.dist.app',
+        }],
+        storage: {
+          type: 'local-inmemory',
+        },
+      }],
+    }});
+  insertGuestProfileTemplate(runtime);
+
+  return runtime;
+}
+
 export function insertGuestProfileTemplate(engine: EntityEngine) {
   for (const defaultNamespace of GuestCatalogs) {
     if (!defaultNamespace.startsWith('app:')) continue;

@@ -1,4 +1,4 @@
-import { check } from "meteor/check";
+import { check, Match } from "meteor/check";
 import { Meteor } from "meteor/meteor";
 import { Promise } from "meteor/promise";
 import { deleteEntity, insertEntity, updateEntity } from "./entity-crud";
@@ -6,10 +6,19 @@ import { fetchRequestEntity } from "./fetch";
 import { getUserDefaultProfile } from "./profiles";
 import { ArbitraryEntity } from "/imports/entities/core";
 import { FetchRequestEntity } from "/imports/entities/protocol";
+import { handleCapCall } from "./handle-submissions";
 
 import './publications';
 
 Meteor.methods({
+
+  async '/v1alpha1/Entity/submit'(entity: unknown) {
+    check(entity, Match.ObjectIncluding({kind: String}));
+    if (entity.kind == 'CapCall') {
+      return Promise.await(handleCapCall(this.userId, entity as ArbitraryEntity));
+    }
+    console.warn('TODO', entity)
+  },
 
   '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
     check(catalogId, String);

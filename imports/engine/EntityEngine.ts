@@ -249,17 +249,16 @@ export class EntityEngine {
   useRemoteNamespace(appUri: string) {
     // const [loadedNs, setLoadedNs] = useState<string|false>(false);
 
-    // TODO: this sucks!
-    const nsName = encodeURIComponent(appUri);
-
-    if (this.namespaces.has(nsName)) return nsName;
-
     const appUrl = new URL(appUri);
 
     if (appUrl.protocol == 'bundled:') {
+
+      // TODO: the fixed namespace sucks!
       const bundledName = decodeURIComponent(appUrl.pathname);
+      if (this.namespaces.has(bundledName)) return bundledName;
+
       this.addNamespace({
-        name: nsName,
+        name: bundledName,
         spec: {
           layers: [{
             mode: 'ReadOnly',
@@ -272,7 +271,7 @@ export class EntityEngine {
             },
           }],
         }});
-      return nsName;
+      return bundledName;
     }
     // console.log('p', appUrl.protocol)
 

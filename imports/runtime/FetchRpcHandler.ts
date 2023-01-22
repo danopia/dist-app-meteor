@@ -11,6 +11,7 @@ import { serveMarketApi } from "./system-apis/market";
 import { serveSessionApi } from "./system-apis/session";
 import { ApiCredentialEntity } from "../entities/profile";
 import { stripIndent } from "common-tags";
+import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch-responses";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -95,6 +96,9 @@ export class FetchRpcHandler {
 
   async handleMountBinding(rpc: FetchRequestEntity, binding: ApiBindingEntity, apiEntity: ApiEntity, apiSpec: OpenAPIV3.Document, defaultServer: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
     console.warn(`TODO: /mount`, {rpc, binding, apiEntity, apiSpec, defaultServer});
+
+    // TODO: we don't need to send HTTP thru the server if CORS is allowed & the credential is held by the client
+    // apiEntity.spec.crossOriginResourceSharing
 
     const securitySchemes = apiSpec.components?.securitySchemes;
     if (!securitySchemes) {
@@ -244,47 +248,68 @@ export class FetchRpcHandler {
   async handleCap(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const slashIdx = rpc.spec.url.indexOf('/', '/cap/'.length);
     const capId = rpc.spec.url.slice('/cap/'.length, slashIdx);
-    const subPath = rpc.spec.url.slice(slashIdx+1);
-
+    const subPath = '/'+rpc.spec.url.slice(slashIdx+1);
+globalThis.runtime = runtime;
     const actTask = this.runtime.getEntity<ActivityTaskEntity>(
       'runtime.dist.app/v1alpha1', 'ActivityTask',
       this.activityTask.metadata.namespace, this.activityTask.metadata.name);
     const cap = actTask?.state.caps?.[capId];
+    if (!cap) throw new Error(`BUG: cap not found (${capId})`);
 
     // console.log({capId, subPath, cap});
     if (cap?.type !== 'HttpClient') throw new Error(`TODO: other cap types`);
 
-    const realUrl = new URL(subPath, cap.baseUrl);
-    const netRequest: FetchRequestEntity = {
+    const netRequest: FetchRequestEntity & {} = {
       ...rpc,
       spec: {
         ...rpc.spec,
-        url: 'dist-app:/protocolendpoints/openapi/proxy/https/'+realUrl.toString().replace(/^[^:]+:\/\//, ''),
-        headers: [...rpc.spec.headers ?? []],
+        url: subPath,
       },
     };
 
-    const apiCredRef = cap.apiCredentialRef?.split('/');
-    if (apiCredRef) {
-      const credential = this.runtime.getEntity<ApiCredentialEntity>(
-        'profile.dist.app/v1alpha1', 'ApiCredential',
-        apiCredRef[0], apiCredRef[1],
-      );
-      if (!credential) return makeStatusResponse(404, `The referenced credential was not found`);
+    if (cap.apiBindingRef) {
+      const binding = this.runtime.getEntity<ApiBindingEntity>(
+        'manifest.dist.app/v1alpha1', 'ApiBinding',
+        decodeURIComponent(cap.apiBindingRef.split('/')[0]),
+        decodeURIComponent(cap.apiBindingRef.split('/')[1]));
+      if (!binding) return makeStatusResponse(404,
+        `ApiBinding ${JSON.stringify(cap.apiBindingRef)} not found`);
 
-      if (credential.spec.authType !== 'api-key') throw new Error(
-        `TODO: other auth-types from cap cred`);
-
-      const { accessToken } = credential.secret ?? {};
-      if (accessToken) {
-        // TODO: use securitySchemes to figure out how to insert the token
-        // this was already impl'd elsewhere in the file
-        netRequest.spec.headers!.push(['x-auth-token', accessToken]);
-      }
-      // return makeStatusResponse(420, 'TODEO');
     }
 
-    const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', netRequest);
+    // const apiCredRef = cap.apiCredentialRef?.split('/');
+    // if (apiCredRef) {
+    //   const credential = this.runtime.getEntity<ApiCredentialEntity>(
+    //     'profile.dist.app/v1alpha1', 'ApiCredential',
+    //     apiCredRef[0], apiCredRef[1],
+    //   );
+    //   if (!credential) return makeStatusResponse(404, `The referenced credential was not found`);
+
+    //   if (credential.spec.authType !== 'api-key') throw new Error(
+    //     `TODO: other auth-types from cap cred`);
+
+    //   const { accessToken } = credential.secret ?? {};
+    //   if (accessToken) {
+    //     // TODO: use securitySchemes to figure out how to insert the token
+    //     // this was already impl'd elsewhere in the file
+    //     netRequest.spec.headers!.push(['x-auth-token', accessToken]);
+    //   }
+    //   // return makeStatusResponse(420, 'TODEO');
+    // }
+
+    // TODO: this.runtime.submitEntity
+
+    const resp = await meteorCallAsync<FetchResponseEntity>('/v1alpha1/Entity/submit', {
+      kind: 'CapCall',
+      spec: {
+        request: netRequest,
+        cap: cap,
+        appInstallationRef: [
+          this.activityTask.spec.installationNamespace,
+          this.activityTask.spec.installationName,
+        ].map(x => encodeURIComponent(x)).join('/'),
+      },
+    });
     // console.log('IframeHost cap server fetch result:', rpc, resp);
     return resp;
   }
@@ -322,86 +347,6 @@ export class FetchRpcHandler {
       return this.handleMountBinding(rpc, binding, apiEntity, apiSpec, server.url);
     }
     return makeStatusResponse(512, 'Deprecated - update to mount API');
-
-    const realUrl = new URL(subPath, server.url).toString();
-    if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
-
-    const pathConfig = Object.entries(apiSpec.paths).filter(x => {
-      const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
-      const pat = new URLPattern({pathname: patStr});
-      return pat.test(new URL('/'+subPath, 'https://.'));
-    }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
-    const methodConfig = pathConfig?.[rpc.spec.method.toLowerCase() as 'get'];
-    if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430
-
-    // TODO: replace this with proper ApiCredential stuff
-    secLoop: for (const security of methodConfig.security ?? apiSpec.security ?? []) {
-      const secType = Object.keys(security)[0];
-      const secDef = apiSpec.components?.securitySchemes?.[secType];
-      if (!secDef || isReferenceObject(secDef)) throw new Error(`TODO, isReferenceObject`);
-      switch (secDef?.type) {
-        case 'apiKey': {
-          if (secDef.in !== 'header') throw new Error(`TODO: apiKey in ${secDef.in}`);
-          // TODO: actual secret storage i hope
-          const storageKey = `dist.app/credential/apiKey/${server.url}`;
-          let knownApiKey = localStorage[storageKey];
-          if (!knownApiKey) {
-            knownApiKey = prompt(`apiKey for ${secType}`);
-            if (!knownApiKey) throw new Error(`TODO: no apikey given`);
-            localStorage[storageKey] = knownApiKey;
-          }
-          rpc.spec.headers ??= [];
-          rpc.spec.headers.push([secDef.name, knownApiKey]);
-          break secLoop;
-        }; break;
-        default: throw new Error(`TODO: openapi sec type ${secDef.type}`);
-      }
-    }
-
-    if (apiEntity.spec.crossOriginResourceSharing === 'restricted') {
-      // TODO: some sort of security model between browser and relay
-      const resp = await meteorCallAsync<FetchResponseEntity>('poc-FetchRequestEntity', {
-        ...rpc,
-        spec: {
-          ...rpc.spec,
-          url: 'dist-app:/protocolendpoints/openapi/proxy/https/'+realUrl.replace(/^[^:]+:\/\//, ''),
-        },
-      });
-      console.log('IframeHost server fetch result:', resp);
-      return resp;
-    }
-
-    const t0 = new Date;
-    const realResp = await fetch(realUrl, {
-      method: rpc.spec.method,
-      headers: rpc.spec.headers,
-      body: rpc.spec.body ?? undefined,
-      redirect: 'manual',
-    });
-    const firstByte = Date.now() - t0.valueOf();
-    const respBody = new Uint8Array(await realResp.arrayBuffer())
-    const lastByte = Date.now() - t0.valueOf();
-
-    let body: Uint8Array | string = respBody;
-    if (realResp.headers.get('content-type')?.startsWith('text/') && body.length < (1*1024*1024)) {
-      body = new TextDecoder().decode(body);
-      if (body[0] == '{' || body[0] == '[') body = JSON.parse(body);
-    }
-    console.log('IframeHost local fetch result:', body);
-
-    return {
-      kind: 'FetchResponse',
-      spec: {
-        status: realResp.status,
-        body: respBody,
-        headers: Array.from(realResp.headers),
-        timing: {
-          startedAt: t0,
-          firstByteMillis: firstByte,
-          completedMillis: lastByte,
-        }
-      },
-    };
   }
 
   async handlePocTodo(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -413,22 +358,4 @@ export class FetchRpcHandler {
 
     return resp;
   }
-}
-
-function isReferenceObject(ref: unknown): ref is OpenAPIV3.ReferenceObject {
-  if (!ref || typeof ref !== 'object') return false;
-  const refObj = ref as Record<string,unknown>;
-  return typeof refObj.$ref == 'string';
-}
-
-const makeErrorResponse = (err: Error) => makeTextResponse(500, err.stack ?? `Server Error`);
-const makeStatusResponse = (status: number, message: string) => makeTextResponse(status, `${status}: ${message}`);
-function makeTextResponse(status: number, body: string): Omit<FetchResponseEntity, 'origId'> {
-  return {
-    kind: 'FetchResponse',
-    spec: {
-      status, body,
-      headers: [['content-type', 'text/plain']],
-    },
-  };
 }
