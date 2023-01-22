@@ -9,7 +9,6 @@ mobile-experience             # Packages for a great mobile UX
 mongo                         # The database Meteor supports right now
 
 standard-minifier-css         # CSS minifier run for production mode
-standard-minifier-js          # JS minifier run for production mode
 typescript                    # Enable TypeScript syntax in .ts and .tsx modules
 shell-server                  # Server-side component of the `meteor shell` command
 hot-module-replacement        # Update client in development without reloading the page
@@ -20,3 +19,7 @@ react-meteor-data             # React higher-order component for reactively trac
 accounts-google
 fetch
 reywood:publish-composite
+
+montiapm:agent
+zodern:standard-minifier-js
+zodern:hide-production-sourcemaps
