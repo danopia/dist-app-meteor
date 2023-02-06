@@ -6,6 +6,7 @@ import { RuntimeContext } from "/imports/ui/contexts";
 import { LauncherIcon } from "/imports/ui/LauncherIcon";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { CommandEntity, FrameEntity } from "/imports/entities/runtime";
+import { launchNewIntent } from "../logic/launch-app";
 
 export const LauncherWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
@@ -48,46 +49,12 @@ export const LauncherSection = (props: {
   // icon maybe 𓃑 or ☰
 
   const launchApp = (icon: typeof icons[number]) => {
-    const commandName = Random.id();
-    runtime.insertEntity<CommandEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Command',
-      metadata: {
-        name: commandName,
-        namespace: 'session',
-      },
-      spec: {
-        type: 'launch-intent',
-        intent: {
-          receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
-          action: icon.launcherIcon.action,
-          category: 'app.dist.Launcher',
-          // TODO: seems like there needs to be a better way to refer to a particular foreign application.
-          // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
-        }
-      },
-    });
-    runtime.insertEntity<FrameEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Frame',
-      metadata: {
-        name: commandName,
-        namespace: 'session',
-      },
-      spec: {
-        contentRef: '../Command/'+commandName,
-        placement: {
-          current: 'floating',
-          grid: {
-            area: 'fullscreen',
-          },
-          floating: {
-            left: 200,
-            top: 200,
-          },
-          rolledWindow: false,
-        },
-      },
+    launchNewIntent(runtime, {
+      receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
+      action: icon.launcherIcon.action,
+      category: 'app.dist.Launcher',
+      // TODO: seems like there needs to be a better way to refer to a particular foreign application.
+      // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
     });
     // throw new Error(`TODO: launch app ${appInstall.metadata.name}`);
   };

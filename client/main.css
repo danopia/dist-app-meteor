@@ -251,3 +251,78 @@ iframe.activity-contents-wrap {
 .launcher-window button:hover .appIcon {
   transform: scale(1.1);
 }
+
+
+body.ReactModal__Body--open .ReactModalPortal {
+  grid-area: activity;
+  position: relative;
+  overflow: hidden;
+  z-index: 15;
+}
+body.ReactModal__Body--open .ReactModal__Overlay {
+  position: absolute;
+}
+
+
+
+.ReactModalPortal .atom-modal {
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 500px;
+}
+.ReactModalPortal .atom-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.ReactModalPortal .atom-container {
+  font-size: initial;
+  font-weight: 300;
+}
+.ReactModalPortal .atom-suggestionsContainerOpen {
+  max-height: initial;
+}
+
+.palette-suggestion {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.chrome-category {
+  color: rgb(255, 255, 255);
+  margin-right: 6px;
+  border-radius: 2px;
+  padding: 1.2px 3px;
+}
+
+.chrome-category b {
+  color: rgb(255, 255, 255);
+  font-weight: bolder;
+}
+/*
+.chrome-shortcut {
+  float: right;
+  margin-right: 2px;
+  color: rgb(150, 150, 150);
+  display: inline-block;
+} */
+
+.chrome-category.Action {
+  background: rgb(0, 188, 212);
+}
+
+.chrome-category.Activity {
+  background: rgb(76, 174, 80);
+}
+
+.chrome-category.Network {
+  background: rgb(63, 81, 181);
+}
+
+.chrome-category.Navigate {
+  background: rgb(255, 182, 0);
+}
+
+.chrome-category.Drawer {
+  background: rgb(0, 149, 136);
+}

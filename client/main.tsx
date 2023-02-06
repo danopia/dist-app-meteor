@@ -1,7 +1,7 @@
 import { Meteor } from 'meteor/meteor';
 
 // Side-effect: replaces event stacks
-import 'stack-source-map/register';
+// import 'stack-source-map/register';
 window.addEventListener('error', evt => {
   try {
     if (evt.error.message == `Unexpected token '<', "\n<!DOCTYPE "... is not valid JSON`) {

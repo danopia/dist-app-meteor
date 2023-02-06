@@ -6,6 +6,7 @@ import { ActivityShell } from './ActivityShell';
 import { RuntimeProvider } from './RuntimeProvider';
 import { useSubscribe } from 'meteor/react-meteor-data';
 import { ErrorFallback } from '../lib/error-fallback';
+import { MyCommandPalette } from './CommandPalette';
 // import { ShellSelector } from './ShellSelector';
 
 const routes = {
@@ -35,6 +36,7 @@ export const App = () => {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <RuntimeProvider>
+        <MyCommandPalette />
         {route}
       </RuntimeProvider>
     </ErrorBoundary>

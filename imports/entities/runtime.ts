@@ -21,12 +21,10 @@ export interface CommandEntity {
       // In sync with protocol.ts
       action?: string;
       category?: string;
+      contextRef?: string;
       receiverRef?: string;
       dataRef?: string;
       data?: string;
-      activity?: {
-        name: string;
-      };
       flags?: Array<'new-task'>;
     };
   } | {

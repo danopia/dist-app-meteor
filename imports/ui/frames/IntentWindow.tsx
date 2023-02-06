@@ -147,6 +147,22 @@ export const IntentWindow = (props: {
     let baseUrl = 'entity://';
     let appInstallation: AppInstallationEntity | null = null;
 
+    if (typeof intent.contextRef == 'string') {
+      const match = new URLPattern({
+        protocol: 'entity:',
+        pathname: "//:namespace/:api@:version/:kind/:name",
+      }).exec(intent.contextRef);
+      if (match) {
+        const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
+        if (api == 'profile.dist.app' && kind == 'AppInstallation') {
+          appInstallation = runtime.getEntity<AppInstallationEntity>(
+            'profile.dist.app/v1alpha1', 'AppInstallation',
+            namespace, name);
+          // appInstallation =
+        }
+      }
+    }
+
     const hActivityTask = hCommand
       .followOwnerReference<ActivityTaskEntity>('runtime.dist.app/v1alpha1', 'ActivityTask');
     if (hActivityTask) {
