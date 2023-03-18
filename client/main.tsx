@@ -1,3 +1,5 @@
+import './tracer'
+
 import { Meteor } from 'meteor/meteor';
 
 // Side-effect: replaces event stacks

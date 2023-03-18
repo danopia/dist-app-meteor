@@ -1,10 +1,17 @@
 
+import { trace } from '@opentelemetry/api';
 import { fetch, Headers } from 'meteor/fetch';
 import { Meteor } from 'meteor/meteor';
+import { EntitiesCollection } from '/imports/db/entities';
 import { FetchErrorEntity, FetchRequestEntity, FetchResponseEntity } from '/imports/entities/protocol';
 
 export async function fetchRequestEntity(req: FetchRequestEntity): Promise<FetchResponseEntity | FetchErrorEntity> {
   console.log('poc-http-fetch:', req);
+
+  await trace.getTracer('test')?.startActiveSpan('test', async span => {
+    await EntitiesCollection.findOneAsync(); // remove me
+    span.end();
+  });
 
   const proxyPrefix = 'dist-app:/protocolendpoints/openapi/proxy/https/';
   if (req.spec.url.startsWith(proxyPrefix)) {

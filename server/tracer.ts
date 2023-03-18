@@ -6,10 +6,11 @@ import { BatchSpanProcessor, NodeTracerProvider } from '@opentelemetry/sdk-trace
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { Resource } from '@opentelemetry/resources';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
-import { Context, ContextManager, ROOT_CONTEXT, SpanKind, trace, context } from '@opentelemetry/api';
+import { Context, ContextManager, ROOT_CONTEXT } from '@opentelemetry/api';
 import { Meteor } from 'meteor/meteor';
-import { EventEmitter } from 'node:events';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+
+import { MongoDBInstrumentation } from "@opentelemetry/instrumentation-mongodb"
 
 import Fiber from 'fibers';
 
@@ -40,10 +41,10 @@ class MeteorContextManager implements ContextManager {
       // return Meteor.bindEnvironment(() => this.with(context, fn, thisArg, ...args))();
       // return fn.apply(thisArg, args);
     }
-    if (target instanceof EventEmitter) {
-      // throw new Error(`TODO: bind of EventEmitter`);
-      // return this._bindEventEmitter(context, target);
-    }
+    // if (target instanceof EventEmitter) {
+    //   // throw new Error(`TODO: bind of EventEmitter`);
+    //   return this._bindEventEmitter(context, target);
+    // }
     if (typeof target === 'function') {
       // Seems like the easiest way to grab a specific new context for later calling
       return this.envVar.withValue(context, () => Meteor.bindEnvironment(target));
@@ -62,7 +63,11 @@ class MeteorContextManager implements ContextManager {
     return this;
     // throw new Error('Method not implemented.');
   }
+
 }
+
+
+
 
 
 
@@ -81,70 +86,146 @@ const provider = new NodeTracerProvider({
     'deployment.environment': 'local',
   }),
 });
+const contextManager = new MeteorContextManager().enable();
 provider.addSpanProcessor(new BatchSpanProcessor(new OTLPTraceExporter()));
 // provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.register({
-  contextManager: new MeteorContextManager().enable(),
+  contextManager,
 });
 registerInstrumentations({
   instrumentations: [
     getNodeAutoInstrumentations(),
-    // new MongoDBInstrumentation(),
+    new MongoDBInstrumentation(),
   ],
   tracerProvider: provider,
 })
 
-const origMethods = Meteor.methods;
-const Mtracer = trace.getTracer('meteor.ddp');
-Meteor.methods = (methods) => {
-  const mapped = Object.fromEntries(Object.entries(methods).map(([name, method]) => {
-    return [name, function (this: Meteor.MethodThisType, ...args: unknown[]) {
-      return Mtracer.startActiveSpan(name, {
-        kind: SpanKind.SERVER,
-        attributes: {
-          'ddp.user_id': this.userId ?? '',
-          'ddp.connection': this.connection?.id,
-        },
-      }, async span => {
-        try {
-          return await method.apply(this, args);
-        } catch (err) {
-          span.recordException(err as Error);
-          throw err;
-        } finally {
-          span.end();
-        }
-      });
-    }];
-  }));
-  origMethods(mapped);
-}
 
-import { WebApp } from 'meteor/webapp';
-import { MongoInternals } from "meteor/mongo";
-const tracer = trace.getTracer('webapp');
-WebApp.rawConnectHandlers.use((req,resp,next) => {
-  console.log(req.method, req.url);
-  const span = tracer.startSpan('webapp', {
-    kind: SpanKind.SERVER,
-    attributes: {
-      'http.method': req.method,
-      'http.url': req.url,
-    },
-  }, ROOT_CONTEXT);
-  // resp.once('finish', () => {
-  //   console.log('finish span', span.isRecording());
-  //   span.end();
-  // });
-  resp.once('close', () => {
-    // console.log('close span', span.isRecording());
-    span.end();
-  });
-  // span.end();
-  context.with(trace.setSpan(ROOT_CONTEXT, span), () => {
-    next();
-  });
-})
+// const x = Npm.require('mongodb');
+// console.log('x', x);
+
+
+
+
+// import { MeterProvider } from '@opentelemetry/sdk-metrics';
+// const metricsProvider = new MeterProvider({});
+// metrics.setGlobalMeterProvider(metricsProvider);
+// metricsProvider.addMetricReader(new PeriodicExportingMetricReader({
+//   exporter: new OTLPMetricExporter(),
+//   exportIntervalMillis: 5000,
+// }));
+
+import './instrument/fibers'
+// await metricsProvider.forceFlush();
+
+
+import './instrument/ddp'
+import './instrument/webapp'
+
+
+// const tracer = trace.getTracer('mongodb');
+// import { Mongo, MongoInternals } from "meteor/mongo";
+// const x = Mongo.Collection.prototype as InstanceType< typeof Mongo.Collection>;
+// const origFind = x.find;
+// x.find = function<T> (this: Mongo.Collection<any>, ...args) {
+//   return tracer.startActiveSpan('find', {}, span => {
+//     try {
+//       return origFind.apply(this, args)
+//     } finally {
+//       span.end();
+//     }
+//   });
+// }
+// const origFindOne = x.findOne;
+// x.findOne = function<T> (this: Mongo.Collection<any>, ...args) {
+//   return tracer.startActiveSpan('findOne '+this.rawCollection().collectionName, {}, span => {
+//     try {
+//       return origFindOne.apply(this, args)
+//     } finally {
+//       span.end();
+//     }
+//   });
+// }
+
+// const client = MongoInternals.defaultRemoteCollectionDriver().mongo.client;
+// // contextManager.bind()
+// client.on('commandStarted', evt => {
+//   console.error('commandStarted', evt.commandName);
+//   console.error(trace.getActiveSpan()?.isRecording())
+//   console.error('fiber', Fiber.current)
+//   // console.error(new Error().stack)
+// })
+
+
+
+// const mcnof_op = Npm.require('../node_modules/meteor/npm-mongo/node_modules/mongodb/lib/operations.js')
+// console.log({mcnof_op})
+
+// const mcnof_pool = Npm.require('../node_modules/meteor/npm-mongo/node_modules/mongodb/lib/cmap/connection_pool.js')
+// const checkOOO = mcnof_pool.ConnectionPool.prototype.checkOut;
+// mcnof_pool.ConnectionPool.prototype.checkOut = function (cb) {
+//   const ctx = context.active();
+//   console.log('checkout', trace.getSpan(ctx)?.isRecording());
+//   checkOOO.call(this, (...args) => context.with(ctx, () => cb(...args)));
+// }
+
+// const mcnofg = Npm.require('../node_modules/meteor/npm-mongo/node_modules/mongodb/lib/cmap/connection.js')
+// const ins = new MongoDBInstrumentation();
+// ins.init()[1].files[0].patch(mcnofg);
+// const orig = mcnofg.Connection.prototype.command;
+// mcnofg.Connection.prototype.command = function (...args) {
+//   console.error(args[0].collection, trace.getActiveSpan()?.isRecording());
+//   if (args[0].collection == 'Profiles') console.log(new Error().stack)
+//   return orig.apply(this, args);
+// }
+
+
+
+
+// const origOpen = MongoInternals.defaultRemoteCollectionDriver().open;
+// MongoInternals.defaultRemoteCollectionDriver().mongo.client.withSession(x => x.).open = (name, conn) => {
+//   console.log('open', name);
+//   const coll = origOpen.call(MongoInternals.defaultRemoteCollectionDriver(), name, conn);
+//   return new Proxy(coll, {
+//     // apply(real, self, args) {
+//     //   console.log(args);
+//     //   return
+//     // }
+//     get(target, key) {
+//       console.log('get', key);
+//       return target[key];
+//     }
+//   })
+// }
+
+
+// const origMethods = Meteor.methods;
+// const Mtracer = trace.getTracer('meteor.method');
+// Meteor.methods = (methods) => {
+//   const mapped = Object.fromEntries(Object.entries(methods).map(([name, method]) => {
+//     return [name, function (this: Meteor.MethodThisType, ...args: unknown[]) {
+//       return Mtracer.startActiveSpan(name, {
+//         kind: SpanKind.SERVER,
+//         attributes: {
+//           'rpc.system': 'ddp',
+//           'ddp.user_id': this.userId ?? '',
+//           'ddp.connection': this.connection?.id,
+//         },
+//       }, async span => {
+//         try {
+//           return await method.apply(this, args);
+//         } catch (err) {
+//           span.recordException(err as Error);
+//           throw err;
+//         } finally {
+//           span.end();
+//         }
+//       });
+//     }];
+//   }));
+//   origMethods(mapped);
+// }
+
 
 // tracer.startSpan('demo', {}, ROOT_CONTEXT).end();
 
