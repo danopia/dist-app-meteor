@@ -1,3 +1,13 @@
+import 'meteor/danopia:opentelemetry';
+
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
+registerInstrumentations({
+  instrumentations: [
+    getWebAutoInstrumentations(),
+  ],
+});
+
 import { Meteor } from 'meteor/meteor';
 
 // Side-effect: replaces event stacks
