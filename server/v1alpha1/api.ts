@@ -9,11 +9,16 @@ import { FetchRequestEntity } from "/imports/entities/protocol";
 import { handleCapCall } from "./handle-submissions";
 
 import './publications';
+import { trace } from "@opentelemetry/api";
 
 Meteor.methods({
 
   async '/v1alpha1/Entity/submit'(entity: unknown) {
     check(entity, Match.ObjectIncluding({kind: String}));
+    // TODO: wrap submissions in their own span by kind
+    trace.getActiveSpan()?.setAttributes({
+      'distapp.entity_kind': entity.kind,
+    });
     if (entity.kind == 'CapCall') {
       return Promise.await(handleCapCall(this.userId, entity as ArbitraryEntity));
     }

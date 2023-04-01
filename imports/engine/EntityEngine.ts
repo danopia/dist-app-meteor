@@ -1,5 +1,6 @@
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
 import { ReactiveMap } from "../lib/reactive-map";
+import { LogicTracer } from "../lib/tracing";
 // import { AsyncCache, AsyncKeyedCache } from "../runtime/async-cache";
 import { ShellSession } from "../runtime/ShellSession";
 import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
@@ -11,6 +12,11 @@ import { LayeredNamespace } from "./next-gen";
 //   namespace?: string;
 //   op: 'Read' | 'Write';
 // };
+
+const tracer = new LogicTracer({
+  name: 'dist.app/entity-engine',
+  requireParent: true,
+});
 
 function loadFunc(this: EntityEngine, input: ArbitraryEntity, key: string) {
   if (input.apiVersion == 'runtime.dist.app/v1alpha1') {
@@ -138,7 +144,14 @@ export class EntityEngine {
       namespace: entity.metadata.namespace,
       op: 'Write',
     });
-    return layer?.impl.insertEntity<T>(entity);
+    return tracer.asyncSpan('engine insertEntity', {
+      attributes: {
+        'distapp.entity.api_version': entity.apiVersion,
+        'distapp.entity.kind': entity.kind,
+        'distapp.entity.namespace': entity.metadata.namespace,
+        'distapp.entity.name': entity.metadata.name,
+      },
+    }, async () => await layer?.impl.insertEntity<T>(entity));
   }
 
   listEntities<T extends ArbitraryEntity>(
@@ -146,14 +159,22 @@ export class EntityEngine {
     kind: T["kind"],
     namespace?: string
   ): T[] {
-    const layer = this.selectNamespaceLayer({
-      apiVersion: apiVersion,
-      kind: kind,
-      namespace: namespace,
-      op: 'Read',
-    });
-    return layer.impl.listEntities<T>(apiVersion, kind).map(entity => {
-      return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
+    return tracer.syncSpan('engine listEntities', {
+      attributes: {
+        'distapp.entity.api_version': apiVersion,
+        'distapp.entity.kind': kind,
+        'distapp.entity.namespace': namespace,
+      },
+    }, () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion: apiVersion,
+        kind: kind,
+        namespace: namespace,
+        op: 'Read',
+      });
+      return layer.impl.listEntities<T>(apiVersion, kind).map(entity => {
+        return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
+      });
     });
   }
 
@@ -163,16 +184,25 @@ export class EntityEngine {
     namespace: string | undefined,
     name: string
   ): T | null {
-    const layer = this.selectNamespaceLayer({
-      apiVersion: apiVersion,
-      kind: kind,
-      namespace: namespace,
-      op: 'Read',
+    return tracer.syncSpan('engine getEntity', {
+      attributes: {
+        'distapp.entity.api_version': apiVersion,
+        'distapp.entity.kind': kind,
+        'distapp.entity.namespace': namespace,
+        'distapp.entity.name': name,
+      },
+    }, () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion: apiVersion,
+        kind: kind,
+        namespace: namespace,
+        op: 'Read',
+      });
+      if (!layer) return null;
+      const entity = layer.impl.getEntity(apiVersion, kind, name)
+      if (!entity) return null;
+      return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
     });
-    if (!layer) return null;
-    const entity = layer.impl.getEntity(apiVersion, kind, name)
-    if (!entity) return null;
-    return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
   }
 
   loadEntity<T extends ArbitraryEntity>(
@@ -194,16 +224,25 @@ export class EntityEngine {
   }
 
   async updateEntity<T extends ArbitraryEntity>(newEntity: T) {
-    const layer = this.selectNamespaceLayer({
-      apiVersion: newEntity.apiVersion,
-      kind: newEntity.kind,
-      namespace: newEntity.metadata.namespace,
-      op: 'Write',
-    });
+    return tracer.asyncSpan('engine updateEntity', {
+      attributes: {
+        'distapp.entity.api_version': newEntity.apiVersion,
+        'distapp.entity.kind': newEntity.kind,
+        'distapp.entity.namespace': newEntity.metadata.namespace,
+        'distapp.entity.name': newEntity.metadata.name,
+      },
+    }, async () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion: newEntity.apiVersion,
+        kind: newEntity.kind,
+        namespace: newEntity.metadata.namespace,
+        op: 'Write',
+      });
 
-    const count = await layer.impl.updateEntity(newEntity);
-    if (!count)
-      throw new Error(`TODO: Update applied to zero entities`);
+      const count = await layer.impl.updateEntity(newEntity);
+      if (!count)
+        throw new Error(`TODO: Update applied to zero entities`);
+    });
   }
 
   // Mutation helper
@@ -213,21 +252,30 @@ export class EntityEngine {
     namespace: string | undefined,
     name: string, mutationCb: (x: T) => void | Symbol
   ) {
-    const layer = this.selectNamespaceLayer({
-      apiVersion, kind,
-      namespace,
-      op: 'Write',
+    return tracer.asyncSpan('engine mutateEntity', {
+      attributes: {
+        'distapp.entity.api_version': apiVersion,
+        'distapp.entity.kind': kind,
+        'distapp.entity.namespace': namespace,
+        'distapp.entity.name': name,
+      },
+    }, async () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion, kind,
+        namespace,
+        op: 'Write',
+      });
+
+      const entity = layer.impl.getEntity(apiVersion, kind, name);
+      if (!entity)
+        throw new Error(`Entity doesn't exist`);
+
+      const result = mutationCb(entity);
+      if (result == Symbol.for('no-op'))
+        return;
+
+      await layer.impl.updateEntity(entity);
     });
-
-    const entity = layer.impl.getEntity(apiVersion, kind, name);
-    if (!entity)
-      throw new Error(`Entity doesn't exist`);
-
-    const result = mutationCb(entity);
-    if (result == Symbol.for('no-op'))
-      return;
-
-    await layer.impl.updateEntity(entity);
   }
 
   deleteEntity<T extends ArbitraryEntity>(
@@ -236,12 +284,21 @@ export class EntityEngine {
     namespace: string | undefined,
     name: string
   ) {
-    const layer = this.selectNamespaceLayer({
-      apiVersion, kind,
-      namespace,
-      op: 'Write',
+    return tracer.asyncSpan('engine deleteEntity', {
+      attributes: {
+        'distapp.entity.api_version': apiVersion,
+        'distapp.entity.kind': kind,
+        'distapp.entity.namespace': namespace,
+        'distapp.entity.name': name,
+      },
+    }, async () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion, kind,
+        namespace,
+        op: 'Write',
+      });
+      return await layer.impl.deleteEntity(apiVersion, kind, name);
     });
-    return layer.impl.deleteEntity(apiVersion, kind, name);
   }
 
 

@@ -1,4 +1,6 @@
+import { SpanKind } from "@opentelemetry/api";
 import { ProtocolEntity } from "../entities/protocol";
+import { syncSpan } from "../lib/tracing";
 
 export type RpcListener<T extends ProtocolEntity> = (event: {
   rpc: T;
@@ -22,18 +24,22 @@ export class MessageHost {
 
   handleMessage(event: MessageEvent) {
     const rpc: ProtocolEntity = event.data;
-    const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
-    // let hits = 0;
-    for (const listener of this.rpcListeners) {
-      if (listener[0] == rpc.kind) {
-        listener[1]({
-          rpc: event.data,
-          respondWith: this.respondTo.bind(this, id),
-        });
-        // hits++;
+    return syncSpan(`MessageHost rpc: ${rpc.kind}`, {
+      kind: SpanKind.SERVER,
+    }, async () => {
+      const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
+      // let hits = 0;
+      for (const listener of this.rpcListeners) {
+        if (listener[0] == rpc.kind) {
+          listener[1]({
+            rpc: event.data,
+            respondWith: this.respondTo.bind(this, id),
+          });
+          // hits++;
+        }
       }
-    }
-    // console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+      // console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+    });
   }
 
   respondTo(msgId: number | false, data: Omit<ProtocolEntity, 'origId'>) {

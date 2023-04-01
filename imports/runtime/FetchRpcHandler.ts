@@ -12,8 +12,16 @@ import { serveSessionApi } from "./system-apis/session";
 import { ApiCredentialEntity } from "../entities/profile";
 import { stripIndent } from "common-tags";
 import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch-responses";
+import { LogicTracer } from "../lib/tracing";
+import { SpanKind } from "@opentelemetry/api";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
+
+const tracer = new LogicTracer({
+  name: 'dist.app/fetch-rpc',
+  requireParent: false,
+});
+
 
 export class FetchRpcHandler {
   constructor(
@@ -23,9 +31,20 @@ export class FetchRpcHandler {
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    const response = await this.handleInner(rpc).catch(makeErrorResponse);
-    console.log('IframeHost:', response.spec.status, 'from', rpc.spec.method, rpc.spec.url, {request: rpc.spec, response: response.spec});
-    return response;
+    return await tracer.asyncSpan(`fetch-rpc ${rpc.spec.method}`, {
+      kind: SpanKind.SERVER,
+      attributes: {
+        'http.method': rpc.spec.method,
+        'http.url': rpc.spec.url,
+      },
+    }, async (span) => {
+      const response = await this.handleInner(rpc).catch(makeErrorResponse);
+      span?.setAttributes({
+        'http.status_code': response.spec.status,
+      });
+      console.log('IframeHost:', response.spec.status, 'from', rpc.spec.method, rpc.spec.url, {request: rpc.spec, response: response.spec});
+      return response;
+    });
   }
 
   async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {

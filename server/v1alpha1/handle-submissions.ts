@@ -6,6 +6,7 @@ import { ApiCredentialEntity, AppInstallationEntity } from "/imports/entities/pr
 import { getUserEngine } from "./entity-engine";
 import { ApiBindingEntity } from "/imports/entities/manifest";
 import { performHttpRequest } from "/imports/runtime/http-client";
+import { trace } from "@opentelemetry/api";
 
 export async function handleCapCall(userId: string | null, entity: ArbitraryEntity) {
   check(entity, {
@@ -22,6 +23,12 @@ export async function handleCapCall(userId: string | null, entity: ArbitraryEnti
     },
   });
   const request = entity.spec.request as FetchRequestEntity;
+  trace.getActiveSpan()?.setAttributes({
+    'distapp.cap.type': entity.spec.cap.type,
+    'distapp.cap.api_binding.ref': entity.spec.cap.apiBindingRef,
+    'distapp.cap.api_credential.ref': entity.spec.cap.apiCredentialRef,
+    'distapp.app_install.ref': entity.spec.appInstallationRef,
+  });
 
   const runtime = await getUserEngine(userId);
   const appInstallationNames = entity.spec.appInstallationRef

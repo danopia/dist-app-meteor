@@ -7,7 +7,7 @@ import { EntityEngine } from "/imports/engine/EntityEngine";
 import { FetchRequestEntity } from "/imports/entities/protocol";
 import "urlpattern-polyfill";
 
-import { fetch } from '/imports/lib/traced-fetch';
+import { fetch } from 'meteor/fetch';
 
 export async function performHttpRequest(runtime: EntityEngine, opts: {
   rpc: FetchRequestEntity;

@@ -1,6 +1,6 @@
 
 import { Meteor } from 'meteor/meteor';
-import { fetch, Headers } from '/imports/lib/traced-fetch';
+import { fetch, Headers } from 'meteor/fetch';
 import { FetchErrorEntity, FetchRequestEntity, FetchResponseEntity } from '/imports/entities/protocol';
 
 export async function fetchRequestEntity(req: FetchRequestEntity): Promise<FetchResponseEntity | FetchErrorEntity> {

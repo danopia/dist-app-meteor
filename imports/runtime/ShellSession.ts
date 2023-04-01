@@ -3,6 +3,8 @@ import { ActivityEntity } from "../entities/manifest";
 import { WorkspaceEntity, CommandEntity, FrameEntity, ActivityTaskEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 import { AppInstallationEntity } from "../entities/profile";
+import { syncSpan } from "../lib/tracing";
+import { context, propagation, TextMapSetter } from "@opentelemetry/api";
 
 export class ShellSession {
 
@@ -195,25 +197,30 @@ export class ShellSession {
   }
 
   runTaskCommand(task: FrameEntity, activityTask: ActivityTaskEntity | null, commandSpec: CommandEntity["spec"]) {
-    this.handleCommand({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Command',
-      metadata: {
-        name: 'task-cmd',
-        namespace: task.metadata.namespace,
-        ownerReferences: [{
-          apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'Frame',
-          name: task.metadata.name,
-          uid: task.metadata.uid,
-        }, ...(activityTask ? [{
-          apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'ActivityTask',
-          name: activityTask.metadata.name,
-          uid: activityTask.metadata.uid,
-        }] : [])],
-      },
-      spec: commandSpec,
+    syncSpan(`ShellSession task: ${commandSpec.type}`, {}, () => {
+      const annotations: Record<string,string> = {};
+      propagation.inject(context.active(), annotations, annotationSetter);
+      this.handleCommand({
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Command',
+        metadata: {
+          name: 'task-cmd',
+          namespace: task.metadata.namespace,
+          ownerReferences: [{
+            apiVersion: 'runtime.dist.app/v1alpha1',
+            kind: 'Frame',
+            name: task.metadata.name,
+            uid: task.metadata.uid,
+          }, ...(activityTask ? [{
+            apiVersion: 'runtime.dist.app/v1alpha1',
+            kind: 'ActivityTask',
+            name: activityTask.metadata.name,
+            uid: activityTask.metadata.uid,
+          }] : [])],
+          annotations,
+        },
+        spec: commandSpec,
+      });
     });
   }
 
@@ -226,3 +233,9 @@ export class ShellSession {
   //   return this.runtime.listEntities<TaskEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace);
   // }
 }
+
+const annotationSetter: TextMapSetter<Record<string, string>> = {
+  set(carrier, key, value) {
+    carrier[`otel/${key}`] = value;
+  },
+};
