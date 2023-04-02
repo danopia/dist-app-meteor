@@ -74,11 +74,29 @@ export const MyCommandPalette = () => {
       };
     }),
     {
-      name: "Upload Session",
+      name: "Launcher",
       category: 'Action',
       icon: {type: 'glyph', glyph: {text: '?', backgroundColor: 'rgba(127, 127, 127, .5)'}},
+      intent: {
+        receiverRef: `internal://launcher`,
+      },
       command,
     },
+    {
+      name: "Explorer",
+      category: 'Action',
+      icon: {type: 'glyph', glyph: {text: '?', backgroundColor: 'rgba(127, 127, 127, .5)'}},
+      intent: {
+        receiverRef: `internal://explorer`,
+      },
+      command,
+    },
+    // {
+    //   name: "Upload Session",
+    //   category: 'Action',
+    //   icon: {type: 'glyph', glyph: {text: '?', backgroundColor: 'rgba(127, 127, 127, .5)'}},
+    //   command,
+    // },
   ];
 
   return (

@@ -142,6 +142,8 @@ export class ShellSession {
       kind: 'ActivityTask',
       metadata: {
         name: actInstId,
+        // TODO: if this namespace is left off, this goes into default? why does it work
+        // namespace: this.namespace,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
           kind: 'Frame',
@@ -168,6 +170,8 @@ export class ShellSession {
       kind: 'Frame',
       metadata: {
         name: taskId,
+        // TODO: if this namespace is left off, this goes into default? why does it work
+        // namespace: this.namespace,
         ownerReferences: [{
           apiVersion: 'runtime.dist.app/v1alpha1',
           kind: 'Workspace',
@@ -231,9 +235,3 @@ export class ShellSession {
   //   return this.runtime.listEntities<TaskEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace);
   // }
 }
-
-const annotationSetter: TextMapSetter<Record<string, string>> = {
-  set(carrier, key, value) {
-    carrier[`otel/${key}`] = value;
-  },
-};

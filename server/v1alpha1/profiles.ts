@@ -25,6 +25,8 @@ Meteor.startup(async () => {
   });
 });
 
+// TODO: the profile seeding should be refactored to use an EntityEngine
+
 export async function getUserDefaultProfile(userId: string): Promise<string> {
 
   // Maybe the user already has a personal profile and we can return that.
@@ -115,7 +117,6 @@ export async function getUserDefaultProfile(userId: string): Promise<string> {
       kind: 'AppInstallation',
       metadata: {
         name: 'welcome',
-        namespace: 'default',
       },
       spec: {
         appUri: 'bundled:'+encodeURIComponent('app:welcome'), // TODO: rename to appRef

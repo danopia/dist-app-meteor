@@ -17,7 +17,7 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
       if (!staticCat) throw new Error(`Bundled id ${JSON.stringify(layerSpec.storage.bundleId)} not found`);
       return new StaticEntityStorage(staticCat);
     case 'profile':
-      return new MongoProfileStorage(layerSpec.storage.profileId);
+      return new MongoProfileStorage(layerSpec.storage.profileId, namespaceName);
   }
   //@ts-expect-error should be exhaustive thus 'never'
   throw new Error(`BUG: nobody built ${JSON.stringify(layerSpec.storage.type)} layer`);
@@ -56,5 +56,9 @@ export class LayeredNamespace {
       if (x.mode == 'WriteOnly' && props.op !== 'Write') return false;
       return true;
     }))
+  }
+
+  allLayers() {
+    return this.layers.slice(0);
   }
 }

@@ -6,6 +6,7 @@ import { AppInstallationEntity } from "../entities/profile";
 import { FrameEntity, ActivityTaskEntity, CommandEntity } from "../entities/runtime";
 import { ErrorFallback } from "../lib/error-fallback";
 import { RuntimeContext } from "./contexts";
+import { ExplorerWindow } from "./frames/ExplorerWindow";
 import { IntentWindow } from "./frames/IntentWindow";
 import { LauncherWindow } from "./frames/LauncherWindow";
 import { IframeHost } from "./IframeHost";
@@ -32,6 +33,7 @@ export const FrameContainer = (props: {
   const contentRaw = useTracker(() => {
     const ref = frameEntity.spec.contentRef;
     if (ref == 'internal://launcher') return {kind: 'Launcher' as const};
+    if (ref == 'internal://explorer') return {kind: 'Explorer' as const};
     const [_, kind, name] = ref.split('/');
     if (kind !== 'ActivityTask' && kind !== 'Command') throw new Error(`TODO: other contentRefs (${frameEntity.spec.contentRef})`);
     return runtime.getEntity<ActivityTaskEntity|CommandEntity>('runtime.dist.app/v1alpha1', kind, props.sessionNamespace, name);
@@ -50,6 +52,16 @@ export const FrameContainer = (props: {
       );
       content = (
         <LauncherWindow onLifecycle={setLifecycle} />
+      );
+      break;
+    }
+
+    case 'Explorer': {
+      title = (
+        <div className="window-title">Explorer</div>
+      );
+      content = (
+        <ExplorerWindow onLifecycle={setLifecycle} />
       );
       break;
     }

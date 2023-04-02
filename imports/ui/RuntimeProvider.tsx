@@ -20,30 +20,7 @@ export const RuntimeProvider = (props: {
         namespace: 'session',
       },
       spec: {
-        windowOrder: ['launcher'],
-      },
-    });
-
-    runtime.insertEntity<FrameEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Frame',
-      metadata: {
-        name: 'launcher',
-        namespace: 'session',
-      },
-      spec: {
-        contentRef: 'internal://launcher',
-        placement: {
-          current: 'floating',
-          floating: {
-            left: 15,
-            top: 15,
-          },
-          grid: {
-            area: 'fullscreen',
-          },
-          rolledWindow: false,
-        },
+        windowOrder: [],
       },
     });
 
