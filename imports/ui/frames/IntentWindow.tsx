@@ -1,3 +1,4 @@
+import { context } from "@opentelemetry/api";
 import { Meteor } from "meteor/meteor";
 import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
@@ -9,16 +10,34 @@ import { EntityHandle } from "/imports/engine/EntityHandle";
 import { ActivityEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
+import { extractTraceAnnotations, LogicTracer, wrapAsyncWithSpan } from "/imports/lib/tracing";
 import { RuntimeContext } from "/imports/ui/contexts";
 
-export const IntentWindow = (props: {
+type IntentWindowProps = {
   frame: FrameEntity;
   command: CommandEntity;
   workspaceName: string;
   // cmdName: string;
   // intent: LaunchIntentEntity['spec'],
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
-}) => {
+};
+
+const tracer = new LogicTracer({
+  name: 'IntentWindow',
+  requireParent: true,
+})
+
+export const IntentWindow = (props: IntentWindowProps) => {
+  console.log(props.command.metadata);
+  const ctx = extractTraceAnnotations(props.command?.metadata?.annotations ?? {});
+  return context.with(ctx, () => tracer.syncSpan('<IntentWindow/>', {
+    attributes: {
+      'distapp.command.type': props.command.spec.type,
+    },
+  }, () => IntentWindowInner(props)));
+};
+
+const IntentWindowInner = (props: IntentWindowProps) => {
   const runtime = useContext(RuntimeContext);
   useEffect(() => props.onLifecycle('ready'), []);
 

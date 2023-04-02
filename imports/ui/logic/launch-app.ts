@@ -1,6 +1,7 @@
 import { Random } from "meteor/random";
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { CommandEntity, FrameEntity } from "/imports/entities/runtime";
+import { injectTraceAnnotations } from "/imports/lib/tracing";
 
 export function launchNewIntent(runtime: EntityEngine, intent: (CommandEntity['spec'] & {type: 'launch-intent'})['intent']) {
   const commandName = Random.id();
@@ -10,6 +11,7 @@ export function launchNewIntent(runtime: EntityEngine, intent: (CommandEntity['s
     metadata: {
       name: commandName,
       namespace: 'session',
+      annotations: injectTraceAnnotations(),
     },
     spec: {
       type: 'launch-intent',

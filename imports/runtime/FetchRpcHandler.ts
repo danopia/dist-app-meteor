@@ -105,11 +105,15 @@ export class FetchRpcHandler {
     if (!impl) return makeStatusResponse(404,
       `System API ${JSON.stringify(apiName)} not found`);
 
-    return await impl({
+    return await tracer.asyncSpan(`system API: ${apiName}`, {
+      attributes: {
+        'http.path': subPath,
+      },
+    }, () => impl({
       request: rpc.spec,
       path: subPath,
       context: this,
-    }).then<Omit<FetchResponseEntity, 'origId'>>(x => ({kind: 'FetchResponse', spec: x}))
+    })).then<Omit<FetchResponseEntity, 'origId'>>(x => ({kind: 'FetchResponse', spec: x}))
       .catch(makeErrorResponse);
   }
 

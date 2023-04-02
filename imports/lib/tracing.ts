@@ -5,8 +5,34 @@ import {
   trace,
   SpanOptions,
   Tracer,
+  propagation,
+  TextMapSetter,
+  TextMapGetter,
 } from "@opentelemetry/api";
 import { Meteor } from "meteor/meteor";
+
+export function injectTraceAnnotations() {
+  const annotations: Record<string,string> = {};
+  propagation.inject(context.active(), annotations, annotationSetter);
+  return annotations;
+}
+const annotationSetter: TextMapSetter<Record<string, string>> = {
+  set(carrier, key, value) {
+    carrier[`otel/${key}`] = value;
+  },
+};
+
+export function extractTraceAnnotations(annotations: Record<string,string | undefined>) {
+  return propagation.extract(context.active(), annotations, annotationGetter);
+}
+const annotationGetter: TextMapGetter<Record<string, string | undefined>> = {
+  keys(carrier) {
+   return Object.keys(carrier).flatMap(x => x.startsWith('otel/') ? [x.slice(5)] : []);
+  },
+  get(carrier, key) {
+    return carrier[`otel/${key}`];
+  },
+};
 
 export class LogicTracer {
   tracer: Tracer;
@@ -93,6 +119,20 @@ export class LogicTracer {
   ) {
     return (...args: Targs) =>
       this.asyncSpan(spanName, options, () =>
+        func.apply(null, args));
+  }
+
+  /** Wraps a sync function and returns a new function which creates a span around the promise */
+  wrapSyncWithSpan<
+    Targs extends unknown[],
+    Tret,
+  >(
+    spanName: string,
+    options: SpanOptions,
+    func: (...args: Targs) => Tret,
+  ) {
+    return (...args: Targs) =>
+      this.syncSpan(spanName, options, () =>
         func.apply(null, args));
   }
 

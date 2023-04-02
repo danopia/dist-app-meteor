@@ -3,7 +3,7 @@ import { ActivityEntity } from "../entities/manifest";
 import { WorkspaceEntity, CommandEntity, FrameEntity, ActivityTaskEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 import { AppInstallationEntity } from "../entities/profile";
-import { syncSpan } from "../lib/tracing";
+import { injectTraceAnnotations, syncSpan } from "../lib/tracing";
 import { context, propagation, TextMapSetter } from "@opentelemetry/api";
 
 export class ShellSession {
@@ -198,14 +198,13 @@ export class ShellSession {
 
   runTaskCommand(task: FrameEntity, activityTask: ActivityTaskEntity | null, commandSpec: CommandEntity["spec"]) {
     syncSpan(`ShellSession task: ${commandSpec.type}`, {}, () => {
-      const annotations: Record<string,string> = {};
-      propagation.inject(context.active(), annotations, annotationSetter);
       this.handleCommand({
         apiVersion: 'runtime.dist.app/v1alpha1',
         kind: 'Command',
         metadata: {
           name: 'task-cmd',
           namespace: task.metadata.namespace,
+          annotations: injectTraceAnnotations(),
           ownerReferences: [{
             apiVersion: 'runtime.dist.app/v1alpha1',
             kind: 'Frame',
@@ -217,7 +216,6 @@ export class ShellSession {
             name: activityTask.metadata.name,
             uid: activityTask.metadata.uid,
           }] : [])],
-          annotations,
         },
         spec: commandSpec,
       });

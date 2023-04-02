@@ -2,6 +2,7 @@
 import { Random } from "meteor/random";
 import { AppInstallationEntity } from "../entities/profile";
 import { CommandEntity, FrameEntity } from "../entities/runtime";
+import { injectTraceAnnotations } from "../lib/tracing";
 import { EntityEngine } from "./EntityEngine";
 import { GuestCatalogs } from "./StaticCatalogs";
 
@@ -74,6 +75,7 @@ export function insertGuestWelcomeSession(engine: EntityEngine) {
     metadata: {
       name: launchCmd,
       namespace: 'session',
+      annotations: injectTraceAnnotations(),
     },
     spec: {
       type: 'launch-intent',
