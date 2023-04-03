@@ -1,5 +1,6 @@
-import React, { Dispatch, SetStateAction, useContext, useEffect, useState } from "react";
+import React, { Dispatch, SetStateAction, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useTracker } from "meteor/react-meteor-data";
+import { parse, stringify } from 'yaml'
 
 import { RuntimeContext } from "/imports/ui/contexts";
 import { LayeredNamespace } from "/imports/engine/next-gen";
@@ -13,10 +14,20 @@ export const ExplorerWindow = (props: {
   const allNamespaces = useTracker(() => Object.entries(runtime.namespaces.all()).sort());
   const [currentEntity, setCurrentEntity] = useState<ArbitraryEntity | null>(null);
 
+  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>()
+
   const liveEntity = useTracker(() => currentEntity
     ? runtime.getEntity(currentEntity.apiVersion, currentEntity.kind, currentEntity.metadata.namespace, currentEntity.metadata.name)
     : null
   , [currentEntity]);
+
+  const liveYaml = useMemo(() => {
+    if (isEditing) setIsEditing(false);
+    if (!liveEntity) return liveEntity;
+    const {_id, catalogId, ...rest} = {...liveEntity} as Record<string,unknown>;
+    return stringify(rest);
+  }, [liveEntity]);
 
   useEffect(() => {
     props.onLifecycle('ready');
@@ -32,10 +43,25 @@ export const ExplorerWindow = (props: {
       {liveEntity ? (<>
         <ul style={{ gridRow: '1', gridColumn: '2', display: 'flex', margin: 0, padding: 0, listStyle: 'none', backgroundColor: '#444' }}>
           <li><button onClick={() => runtime.deleteEntity(liveEntity.apiVersion, liveEntity.kind, liveEntity.metadata.namespace, liveEntity.metadata.name)}>Delete</button></li>
+          {isEditing ? (<>
+            <li><button onClick={() => {
+              if (textareaRef.current?.value) {
+                runtime.updateEntity(parse(textareaRef.current.value))
+                  .then(() => setIsEditing(false));
+              }
+            }}>Save</button></li>
+            <li><button onClick={() => setIsEditing(false)}>Cancel</button></li>
+          </>) : (
+            <li><button onClick={() => setIsEditing(true)}>Edit</button></li>
+          )}
         </ul>
-        <div style={{ gridRow: '2', gridColumn: '2', padding: '0.5em 5%', overflowY: 'auto', borderLeft: '1px solid gray' }}>
-          <pre>{JSON.stringify(liveEntity ?? {}, null, 2)}</pre>
-        </div>
+        {isEditing ? (
+          <textarea ref={textareaRef} style={{ gridRow: '2', gridColumn: '2' }}>{liveYaml}</textarea>
+        ) : (
+          <div style={{ gridRow: '2', gridColumn: '2', padding: '0.5em 5%', overflowY: 'auto', borderLeft: '1px solid gray' }}>
+            <pre>{liveYaml}</pre>
+          </div>
+        )}
       </>) : []}
     </div>
   );
