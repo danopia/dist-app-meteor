@@ -4,6 +4,7 @@ import { ArbitraryEntity } from "../entities/core";
 import { ProfilesCollection } from "../db/profiles";
 import { EntitiesCollection } from "../db/entities";
 import { meteorCallAsync } from "../lib/meteor-call";
+import { Meteor } from "meteor/meteor";
 
 export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
@@ -67,7 +68,15 @@ export class MongoProfileStorage implements EntityStorage {
       if (!required) return null;
       throw new Error(`No storage matched profile ${this.profileId}`);
     }
-    const layer = profile.layers.find(x => x.apiFilters.some(y => y.apiGroup == apiGroup));
+    const layer = profile.layers.find(x => x.apiFilters.length == 0
+      || x.apiFilters.some(y => {
+        if (y.apiGroup && y.apiGroup !== apiGroup) return false;
+        if (y.apiVersion && y.apiVersion !== apiVersion) return false;
+        // if (y.kind && y.kind !== props.kind) return false;
+        // if (x.mode == 'ReadOnly' && props.op !== 'Read') return false;
+        // if (x.mode == 'WriteOnly' && props.op !== 'Write') return false;
+        return true;
+      }));
     if (!layer) {
       if (!required) return null;
       throw new Error(`No storage matched api filter ${apiGroup}`);
@@ -176,7 +185,7 @@ export class MongoEntityStorage implements EntityStorage {
   }
 
   updateEntity<T extends ArbitraryEntity>(newEntity: T) {
-    if (!newEntity.metadata.generation) throw new Error(`BUG: no generation in update`);
+    if (!newEntity.metadata.generation) throw new Meteor.Error(`bug`, `no generation in update`);
     const count = this.props.collection.update({
       catalogId: this.props.catalogId,
       apiVersion: newEntity.apiVersion,
