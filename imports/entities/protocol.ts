@@ -5,7 +5,7 @@ export interface LifecycleEntity {
   kind: "Lifecycle";
   metadata?: EntityMetadata;
   spec: {
-    stage: 'ready' | 'recycle';
+    stage: 'ready' | 'recycle' | 'unload';
   };
 }
 

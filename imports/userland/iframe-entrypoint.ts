@@ -30,6 +30,14 @@ class DistApp {
       .catch(err => console
         .error(err)));
 
+    window.addEventListener('unload', () => this
+      .sendRpc({
+        kind: 'Lifecycle',
+        spec: {
+          stage: 'unload',
+        },
+      }));
+
     fetchProtocols.set('dist-app:', (input, init) => this
       .fetch(input, init));
   }
@@ -193,6 +201,10 @@ function receiveMessagePort() {
       ok(port);
     }
     window.addEventListener("message", handleEvent, false);
+    // Let the host know we're waiting, in case we weren't the first frame
+    window.parent.postMessage({
+      'protocol': 'protocol.dist.app/v1alpha1',
+    }, '*');
   });
 }
 

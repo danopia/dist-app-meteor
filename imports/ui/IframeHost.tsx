@@ -52,6 +52,8 @@ export const IframeHost = (props: {
     messageHost.addRpcListener<protocol.LifecycleEntity>('Lifecycle', ({rpc}) => {
       if (rpc.spec.stage == 'recycle') {
         setIframeKey(Math.random());
+      } else if (rpc.spec.stage == 'unload') {
+        console.warn(`TODO: recycle the MessageHost and prepare for a new window`);
       } else {
         props.onLifecycle(rpc.spec.stage);
       }

@@ -7,6 +7,8 @@ export type RpcListener<T extends ProtocolEntity> = (event: {
   respondWith<T extends ProtocolEntity>(data: Omit<T, 'origId'>): void;
 }) => void | Promise<void>;
 
+const WindowMap = new WeakMap<MessageEventSource, MessageHost>();
+
 export class MessageHost {
   constructor() {
     const { port1, port2 } = new MessageChannel();
@@ -59,6 +61,33 @@ export class MessageHost {
     otherWindow.postMessage({
       protocol: 'protocol.dist.app/v1alpha1',
     }, '*', [this.remotePort]);
+    WindowMap.set(otherWindow, this);
     this.remotePort = null;
   }
+
+  /** This can happen if a client window self-reloads for any reason */
+  rebindWindow(otherWindow: Window) {
+    console.warn(`Rebinding MessageHost to new Window`);
+
+    const { port1, port2: remotePort } = new MessageChannel();
+    this.localPort = port1;
+
+    this.localPort.addEventListener("message", this.handleMessage.bind(this));
+    this.localPort.start();
+
+    otherWindow.postMessage({
+      protocol: 'protocol.dist.app/v1alpha1',
+    }, '*', [remotePort]);
+    WindowMap.set(otherWindow, this);
+  }
 }
+
+// Listen for global messages in case an existing Window wants to re-establish comms
+window.addEventListener('message', evt => {
+  if (!evt.source) return;
+  const host = WindowMap.get(evt.source);
+  if (!host) return;
+
+  if (evt.data.protocol !== 'protocol.dist.app/v1alpha1') return;
+  host.rebindWindow(evt.source as Window);
+});
