@@ -18,8 +18,26 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
 
   if (rpc.path == 'list-available-apps' && rpc.request.method == 'GET') {
 
+    // Find places where we can find the user's available applications
+    const manifestNamespaces = Array
+      .from(rpc.context.runtime
+        .getNamespacesServingApi({
+          apiVersion: 'manifest.dist.app/v1alpha1',
+          kind: 'Application',
+          op: 'Read',
+        })
+        .keys());
+
+    // Find existing applications
+    const applications = manifestNamespaces
+      .flatMap(x => rpc.context.runtime
+        .listEntities<ApplicationEntity>(
+          'manifest.dist.app/v1alpha1', 'Application', x)
+        .map(entity => ({ ns: x, entity })));
+
+
     // Find places where we can find the user's existing installations
-    const namespaces = Array
+    const profileNamespaces = Array
       .from(rpc.context.runtime
         .getNamespacesServingApi({
           apiVersion: 'profile.dist.app/v1alpha1',
@@ -27,27 +45,31 @@ export async function serveMarketApi(rpc: {request: FetchRequestEntity['spec'], 
           op: 'Read',
         })
         .keys());
-    console.log({ namespaces });
 
     // Find existing installations
-    const installations = namespaces
+    const installations = profileNamespaces
       .flatMap(x => rpc.context.runtime
         .listEntities<AppInstallationEntity>(
           'profile.dist.app/v1alpha1', 'AppInstallation', x)
         .map(entity => ({ ns: x, entity })));
 
-    const bundledApps = Array.from(StaticCatalogs.entries()).map(([id, catalog]) => {
-      const appRes: ApplicationEntity | undefined = catalog.flatMap(x => x.kind == 'Application' ? [x] : [])[0];
+    console.log('static', [...StaticCatalogs.entries()][0]);
+    console.log('dynamic', applications[0]);
+    console.log({installations})
+
+    const bundledApps = applications.map(({ns, entity: appRes}) => {
+      // const appRes: ApplicationEntity | undefined = catalog.flatMap(x => x.kind == 'Application' ? [x] : [])[0];
 
       // Know where the app is already present
       const appInstalls = installations.filter(x => {
-        return x.entity.spec.appUri == 'bundled:'+encodeURIComponent(id);
+        return x.entity.spec.appUri == 'bundled:'+encodeURIComponent(ns);
       });
+      console.log({appInstalls})
 
       return {
-        id: 'bundled:'+id.slice(4),
-        // url: 'bundled:'+encodeURIComponent(id),
-        url: `entity://bundled/manifest.dist.app@v1alpha1/Application/${encodeURIComponent(id)}`,
+        id: 'bundled:'+ns.slice(4),
+        // url: 'bundled:'+encodeURIComponent(ns),
+        url: `entity://bundled/manifest.dist.app@v1alpha1/Application/${encodeURIComponent(ns)}`,
         title: appRes.metadata.title ?? 'N/A',
         description: appRes.metadata.description ?? 'N/A',
         iconUrl: appRes.spec.brandImageUrl ?? (appRes.spec.icon?.type == 'glyph'
