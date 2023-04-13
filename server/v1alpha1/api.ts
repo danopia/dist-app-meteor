@@ -20,36 +20,36 @@ Meteor.methods({
       'distapp.entity_kind': entity.kind,
     });
     if (entity.kind == 'CapCall') {
-      return Promise.await(handleCapCall(this.userId, entity as ArbitraryEntity));
+      return await handleCapCall(this.userId, entity as ArbitraryEntity);
     }
     console.warn('TODO', entity)
   },
 
-  '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
+  async '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
     check(catalogId, String);
     check(entity, Object);
-    return Promise.await(insertEntity(this.userId, catalogId, entity as ArbitraryEntity));
+    return await insertEntity(this.userId, catalogId, entity as ArbitraryEntity);
   },
 
-  '/v1alpha1/Entity/update'(catalogId: unknown, newEntity: unknown) {
+  async '/v1alpha1/Entity/update'(catalogId: unknown, newEntity: unknown) {
     check(catalogId, String);
     check(newEntity, Object);
-    return Promise.await(updateEntity(this.userId, catalogId, newEntity as ArbitraryEntity));
+    return await updateEntity(this.userId, catalogId, newEntity as ArbitraryEntity);
   },
 
-  '/v1alpha1/Entity/delete'(catalogId: unknown, apiVersion: unknown, kind: unknown, name: unknown) {
+  async '/v1alpha1/Entity/delete'(catalogId: unknown, apiVersion: unknown, kind: unknown, name: unknown) {
     check(catalogId, String);
     check(apiVersion, String);
     check(kind, String);
     check(name, String);
-    return Promise.await(deleteEntity(this.userId, catalogId, apiVersion, kind, name));
+    return await deleteEntity(this.userId, catalogId, apiVersion, kind, name);
   },
 
 
-  '/v1alpha1/get user profile'() {
+  async '/v1alpha1/get user profile'() {
     const userId = Meteor.userId();
     if (!userId) throw new Meteor.Error(`logged-out`, `Log in to start a profile.`);
-    return Promise.await(getUserDefaultProfile(userId));
+    return await getUserDefaultProfile(userId);
   },
 
   async 'poc-FetchRequestEntity'(req: FetchRequestEntity) {
@@ -58,7 +58,7 @@ Meteor.methods({
     return await fetchRequestEntity(req);
   },
 
-  '/v1alpha1/report-error'(stack: unknown) {
+  async '/v1alpha1/report-error'(stack: unknown) {
     check(stack, String);
     console.log('Browser ' + stack.replace(/\n/g, '\n> '));
   },
