@@ -1,9 +1,10 @@
 import { Meteor } from "meteor/meteor";
+
 import { CatalogsCollection } from "/imports/db/catalogs";
-import { EntitiesCollection } from "../../imports/db/entities";
+import { EntitiesCollection } from "/imports/db/entities";
 import { ProfilesCollection } from "/imports/db/profiles";
-import { WorkspaceEntity } from "/imports/entities/runtime";
 import { AppInstallationEntity } from "/imports/entities/profile";
+import { Log } from "/imports/lib/logging";
 
 // Forcibly reserve a 'system' userId
 // It'll be technically possible for admins to get interactive access to this user.
@@ -37,10 +38,10 @@ export async function getUserDefaultProfile(userId: string): Promise<string> {
     } },
   });
   if (existingProfile) {
-    console.log('existing profile for', userId);
+    Log.info(`existing profile for ${userId}`);
     return existingProfile._id;
   }
-  console.log('new profile for', userId);
+  Log.info(`new profile for ${userId}`);
 
   // Register an empty profile
   const profileId = ProfilesCollection.insert({

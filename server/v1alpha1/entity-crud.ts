@@ -4,6 +4,7 @@ import { CatalogsCollection } from "/imports/db/catalogs";
 import { ArbitraryEntity, EntitiesCollection } from "/imports/db/entities";
 import { ProfilesCollection } from "/imports/db/profiles";
 import { MongoEntityStorage } from "/imports/engine/EntityStorage";
+import { Log } from "/imports/lib/logging";
 
 function checkAccessRole(actingUserId: string | null, catalogId: string, roles: string[]) {
   if (typeof actingUserId !== 'string') throw new Meteor.Error('user-404', `Not logged in`);
@@ -25,9 +26,9 @@ export async function insertEntity(actingUserId: string | null, catalogId: strin
   check(entity.kind, String);
   check(entity.metadata?.name, String);
 
-  console.log('insert', {catalogId, apiVersion: entity.apiVersion, kind: entity.kind, name: entity.metadata.name});
+  Log.info({message: 'entity insert', catalogId, apiVersion: entity.apiVersion, kind: entity.kind, name: entity.metadata.name});
 
-  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection });
+  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection, namespace: catalogId });
   storage.insertEntity(entity);
 
   // const _id = JSON.stringify([catalogId, entity.apiVersion, entity.kind, entity.metadata.name]);
@@ -47,11 +48,11 @@ export async function insertEntity(actingUserId: string | null, catalogId: strin
 export async function updateEntity(actingUserId: string | null, catalogId: string, newEntity: ArbitraryEntity) {
   checkAccessRole(actingUserId, catalogId, ['Editor', 'Owner']);
 
-  console.log('update', {catalogId, entity: newEntity});
+  Log.info({message: 'entity update', catalogId, entity: newEntity});
   // throw new Meteor.Error('todo', `TODO: update`);
   // if ('_id' in newEntity) throw new Error(`_id poisoning`);
 
-  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection });
+  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection, namespace: catalogId });
   return storage.updateEntity(newEntity);
   // const _id = JSON.stringify([catalogId, newEntity.apiVersion, newEntity.kind, newEntity.metadata.name]);
   // return EntitiesCollection.update({
@@ -73,10 +74,10 @@ export async function updateEntity(actingUserId: string | null, catalogId: strin
 export async function deleteEntity(actingUserId: string | null, catalogId: string, apiVersion: string, kind: string, name: string) {
   checkAccessRole(actingUserId, catalogId, ['Editor', 'Owner']);
 
-  console.log('delete', {catalogId, entity: {apiVersion, kind, name}});
+  Log.info({message: 'entity delete', catalogId, entity: {apiVersion, kind, name}});
   // throw new Meteor.Error('todo', `TODO: delete`);
 
-  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection });
+  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection, namespace: catalogId });
   return storage.deleteEntity(apiVersion, kind, name);
   // const _id = JSON.stringify([catalogId, apiVersion, kind, name]);
   // return EntitiesCollection.remove({
