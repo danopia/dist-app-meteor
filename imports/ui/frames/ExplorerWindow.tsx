@@ -37,7 +37,7 @@ export const ExplorerWindow = (props: {
     <div className="activity-contents-wrap" style={{ display: 'grid', gridTemplateColumns: 'minmax(33%, 10em) auto', gridTemplateRows: 'max-content 1fr' }}>
       <ul style={{ gridRow: '1 / 3', gridColumn: '1', padding: '0.5em 5%', overflowY: 'auto', listStyle: 'none', margin: 0 }}>
         {allNamespaces.map(([namespace, impl]) => (
-          <ExplorerTreeNamespace name={namespace} namespace={impl} setCurrentEntity={setCurrentEntity} />
+          <ExplorerTreeNamespace key={namespace} name={namespace} namespace={impl} setCurrentEntity={setCurrentEntity} />
         ))}
       </ul>
       {liveEntity ? (<>
@@ -96,14 +96,14 @@ export const ExplorerTreeNamespace = (props: {
         <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
           {entitiesByKind.map(x => (
 
-            <li className="entry-item" style={{ marginTop: '0.5em' }}>
+            <li key={`${x.apiVersion}/${x.kind}`} className="entry-item" style={{ marginTop: '0.5em' }}>
               <div className="folder-name">
                 <span className="name">{x.kind} ({x.apiVersion.split('.')[0]})</span>
               </div>
 
               <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
                 {x.entities.map(entity => (
-                  <li className="entry-item actionable" style={{ marginTop: '0.3em' }} onClick={() => props.setCurrentEntity(entity)}>
+                  <li key={entity.metadata.name} className="entry-item actionable" style={{ marginTop: '0.3em' }} onClick={() => props.setCurrentEntity(entity)}>
                     <div className="folder-name">
                       <span className="name">{entity.metadata.name}</span>
                     </div>
