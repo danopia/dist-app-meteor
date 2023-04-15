@@ -21,5 +21,6 @@ logging
 accounts-google@1.4.0
 fetch@0.1.3
 reywood:publish-composite
+zodern:types
 
 danopia:opentelemetry

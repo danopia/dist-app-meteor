@@ -24,6 +24,7 @@
     /* Module Resolution Options */
     "baseUrl": ".",
     "paths": {
+      "meteor/*": [".meteor/local/types/packages.d.ts"],
       /* Support absolute /imports/* with a leading '/' */
       "/*": ["*"]
     },
