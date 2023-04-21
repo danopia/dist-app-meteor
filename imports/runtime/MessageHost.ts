@@ -1,6 +1,6 @@
-import { SpanKind } from "@opentelemetry/api";
+import { context, propagation, SpanKind } from "@opentelemetry/api";
 import { ProtocolEntity } from "../entities/protocol";
-import { syncSpan } from "../lib/tracing";
+import { LogicTracer } from "../lib/tracing";
 
 export type RpcListener<T extends ProtocolEntity> = (event: {
   rpc: T;
@@ -8,6 +8,10 @@ export type RpcListener<T extends ProtocolEntity> = (event: {
 }) => void | Promise<void>;
 
 const WindowMap = new WeakMap<MessageEventSource, MessageHost>();
+
+const trr = new LogicTracer({
+  name: 'dist.app/MessageHost',
+});
 
 export class MessageHost {
   constructor() {
@@ -26,22 +30,33 @@ export class MessageHost {
 
   handleMessage(event: MessageEvent) {
     const rpc: ProtocolEntity = event.data;
-    return syncSpan(`MessageHost rpc: ${rpc.kind}`, {
-      kind: SpanKind.SERVER,
-    }, async () => {
-      const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
-      // let hits = 0;
-      for (const listener of this.rpcListeners) {
-        if (listener[0] == rpc.kind) {
-          listener[1]({
-            rpc: event.data,
-            respondWith: this.respondTo.bind(this, id),
-          });
-          // hits++;
-        }
-      }
-      // console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+
+    const ctx = propagation.extract(context.active(), rpc.baggage ?? {}, {
+      get(h,k) { return h[k]; },
+      keys(h) { return Object.keys(h); },
     });
+
+    return context.with(ctx, () =>
+      trr.syncSpan(`MessageHost rpc: ${rpc.kind}`, {
+        kind: SpanKind.SERVER,
+        attributes: {
+          'rpc.system': 'ddp',
+          'rpc.method': rpc.kind,
+        },
+      }, async () => {
+        const id = rpc.kind == 'FetchRequest' ? rpc.id : false;
+        // let hits = 0;
+        for (const listener of this.rpcListeners) {
+          if (listener[0] == rpc.kind) {
+            await listener[1]({
+              rpc: event.data,
+              respondWith: this.respondTo.bind(this, id),
+            });
+            // hits++;
+          }
+        }
+        // console.log('MessageHost got message', event.data, 'for', hits, 'listeners');
+      }));
   }
 
   respondTo(msgId: number | false, data: Omit<ProtocolEntity, 'origId'>) {

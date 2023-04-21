@@ -8,6 +8,7 @@ import { useObjectURL } from '../lib/use-object-url';
 import * as protocol from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 import { compileIframeSrc } from '../lib/compile-iframe-src';
+import { Meteor } from 'meteor/meteor';
 
 // TODO: rename AppWindow or IframeWindow, put in frames/
 export const IframeHost = (props: {
@@ -82,7 +83,10 @@ export const IframeHost = (props: {
       if (rpc.spec.error) {
         alert('A running dist.app encountered a script error:\n\n' + rpc.spec.error.stack);
       }
-    })
+    });
+    messageHost.addRpcListener<{}>('OtelExport', async ({rpc}) => {
+      await Meteor.callAsync('OTLP/v1/traces', rpc.spec);
+    });
   }, [messageHost]);
 
   const frameSrc = useMemo(() => compileIframeSrc(implementation), [JSON.stringify(implementation)]);
