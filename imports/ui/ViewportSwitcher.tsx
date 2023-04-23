@@ -1,12 +1,11 @@
 import { Meteor } from 'meteor/meteor';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 
 import { useBodyClass } from '../lib/use-body-class';
-import { ProfileDoc, ProfilesCollection } from '../db/profiles';
+import { ProfilesCollection } from '../db/profiles';
 import { useNavigate } from 'raviger';
 import { ActivityShell } from './ActivityShell';
-import { RuntimeProvider } from './RuntimeProvider';
 import { MyCommandPalette } from './CommandPalette';
 import { EntityEngine } from '../engine/EntityEngine';
 import { WorkspaceEntity } from '../entities/runtime';
@@ -24,8 +23,8 @@ export const ViewportSwitcher = (props: {
 
   const navigate = useNavigate();
 
-  const user = useTracker(() => Meteor.user(), []) as Meteor.User; // TODO: satisfies
-  const profiles = useFind(() => ProfilesCollection.find(), []) as ProfileDoc[] | null; // TODO: get typings
+  const user = useTracker(() => Meteor.user(), []);
+  const profiles = useFind(() => ProfilesCollection.find(), []);
   const profile = profiles?.find(x => x._id == props.profileId) ?? profiles?.[0];
 
   // TODO: useMemo is the wrong tool for this

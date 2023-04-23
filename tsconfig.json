@@ -25,6 +25,7 @@
     "baseUrl": ".",
     "paths": {
       "meteor/*": [".meteor/local/types/packages.d.ts"],
+      "meteor/react-meteor-data": [".meteor/local/build/programs/server/assets/packages/react-meteor-data/react-meteor-data.d.ts"],
       /* Support absolute /imports/* with a leading '/' */
       "/*": ["*"]
     },
