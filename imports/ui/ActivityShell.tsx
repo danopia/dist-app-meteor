@@ -11,11 +11,11 @@ import { useBodyClass } from '../lib/use-body-class';
 
 export const ActivityShell = (props: {
   savedSessionName?: string;
-  // workspaceName: string;
+  workspaceName?: string;
   guest: boolean;
 }) => {
   const [floatingLayerKey, setFloatingLayerKey] = useState(Math.random());
-  const workspaceName = "main";
+  const workspaceName = props.workspaceName ?? "main";
 
   const runtime = useContext(RuntimeContext);
   const workspace = useTracker(() => runtime.getEntity<WorkspaceEntity>(

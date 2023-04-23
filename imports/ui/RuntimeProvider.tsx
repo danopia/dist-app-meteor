@@ -5,11 +5,16 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { Meteor } from 'meteor/meteor';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { meteorCallAsync } from '../lib/meteor-call';
+import { EntityEngine } from '../engine/EntityEngine';
 
 export const RuntimeProvider = (props: {
   children: ReactNode;
+  engine?: EntityEngine;
+  profileId?: string;
 }) => {
   const runtime = useMemo(() => {
+    if (props.engine) return props.engine;
+
     const runtime = newEngineWithGuestProfile();
 
     runtime.insertEntity<WorkspaceEntity>({
@@ -27,13 +32,14 @@ export const RuntimeProvider = (props: {
     insertGuestWelcomeSession(runtime);
 
     return runtime;
-  }, []);
+  }, [props.engine]);
   //@ts-expect-error globalThis.runtime
   globalThis.runtime = runtime;
 
   const userId = useTracker(() => Meteor.userId(), []);
-  const [profileId, setProfileId] = useState<string|null>(null);
+  const [profileId, setProfileId] = useState<string|null>(props.profileId ?? null);
   useEffect(() => {
+    if (props.profileId) return;
     let isUs = true;
     meteorCallAsync('/v1alpha1/get user profile').then(x => {
       if (!isUs) return;

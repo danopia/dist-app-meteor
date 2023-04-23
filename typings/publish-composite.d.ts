@@ -29,4 +29,5 @@ declare module 'meteor/reywood:publish-composite' {
 	}
 
 	function publishComposite<T>(name: string, options: IOptions<T>): void;
+	function publishComposite<T>(name: string, options: (...args: unknown[]) => IOptions<T>): void;
 }

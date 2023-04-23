@@ -6,7 +6,7 @@ body.shell-workspace-floating {
   padding: 0;
   margin: 0;
 }
-body.shell-workspace-floating #react-target {
+body.shell-workspace-floating #react-target, .activity-shell-parent {
   display: grid;
   height: 100vh;
   grid-template-areas: "powerbar powerbar" "nav activity";

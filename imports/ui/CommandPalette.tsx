@@ -19,7 +19,9 @@ export interface PaletteCommand {
 }
 function command() {}
 
-export const MyCommandPalette = () => {
+export const MyCommandPalette = (props: {
+  parentElement?: string;
+}) => {
 
   const runtime = useContext(RuntimeContext);
 
@@ -104,7 +106,7 @@ export const MyCommandPalette = () => {
         closeOnSelect={true}
         commands={commands as Command[]}
         trigger={null}
-        reactModalParentSelector="#react-target"
+        reactModalParentSelector={props.parentElement ?? "#react-target"}
         resetInputOnOpen={true}
         options={{
           keys: ['category', 'name', 'extraNames'] as Array<keyof PaletteCommand>,

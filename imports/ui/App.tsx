@@ -1,15 +1,25 @@
 import React from 'react';
 import { useRedirect, useRoutes } from 'raviger';
 import { ErrorBoundary } from 'react-error-boundary';
+import { useSubscribe } from 'meteor/react-meteor-data';
 
 import { ActivityShell } from './ActivityShell';
 import { RuntimeProvider } from './RuntimeProvider';
-import { useSubscribe } from 'meteor/react-meteor-data';
 import { ErrorFallback } from '../lib/error-fallback';
 import { MyCommandPalette } from './CommandPalette';
+import { ViewportSwitcher } from './ViewportSwitcher';
 // import { ShellSelector } from './ShellSelector';
 
 const routes = {
+  '/': () => <ViewportSwitcher />,
+  '/profile/:profileId': (params: {
+    profileId: string;
+  }) => <ViewportSwitcher profileId={params.profileId} />,
+  '/profile/:profileId/workspace/:workspaceName': (params: {
+    profileId: string;
+    workspaceName: string;
+  }) => <ViewportSwitcher profileId={params.profileId} workspaceName={params.workspaceName} />,
+
   // '/desktop': () => <ShellSelector />,
   '/desktop/guest': () => <ActivityShell guest={true} />,
   // '/my/new-shell': () => <NewShell />,
@@ -21,7 +31,7 @@ const routes = {
 };
 
 export const App = () => {
-  useRedirect('/', '/desktop/guest', {replace: true});
+  // useRedirect('/', '/desktop/guest', {replace: true});
   useSubscribe('/v1alpha1/all-my-stuff');
   const route = useRoutes(routes) || (
     <section>
@@ -35,10 +45,7 @@ export const App = () => {
 
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <RuntimeProvider>
-        <MyCommandPalette />
-        {route}
-      </RuntimeProvider>
+      {route}
     </ErrorBoundary>
   );
 };
