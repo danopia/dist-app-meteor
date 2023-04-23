@@ -334,4 +334,26 @@ export class EntityEngine {
 
     throw new Error("Function not implemented.");
   }
+
+
+  findAllEntities<T extends ArbitraryEntity>(
+    apiVersion: T["apiVersion"],
+    kind: T["kind"],
+  ) {
+    // Find places where we can find the type of entity
+    const namespaces = Array
+      .from(this
+        .getNamespacesServingApi({
+          apiVersion, kind,
+          op: 'Read',
+        })
+        .keys());
+
+    // Collect all of the entities
+    return namespaces
+      .flatMap(x => this
+        .listEntities<T>(apiVersion, kind, x)
+        .map(entity => ({ ns: x, entity })));
+  }
+
 }

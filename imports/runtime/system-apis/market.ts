@@ -1,10 +1,8 @@
 import { stripIndent } from "common-tags";
 
 import { FetchRpcHandler } from "/imports/runtime/FetchRpcHandler";
-import { EntityEngine } from "/imports/engine/EntityEngine";
 import { StaticCatalogs } from "/imports/engine/StaticCatalogs";
 
-import { ArbitraryEntity } from "/imports/entities/core";
 import { ApplicationEntity, IconSpec } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
@@ -27,11 +25,11 @@ export async function serveMarketApi(rpc: {
   if (rpc.path == 'list-available-apps' && rpc.request.method == 'GET') {
 
     // Find the user's available applications
-    const applications = findAllEntities<ApplicationEntity>(rpc.context.runtime,
+    const applications = rpc.context.runtime.findAllEntities<ApplicationEntity>(
       'manifest.dist.app/v1alpha1', 'Application');
 
     // Find the user's app installations
-    const installations = findAllEntities<AppInstallationEntity>(rpc.context.runtime,
+    const installations = rpc.context.runtime.findAllEntities<AppInstallationEntity>(
       'profile.dist.app/v1alpha1', 'AppInstallation');
 
 
@@ -131,26 +129,4 @@ function brandImageUrlForIcon(icon: IconSpec) {
       return null;
     }
   }
-}
-
-// TODO: move a shared file
-function findAllEntities<T extends ArbitraryEntity>(
-  runtime: EntityEngine,
-  apiVersion: T["apiVersion"],
-  kind: T["kind"],
-) {
-  // Find places where we can find the type of entity
-  const namespaces = Array
-    .from(runtime
-      .getNamespacesServingApi({
-        apiVersion, kind,
-        op: 'Read',
-      })
-      .keys());
-
-  // Collect all of the entities
-  return namespaces
-    .flatMap(x => runtime
-      .listEntities<T>(apiVersion, kind, x)
-      .map(entity => ({ ns: x, entity })));
 }
