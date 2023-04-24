@@ -22,7 +22,6 @@ const tracer = new LogicTracer({
   requireParent: false,
 });
 
-
 export class FetchRpcHandler {
   constructor(
     public readonly runtime: EntityEngine,
@@ -68,6 +67,7 @@ export class FetchRpcHandler {
   }
 
   // async handleInner(req: Request): Promise<Response> {
+  @tracer.InternalSpan
   async handleTaskState(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const stateKey = decodeURIComponent(rpc.spec.url.split('/')[3]);
     // console.log('task/state', {method: rpc.spec.method, stateKey, data: rpc.spec.body});
@@ -117,6 +117,7 @@ export class FetchRpcHandler {
       .catch(makeErrorResponse);
   }
 
+  @tracer.InternalSpan
   async handleMountBinding(rpc: FetchRequestEntity, binding: ApiBindingEntity, apiEntity: ApiEntity, apiSpec: OpenAPIV3.Document, defaultServer: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
     console.warn(`TODO: /mount`, {rpc, binding, apiEntity, apiSpec, defaultServer});
 
@@ -218,6 +219,7 @@ export class FetchRpcHandler {
       `Sober up and implement this`);
   }
 
+  @tracer.InternalSpan
   async createCap(binding: ApiBindingEntity, defaultServer: string, usingCred: ApiCredentialEntity | null) {
     const [app] = this.runtime.listEntities<ApplicationEntity>(
       'manifest.dist.app/v1alpha1', 'Application',
@@ -268,11 +270,12 @@ export class FetchRpcHandler {
     return makeTextResponse(200, capId);
   }
 
+  @tracer.InternalSpan
   async handleCap(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const slashIdx = rpc.spec.url.indexOf('/', '/cap/'.length);
     const capId = rpc.spec.url.slice('/cap/'.length, slashIdx);
     const subPath = '/'+rpc.spec.url.slice(slashIdx+1);
-globalThis.runtime = runtime;
+
     const actTask = this.runtime.getEntity<ActivityTaskEntity>(
       'runtime.dist.app/v1alpha1', 'ActivityTask',
       this.activityTask.metadata.namespace, this.activityTask.metadata.name);
@@ -337,6 +340,7 @@ globalThis.runtime = runtime;
     return resp;
   }
 
+  @tracer.InternalSpan
   async handleBinding(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     const slashIdx = rpc.spec.url.indexOf('/', '/ApiBinding/'.length);
     const bindingName = rpc.spec.url.slice('/ApiBinding/'.length, slashIdx);
@@ -372,6 +376,7 @@ globalThis.runtime = runtime;
     return makeStatusResponse(512, 'Deprecated - update to mount API');
   }
 
+  @tracer.InternalSpan
   async handlePocTodo(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
 
     // TODO BEGIN

@@ -44,6 +44,22 @@ export class LogicTracer {
   }) {
     this.tracer = trace.getTracer(options.name, options.version);
     this.requireParent = options.requireParent ?? false;
+
+    this.InternalSpan = this.InternalSpan.bind(this);
+  }
+
+  InternalSpan<
+    Targs extends unknown[],
+    Tret,
+  >(
+    _target: any,
+    propertyName: string,
+    descriptor: TypedPropertyDescriptor<(...args: Targs) => Promise<Tret>>,
+  ) {
+    let method = descriptor.value!;
+    descriptor.value = this.wrapAsyncWithSpan(propertyName, {
+      kind: SpanKind.INTERNAL,
+    }, method);
   }
 
   /** Runs an async function within a new span, and then ends the span upon completion */

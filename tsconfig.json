@@ -21,6 +21,8 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": false,
 
+    "experimentalDecorators": true,
+
     /* Module Resolution Options */
     "baseUrl": ".",
     "paths": {
