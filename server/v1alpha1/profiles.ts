@@ -235,8 +235,10 @@ async function createLoginProfile() {
   //   })});
 
   // Install the default apps
-  for (const defaultNamespace of GuestCatalogs) {
-    if (!defaultNamespace.startsWith('app:')) continue;
+  for (const defaultNamespace of [
+    'app:welcome',
+    'app:toolbelt',
+  ]) {
     EntitiesCollection.insert({
       catalogId: sessionsCatalogId,
       ...(<AppInstallationEntity>{
