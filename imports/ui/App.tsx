@@ -32,7 +32,7 @@ const routes = {
 
 export const App = () => {
   // useRedirect('/', '/desktop/guest', {replace: true});
-  useSubscribe('/v1alpha1/all-my-stuff');
+  // useSubscribe('/v1alpha1/all-my-stuff');
   const route = useRoutes(routes) || (
     <section>
       <h2>Page Not Found</h2>

@@ -110,6 +110,7 @@ export class ShellSession {
           metadata: {
             name: commandName,
             namespace: this.namespace,
+            ownerReferences: command.metadata.ownerReferences?.filter(x => x.kind == 'Workspace'),
           },
           spec: {
             contentRef: '../Command/'+commandName,
@@ -209,17 +210,21 @@ export class ShellSession {
           name: 'task-cmd',
           namespace: task.metadata.namespace,
           annotations: injectTraceAnnotations(),
-          ownerReferences: [{
-            apiVersion: 'runtime.dist.app/v1alpha1',
-            kind: 'Frame',
-            name: task.metadata.name,
-            uid: task.metadata.uid,
-          }, ...(activityTask ? [{
-            apiVersion: 'runtime.dist.app/v1alpha1',
-            kind: 'ActivityTask',
-            name: activityTask.metadata.name,
-            uid: activityTask.metadata.uid,
-          }] : [])],
+          ownerReferences: [
+            ...task.metadata.ownerReferences ?? [],
+            {
+              apiVersion: 'runtime.dist.app/v1alpha1',
+              kind: 'Frame',
+              name: task.metadata.name,
+              uid: task.metadata.uid,
+            },
+            ...(activityTask ? [{
+              apiVersion: 'runtime.dist.app/v1alpha1',
+              kind: 'ActivityTask',
+              name: activityTask.metadata.name,
+              uid: activityTask.metadata.uid,
+            }] : []),
+          ],
         },
         spec: commandSpec,
       });

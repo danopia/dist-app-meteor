@@ -57,9 +57,12 @@ export class LogicTracer {
     descriptor: TypedPropertyDescriptor<(...args: Targs) => Promise<Tret>>,
   ) {
     let method = descriptor.value!;
-    descriptor.value = this.wrapAsyncWithSpan(propertyName, {
-      kind: SpanKind.INTERNAL,
-    }, method);
+    const tracer = this;
+    descriptor.value = function (...args: Targs) {
+      return tracer.wrapAsyncWithSpan(propertyName, {
+        kind: SpanKind.INTERNAL,
+      }, method, this)(...args);
+    };
   }
 
   /** Runs an async function within a new span, and then ends the span upon completion */
@@ -132,10 +135,11 @@ export class LogicTracer {
     spanName: string,
     options: SpanOptions,
     func: (...args: Targs) => Promise<Tret>,
+    thisArg?: unknown,
   ) {
     return (...args: Targs) =>
       this.asyncSpan(spanName, options, () =>
-        func.apply(null, args));
+        func.apply(thisArg, args));
   }
 
   /** Wraps a sync function and returns a new function which creates a span around the promise */

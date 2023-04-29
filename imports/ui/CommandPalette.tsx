@@ -21,6 +21,7 @@ function command() {}
 
 export const MyCommandPalette = (props: {
   parentElement?: string;
+  workspaceName?: string;
 }) => {
 
   const runtime = useContext(RuntimeContext);
@@ -114,7 +115,7 @@ export const MyCommandPalette = (props: {
         renderCommand={CommandPaletteItem}
         onSelect={(selected: PaletteCommand) => {
           if (selected.intent) {
-            launchNewIntent(runtime, selected.intent);
+            launchNewIntent(runtime, props.workspaceName, selected.intent);
           }
           console.log({selected});
         }}

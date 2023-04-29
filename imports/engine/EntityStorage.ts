@@ -3,8 +3,9 @@ import { Entity } from "/imports/entities";
 import { ArbitraryEntity } from "../entities/core";
 import { ProfilesCollection } from "../db/profiles";
 import { EntitiesCollection } from "../db/entities";
-import { meteorCallAsync } from "../lib/meteor-call";
+import { meteorCallAsyncWithSpan } from "../lib/meteor-call";
 import { Meteor } from "meteor/meteor";
+import { Span } from "@opentelemetry/api";
 
 export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
@@ -12,7 +13,7 @@ export interface EntityStorage {
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[];
   // watchEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]);
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null;
-  updateEntity<T extends ArbitraryEntity>(newEntity: T): T | Promise<T>;
+  updateEntity<T extends ArbitraryEntity>(newEntity: T, span?: Span): void | Promise<void>;
   deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): boolean | Promise<boolean>;
 }
 
@@ -30,13 +31,13 @@ export class StaticEntityStorage implements EntityStorage {
       x.apiVersion == apiVersion && x.kind == kind && x.metadata.name == name) as T;
   }
   insertEntity(): void {
-    throw new Error("StaticEntityStorage is a read-only store.");
+    throw new Meteor.Error('is-readonly', "StaticEntityStorage is a read-only store.");
   }
-  updateEntity<T extends ArbitraryEntity>(): T | Promise<T> {
-    throw new Error("StaticEntityStorage is a read-only store.");
+  updateEntity(): void | Promise<void> {
+    throw new Meteor.Error('is-readonly', "StaticEntityStorage is a read-only store.");
   }
   deleteEntity(): boolean | Promise<boolean> {
-    throw new Error("StaticEntityStorage is a read-only store.");
+    throw new Meteor.Error('is-readonly', "StaticEntityStorage is a read-only store.");
   }
 }
 
@@ -54,8 +55,8 @@ export class MongoProfileStorage implements EntityStorage {
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null {
     return this.getStorage(apiVersion, false)?.getEntity(apiVersion, kind, name) ?? null;
   }
-  updateEntity<T extends ArbitraryEntity>(newEntity: T): T | Promise<T> {
-    return this.getStorage(newEntity.apiVersion, true)!.updateEntity(newEntity);
+  updateEntity<T extends ArbitraryEntity>(newEntity: T, span?: Span): void | Promise<void> {
+    return this.getStorage(newEntity.apiVersion, true)!.updateEntity(newEntity, span);
   }
   deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): boolean | Promise<boolean> {
     return this.getStorage(apiVersion, true)!.deleteEntity(apiVersion, kind, name);
@@ -66,7 +67,7 @@ export class MongoProfileStorage implements EntityStorage {
     const profile = ProfilesCollection.findOne({ _id: this.profileId });
     if (!profile) {
       if (!required) return null;
-      throw new Error(`No storage matched profile ${this.profileId}`);
+      throw new Meteor.Error('no-storage', `No storage matched profile ${this.profileId}`);
     }
     const layer = profile.layers.find(x => x.apiFilters.length == 0
       || x.apiFilters.some(y => {
@@ -94,7 +95,7 @@ export class MongoProfileStorage implements EntityStorage {
   listAllEntities() {
     const profile = ProfilesCollection.findOne({ _id: this.profileId });
     if (!profile) {
-      throw new Error(`No storage matched profile ${this.profileId}`);
+      throw new Meteor.Error('no-storage', `No storage matched profile ${this.profileId}`);
     }
     const allLayers = profile.layers.map(layer => {
       const banner = 'local-catalog:';
@@ -185,7 +186,8 @@ export class MongoEntityStorage implements EntityStorage {
   }
 
   updateEntity<T extends ArbitraryEntity>(newEntity: T) {
-    if (!newEntity.metadata.generation) throw new Meteor.Error(`bug`, `no generation in update`);
+    if (!newEntity.metadata.generation) throw new Meteor.Error(`bug`,
+      `no generation in update`);
     const count = this.props.collection.update({
       catalogId: this.props.catalogId,
       apiVersion: newEntity.apiVersion,
@@ -202,8 +204,14 @@ export class MongoEntityStorage implements EntityStorage {
         generation: (newEntity.metadata.generation ?? 0) + 1,
       },
     });
-    if (count == 0) throw new Error(`updateEntity didn't apply any change`);
-    return this.getEntity<T>(newEntity.apiVersion, newEntity.kind, newEntity.metadata.name);
+    // return count > 0;
+    if (count == 0) {
+      // console.log('desired:', newEntity);
+      // TODO: this is not a good way of passing error details (but we do want them, to reduce round-trips)
+      const latestVersion = this.getEntity<T>(newEntity.apiVersion, newEntity.kind, newEntity.metadata.name);
+      throw new Meteor.Error('no-update', `updateEntity didn't apply any change`, {latestVersion});
+    }
+    // return this.getEntity<T>(newEntity.apiVersion, newEntity.kind, newEntity.metadata.name);
   }
 
   deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
@@ -242,13 +250,14 @@ export class MeteorEntityStorage implements EntityStorage {
     return this.readStorage.getEntity(apiVersion, kind, name);
   }
 
-  async insertEntity<T extends ArbitraryEntity>(entity: T) {
-    await meteorCallAsync('/v1alpha1/Entity/insert', this.props.catalogId, entity);
+  // TODO: the span should probably be set before calling into these
+  async insertEntity<T extends ArbitraryEntity>(entity: T, span?: Span) {
+    await meteorCallAsyncWithSpan(span, '/v1alpha1/Entity/insert', this.props.catalogId, entity);
   }
-  async updateEntity<T extends ArbitraryEntity>(newEntity: T) {
-    return await meteorCallAsync<T>('/v1alpha1/Entity/update', this.props.catalogId, newEntity);
+  async updateEntity<T extends ArbitraryEntity>(newEntity: T, span?: Span) {
+    await meteorCallAsyncWithSpan<void>(span, '/v1alpha1/Entity/update', this.props.catalogId, newEntity);
   }
-  async deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
-    return await meteorCallAsync<boolean>('/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
+  async deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string, span?: Span) {
+    return await meteorCallAsyncWithSpan<boolean>(span, '/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
   }
 }

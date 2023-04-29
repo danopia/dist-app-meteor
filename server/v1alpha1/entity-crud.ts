@@ -48,11 +48,20 @@ export async function insertEntity(actingUserId: string | null, catalogId: strin
 export async function updateEntity(actingUserId: string | null, catalogId: string, newEntity: ArbitraryEntity) {
   checkAccessRole(actingUserId, catalogId, ['Editor', 'Owner']);
 
-  Log.info({message: 'entity update', catalogId, entity: newEntity});
+  Log.info({message: 'entity update', catalogId, entity: {
+    apiVersion: newEntity.apiVersion,
+    kind: newEntity.kind,
+    name: newEntity.metadata.name,
+    generation: newEntity.metadata.generation,
+  }});
   // throw new Meteor.Error('todo', `TODO: update`);
   // if ('_id' in newEntity) throw new Error(`_id poisoning`);
 
-  const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection, namespace: catalogId });
+  const storage = new MongoEntityStorage({
+    catalogId,
+    collection: EntitiesCollection,
+    namespace: catalogId,
+  });
   return storage.updateEntity(newEntity);
   // const _id = JSON.stringify([catalogId, newEntity.apiVersion, newEntity.kind, newEntity.metadata.name]);
   // return EntitiesCollection.update({

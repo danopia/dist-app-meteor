@@ -8,6 +8,7 @@ import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { FrameContainer } from './FrameContainer';
 import { ErrorFallback } from '../lib/error-fallback';
 import { useBodyClass } from '../lib/use-body-class';
+import { MyCommandPalette } from './CommandPalette';
 
 export const ActivityShell = (props: {
   savedSessionName?: string;
@@ -25,13 +26,13 @@ export const ActivityShell = (props: {
   const frames = useTracker(() => runtime.listEntities<FrameEntity>(
     'runtime.dist.app/v1alpha1', 'Frame',
     'session',
-  ), [runtime]);
+  ).filter(x => x.metadata.ownerReferences?.some(y => y.name == workspaceName)), [runtime, workspaceName]);
   // TODO: also list debug event entities and indicate them on their frames
 
-  useBodyClass('shell-workspace-floating');
+  // useBodyClass('shell-workspace-floating');
 
   if (!workspace) {
-    throw new Error(`no workspace `+workspaceName);
+    // throw new Error(`no workspace `+workspaceName);
     return (
       <div>BUG: no workspace {workspaceName}</div>
     );
@@ -42,6 +43,9 @@ export const ActivityShell = (props: {
   // TODO: pass entity handles and APIs down, to parameterize namespace
   return (
     <>
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <MyCommandPalette parentElement=".activity-shell-parent" workspaceName={workspaceName} />
+      </ErrorBoundary>
       <ShellTopBar savedSessionName={props.savedSessionName}>
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
       </ShellTopBar>

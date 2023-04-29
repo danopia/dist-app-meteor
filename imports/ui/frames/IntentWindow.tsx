@@ -114,7 +114,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
     }).exec(intent.dataRef);
     if (match) {
       const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
-      console.log({intent, api, kind, name, namespace, version});
+      // console.log({intent, api, kind, name, namespace, version});
 
       if (intent.action == 'app.dist.InstallApp' && namespace == 'bundled' && kind == 'Application') {
         // @ts-expect-error extras is not typed yet
@@ -163,6 +163,11 @@ const IntentWindowInner = (props: IntentWindowProps) => {
       metadata: {
         name: frameName,
         namespace: 'session',
+        ownerReferences: [{
+          apiVersion: 'runtime.dist.app/v1alpha1',
+          kind: 'Workspace',
+          name: props.workspaceName,
+        }],
       },
       spec: {
         contentRef: intent.receiverRef,
@@ -241,7 +246,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           if (!workspace) throw new Error(`no workspace`);
 
           const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
-          console.log('Created task', taskId);
+          // console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
           runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
 
@@ -262,7 +267,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           if (!workspace) throw new Error(`no workspace`);
 
           const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
-          console.log('Created task', taskId);
+          // console.log('Created task', taskId);
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
           runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
 
@@ -346,7 +351,12 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
     },
   });
 
-  runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(taskId)});
+  runtime.mutateEntity<WorkspaceEntity>(
+    'runtime.dist.app/v1alpha1', 'Workspace',
+    'session', workspaceName,
+    spaceSNap => {
+      spaceSNap.spec.windowOrder.unshift(taskId);
+    });
 
   return taskId;
 }

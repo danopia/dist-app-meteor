@@ -8,7 +8,7 @@ import { check } from "meteor/check";
 
 Meteor.publish('/v1alpha1/profiles/list', () => {
   const userId = Meteor.userId();
-  if (!userId) return ProfilesCollection.find({ _id: 'nonextant' });
+  if (!userId) return ProfilesCollection.find({ _id: 'login' });
   return ProfilesCollection.find({
     'members': { $elemMatch: {
       'basicRole': { $in: ['Owner', 'Editor', 'Viewer'] },
@@ -21,7 +21,8 @@ publishComposite('/v1alpha1/profiles/by-id/composite', (profileId) => ({
   find() {
     check(profileId, String);
     const userId = Meteor.userId();
-    if (!userId) return CatalogsCollection.find({ _id: 'nonextant' });
+    if (profileId == 'login') return CatalogsCollection.find({ _id: 'login-profile' });
+    if (!userId) return CatalogsCollection.find({ _id: 'non-extant' });
     return CatalogsCollection.find({
       accessRules: { $elemMatch: {
         mode: { $in: ['ReadOnly', 'ReadWrite', 'WriteOnly'] },

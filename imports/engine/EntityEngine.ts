@@ -1,4 +1,6 @@
+import { Meteor } from "meteor/meteor";
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
+import { Log } from "../lib/logging";
 import { ReactiveMap } from "../lib/reactive-map";
 import { LogicTracer } from "../lib/tracing";
 // import { AsyncCache, AsyncKeyedCache } from "../runtime/async-cache";
@@ -239,9 +241,10 @@ export class EntityEngine {
         op: 'Write',
       });
 
-      const count = await layer.impl.updateEntity(newEntity);
-      if (!count)
-        throw new Error(`TODO: Update applied to zero entities`);
+      await layer.impl.updateEntity(newEntity);
+      // const count = await layer.impl.updateEntity(newEntity);
+      // if (!count)
+      //   throw new Error(`TODO: Update applied to zero entities`);
     });
   }
 
@@ -259,22 +262,46 @@ export class EntityEngine {
         'distapp.entity.namespace': namespace,
         'distapp.entity.name': name,
       },
-    }, async () => {
+    }, async span => {
       const layer = this.selectNamespaceLayer({
         apiVersion, kind,
         namespace,
         op: 'Write',
       });
 
-      const entity = layer.impl.getEntity(apiVersion, kind, name);
+      let entity = layer.impl.getEntity(apiVersion, kind, name);
       if (!entity)
         throw new Error(`Entity doesn't exist`);
 
-      const result = mutationCb(entity);
-      if (result == Symbol.for('no-op'))
-        return;
+      for (let i = 0; i <= 3; i++) {
+        if (i > 0) {
+          Log.warn(`Retrying mutation on ${entity.kind}/${entity.metadata.name} (#${i})`);
+        }
 
-      await layer.impl.updateEntity(entity);
+        const result = mutationCb(entity);
+        if (result == Symbol.for('no-op'))
+          return;
+
+        // TODO: retry this if we raced someone else
+        try {
+          await layer.impl.updateEntity(entity, span);
+          return;
+        } catch (err) {
+          if (err instanceof Meteor.Error && err.error == 'no-update') {
+            const richDetailsTODO = err.details as undefined | string | {latestVersion: T};
+            if (richDetailsTODO && typeof richDetailsTODO !== 'string' && richDetailsTODO.latestVersion) {
+              entity = richDetailsTODO.latestVersion;
+              continue;
+            }
+          } else throw err;
+        }
+
+        entity = layer.impl.getEntity(apiVersion, kind, name);
+        if (!entity)
+          throw new Error(`Entity doesn't exist (anymore)`);
+        continue;
+      }
+      throw new Meteor.Error('no-mutate', `Ran out of retries for mutation.`);
     });
   }
 
