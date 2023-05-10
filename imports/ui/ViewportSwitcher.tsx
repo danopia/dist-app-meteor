@@ -214,6 +214,8 @@ export const ViewportSwitcher = (props: {
         <ActivityShell guest={true} workspaceName={workspaceName} />
       </div>
     );
+  } else if (workspaces.length >= 1) {
+    navigate(`/profile/${profile._id}/workspace/${workspaces[0].metadata.name}`);
   }
 
   //     meteorCallAsync('/v1alpha1/get user profile').then(x => {
