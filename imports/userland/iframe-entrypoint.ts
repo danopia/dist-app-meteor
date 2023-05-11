@@ -9,6 +9,8 @@ globalThis.fetch = async (req, opts) => {
   return await handler(req, opts);
 };
 
+const SessionId = crypto.randomUUID();
+
 class DistApp {
   private nextPromise = 0;
   private readonly promises = new Map<number, [(data: ProtocolEntity) => void, (error: Error) => void]>();
@@ -66,15 +68,35 @@ class DistApp {
     console.warn('TODO: DistApp received:', evt.data);
   }
   async handleError(err: Error) {
-    const {name, message, stack} = err;
-    this.sendRpc<WriteDebugEventEntity>({
-      kind: 'WriteDebugEvent',
-      spec: {
-        timestamp: new Date(),
-        level: 'error',
-        text: `Uncaught ${name} in page`,
-        error: { name, message, stack },
-      },
+    await this.fetch('/system-api/telemetry.v1alpha1.dist.app/otlp', {
+      method: 'POST',
+      body: JSON.stringify({
+        "resourceLogs": [{
+          "resource": {
+            "attributes": [
+              { "key": "service.name", "value": { "stringValue": "dist.app-userland" } },
+              { "key": "session.id", "value": { "stringValue": SessionId } },
+            ],
+          },
+          "scopeLogs": [{
+            "scope": {},
+            "logRecords": [{
+              "timeUnixNano": `${Date.now()}000000`,
+              "severityNumber": 9,
+              "severityText": "Info",
+              "name": "UncaughtError",
+              "body": {
+                "stringValue": `Uncaught ${err.name} in page`,
+                "attributes": [
+                  { "key": "error.message", "value": { "stringValue": err.message } },
+                  { "key": "error.name", "value": { "stringValue": err.name } },
+                  { "key": "error.stack", "value": { "stringValue": err.stack } },
+                ],
+              },
+            }],
+          }],
+        }],
+      }),
     });
   }
   async mountApiBinding(apiBindingName: string) {

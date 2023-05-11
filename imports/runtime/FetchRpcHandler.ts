@@ -14,6 +14,7 @@ import { stripIndent } from "common-tags";
 import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch-responses";
 import { LogicTracer } from "../lib/tracing";
 import { SpanKind } from "@opentelemetry/api";
+import { serveTelemetryApi } from "./system-apis/telemetry";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -21,6 +22,17 @@ const tracer = new LogicTracer({
   name: 'dist.app/fetch-rpc',
   requireParent: false,
 });
+
+type FetchHandlerFunc = (rpc: {
+  request: FetchRequestEntity['spec'];
+  path: string;
+  context: FetchRpcHandler;
+}) => Promise<FetchResponseEntity['spec']>;
+
+const KnownSystemApis = new Map<string, FetchHandlerFunc>();
+KnownSystemApis.set('market.v1alpha1.dist.app', serveMarketApi);
+KnownSystemApis.set('session.v1alpha1.dist.app', serveSessionApi);
+KnownSystemApis.set('telemetry.v1alpha1.dist.app', serveTelemetryApi);
 
 export class FetchRpcHandler {
   constructor(
@@ -57,6 +69,11 @@ export class FetchRpcHandler {
     if (rpc.spec.url.startsWith('/ApiBinding/')) {
       // TODO: maybe these need to be bound
       return await this.handleBinding(rpc);
+    }
+    if (rpc.spec.url.startsWith('/system-api/telemetry.v1alpha1.dist.app')) {
+      const [apiName, ...pathParts] = rpc.spec.url.split('/').slice(2);
+      const subPath = pathParts.join('/');
+      return await this.handleSystemBinding(rpc, apiName, subPath);
     }
 
     if (rpc.spec.url.startsWith('/cap/')) {
@@ -98,10 +115,7 @@ export class FetchRpcHandler {
   }
 
   async handleSystemBinding(rpc: FetchRequestEntity, apiName: string, subPath: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
-    const impl = ({
-      'market.v1alpha1.dist.app': serveMarketApi,
-      'session.v1alpha1.dist.app': serveSessionApi,
-    })[apiName];
+    const impl = KnownSystemApis.get(apiName);
     if (!impl) return makeStatusResponse(404,
       `System API ${JSON.stringify(apiName)} not found`);
 

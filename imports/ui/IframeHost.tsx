@@ -77,6 +77,7 @@ export const IframeHost = (props: {
           } });
       }
     });
+    // TODO: remove in favor of telemetry.v1alpha1.dist.app
     messageHost.addRpcListener<protocol.WriteDebugEventEntity>('WriteDebugEvent', ({rpc}) => {
       // TODO: record the debug events, probably in 'session' but perhaps as 'debug.dist.app' API
       console.log({ WriteDebugEvent: rpc.spec });
@@ -84,6 +85,7 @@ export const IframeHost = (props: {
         alert('A running dist.app encountered a script error:\n\n' + rpc.spec.error.stack);
       }
     });
+    // TODO: remove in favor of telemetry.v1alpha1.dist.app
     messageHost.addRpcListener<{}>('OtelExport', async ({rpc}) => {
       await Meteor.callAsync('OTLP/v1/traces', rpc.spec);
     });
