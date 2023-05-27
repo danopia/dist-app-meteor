@@ -47,7 +47,8 @@ export const ExplorerWindow = (props: {
             <li><button onClick={() => {
               if (textareaRef.current?.value) {
                 runtime.updateEntity(parse(textareaRef.current.value))
-                  .then(() => setIsEditing(false));
+                  .then(() => setIsEditing(false))
+                  .catch(err => alert(err.message));
               }
             }}>Save</button></li>
             <li><button onClick={() => setIsEditing(false)}>Cancel</button></li>

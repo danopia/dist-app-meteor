@@ -265,6 +265,8 @@ export class MeteorEntityStorage implements EntityStorage {
       Tracker.nonreactive(() => {
         remoteConn?.subscribe('/v1alpha1/catalogs/by-id/composite', props.catalogId);
       });
+
+      this.remoteConn = remoteConn;
       coll = remoteColl;
     }
 
@@ -275,6 +277,7 @@ export class MeteorEntityStorage implements EntityStorage {
     });
   }
   private readonly readStorage: MongoEntityStorage;
+  private readonly remoteConn?: DDP.DDPStatic;
 
   listAllEntities(): ArbitraryEntity[] {
     return this.readStorage.listAllEntities();
@@ -288,12 +291,24 @@ export class MeteorEntityStorage implements EntityStorage {
 
   // TODO: the span should probably be set before calling into these
   async insertEntity<T extends ArbitraryEntity>(entity: T, span?: Span) {
-    await meteorCallAsyncWithSpan(span, '/v1alpha1/Entity/insert', this.props.catalogId, entity);
+    if (this.remoteConn) {
+      await this.remoteConn.call('/v1alpha1/Entity/insert', this.props.catalogId, entity);
+    } else {
+      await meteorCallAsyncWithSpan(span, '/v1alpha1/Entity/insert', this.props.catalogId, entity);
+    }
   }
   async updateEntity<T extends ArbitraryEntity>(newEntity: T, span?: Span) {
-    await meteorCallAsyncWithSpan<void>(span, '/v1alpha1/Entity/update', this.props.catalogId, newEntity);
+    if (this.remoteConn) {
+      await this.remoteConn.call('/v1alpha1/Entity/update', this.props.catalogId, newEntity);
+    } else {
+      await meteorCallAsyncWithSpan<void>(span, '/v1alpha1/Entity/update', this.props.catalogId, newEntity);
+    }
   }
   async deleteEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string, span?: Span) {
-    return await meteorCallAsyncWithSpan<boolean>(span, '/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
+    if (this.remoteConn) {
+      return await this.remoteConn.call('/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
+    } else {
+      return await meteorCallAsyncWithSpan<boolean>(span, '/v1alpha1/Entity/delete', this.props.catalogId, apiVersion, kind, name);
+    }
   }
 }
