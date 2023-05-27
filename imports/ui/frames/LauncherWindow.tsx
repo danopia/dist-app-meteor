@@ -52,7 +52,7 @@ export const LauncherSection = (props: {
 
   const launchApp = (icon: typeof icons[number]) => {
     launchNewIntent(runtime, props.workspaceName, {
-      receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
+      receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app/v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
       action: icon.launcherIcon.action,
       category: 'app.dist.Launcher',
       // TODO: seems like there needs to be a better way to refer to a particular foreign application.

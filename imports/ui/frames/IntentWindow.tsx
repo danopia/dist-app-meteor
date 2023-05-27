@@ -112,7 +112,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   if (!children && typeof intent.dataRef == 'string') {
     const match = new URLPattern({
       protocol: 'entity:',
-      pathname: "//:namespace/:api@:version/:kind/:name",
+      pathname: "//:namespace/:api/:version/:kind/:name",
     }).exec(intent.dataRef);
     if (match) {
       const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
@@ -260,7 +260,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
     if (typeof intent.contextRef == 'string') {
       const match = new URLPattern({
         protocol: 'entity:',
-        pathname: "//:namespace/:api@:version/:kind/:name",
+        pathname: "//:namespace/:api/:version/:kind/:name",
       }).exec(intent.contextRef);
       if (match) {
         const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
@@ -279,7 +279,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
       appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', hActivityTask.spec.installationNamespace, hActivityTask.spec.installationName);
       if (appInstallation) {
         const appNamespace = runtime.useRemoteNamespace(appInstallation?.spec.appUri);
-        baseUrl = `entity://${appNamespace}/manifest.dist.app@v1alpha1/`;
+        baseUrl = `entity://${appNamespace}/manifest.dist.app/v1alpha1/`;
         // throw {stack: JSON.stringify({appInstallation, intent}, null, 2)};
       }
     }
@@ -288,7 +288,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
     // console.log({receiverUrl})
     const match = new URLPattern({
       protocol: 'entity:',
-      pathname: "//:namespace/:api@:version/:kind/:name",
+      pathname: "//:namespace/:api/:version/:kind/:name",
     }).exec(receiverUrl);
     if (match) {
       const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;

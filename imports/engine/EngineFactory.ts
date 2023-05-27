@@ -80,7 +80,7 @@ export function insertGuestWelcomeSession(engine: EntityEngine) {
     spec: {
       type: 'launch-intent',
       intent: {
-        receiverRef: "entity://profile:guest/profile.dist.app@v1alpha1/AppInstallation/bundledguestapp-app:welcome",
+        receiverRef: "entity://profile:guest/profile.dist.app/v1alpha1/AppInstallation/bundledguestapp-app:welcome",
         action: "app.dist.Main",
         category: "app.dist.Launcher",
         // action: 'app.dist.FTUE',

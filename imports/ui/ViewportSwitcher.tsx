@@ -106,7 +106,7 @@ export const ViewportSwitcher = (props: {
         },
       });
       launchNewIntent(engine, 'login', {
-        receiverRef: `entity://login/profile.dist.app@v1alpha1/AppInstallation/app:welcome`,
+        receiverRef: `entity://login/profile.dist.app/v1alpha1/AppInstallation/app:welcome`,
         action: 'app.dist.Main',
         category: 'app.dist.Launcher',
       });

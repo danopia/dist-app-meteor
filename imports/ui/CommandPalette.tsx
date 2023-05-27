@@ -14,7 +14,7 @@ export interface PaletteCommand {
   category?: string;
   icon?: IconSpec | null;
   extraNames?: string;
-  intent?: Parameters<typeof launchNewIntent>[1];
+  intent?: Parameters<typeof launchNewIntent>[2];
   command: () => void;
 }
 function command() {}
@@ -68,10 +68,10 @@ export const MyCommandPalette = (props: {
         icon: x.activity.spec.icon ?? x.application.spec.icon ?? null,
         extraNames: [x.application.metadata.title, x.appInstallation.metadata.title].join(' '),
         intent: {
-          contextRef: `entity://${x.appInstallation.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${x.appInstallation.metadata.name}`,
+          contextRef: `entity://${x.appInstallation.metadata.namespace}/profile.dist.app/v1alpha1/AppInstallation/${x.appInstallation.metadata.name}`,
           action: 'app.dist.Main',
           // category: 'app.dist.Launcher',
-          receiverRef: `entity://${x.appNamespace}/manifest.dist.app@v1alpha1/Activity/${x.activity.metadata.name}`,
+          receiverRef: `entity://${x.appNamespace}/manifest.dist.app/v1alpha1/Activity/${x.activity.metadata.name}`,
         },
         command,
       };
@@ -113,11 +113,10 @@ export const MyCommandPalette = (props: {
           keys: ['category', 'name', 'extraNames'] as Array<keyof PaletteCommand>,
         }}
         renderCommand={CommandPaletteItem}
-        onSelect={(selected: PaletteCommand) => {
+        onSelect={(selected: Partial<PaletteCommand>) => {
           if (selected.intent) {
             launchNewIntent(runtime, props.workspaceName, selected.intent);
           }
-          console.log({selected});
         }}
       />
   );
