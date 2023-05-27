@@ -44,8 +44,8 @@ export const MyCommandPalette = (props: {
       [x, runtime.useRemoteNamespace(x.spec.appUri)]));
 
     const resources = Array.from(appNamespaces).flatMap(([appInst, ns]) => {
-      const [application] = runtime.listEntities<ApplicationEntity>(
-        'manifest.dist.app/v1alpha1', 'Application', ns);
+      const application = runtime.listEntities<ApplicationEntity>(
+        'manifest.dist.app/v1alpha1', 'Application', ns).at(0);
       return runtime
         .listEntities<ActivityEntity>(
           'manifest.dist.app/v1alpha1', 'Activity', ns)
@@ -60,8 +60,8 @@ export const MyCommandPalette = (props: {
   }, [runtime, appInstallations]);
 
   const commands: Array<PaletteCommand> = [
-    ...activities.map<PaletteCommand>(x => {
-      return {
+    ...activities.flatMap<PaletteCommand>(x => x.application ? [
+      {
         category: 'Activity',
         name: x.activity.metadata.title,
         id: [x.appInstallation.metadata.name, x.activity.metadata.name].join('/'),
@@ -74,8 +74,8 @@ export const MyCommandPalette = (props: {
           receiverRef: `entity://${x.appNamespace}/manifest.dist.app/v1alpha1/Activity/${x.activity.metadata.name}`,
         },
         command,
-      };
-    }),
+      }
+    ] : []),
     {
       name: "Launcher",
       category: 'Action',
