@@ -210,39 +210,41 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   }
 
   if (intent.receiverRef?.startsWith('internal://')) {
-    const frameName = 'internal-'+Math.random().toString(16).slice(2);
-    runtime.insertEntity<FrameEntity>({
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      kind: 'Frame',
-      metadata: {
-        name: frameName,
-        namespace: 'session',
-        ownerReferences: [{
-          apiVersion: 'runtime.dist.app/v1alpha1',
-          kind: 'Workspace',
-          name: props.workspaceName,
-        }],
-      },
-      spec: {
-        contentRef: intent.receiverRef,
-        placement: {
-          current: 'floating',
-          floating: {
-            left: 15,
-            top: 15,
-            width: 500,
-            height: 300,
-          },
-          grid: {
-            area: 'fullscreen',
-          },
-          rolledWindow: false,
+    const frameName = props.command.metadata.name+'-333';
+    (async () => {
+      runtime.insertEntity<FrameEntity>({
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Frame',
+        metadata: {
+          name: frameName,
+          namespace: 'session',
+          ownerReferences: [{
+            apiVersion: 'runtime.dist.app/v1alpha1',
+            kind: 'Workspace',
+            name: props.workspaceName,
+          }],
         },
-      },
-    });
-    runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(frameName)});
-    runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-    runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+        spec: {
+          contentRef: intent.receiverRef!,
+          placement: {
+            current: 'floating',
+            floating: {
+              left: 15,
+              top: 15,
+              width: 500,
+              height: 300,
+            },
+            grid: {
+              area: 'fullscreen',
+            },
+            rolledWindow: false,
+          },
+        },
+      });
+      runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(frameName)});
+      runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+      runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+    })();
     return;
   }
 
