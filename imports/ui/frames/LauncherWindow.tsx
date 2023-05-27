@@ -10,7 +10,7 @@ import { launchNewIntent } from "../logic/launch-app";
 
 export const LauncherWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
-  workspaceName?: string;
+  workspaceName: string;
 }) => {
   const runtime = useContext(RuntimeContext);
 
@@ -29,7 +29,7 @@ export const LauncherWindow = (props: {
   return (
       <nav className="activity-contents-wrap">
         {namespaces.map(namespace => (
-          <LauncherSection key={namespace} namespace={namespace} workspaceName={workspaceName} />
+          <LauncherSection key={namespace} namespace={namespace} workspaceName={props.workspaceName} />
         ))}
       </nav>
   );
@@ -38,7 +38,7 @@ export const LauncherWindow = (props: {
 
 export const LauncherSection = (props: {
   namespace: string;
-  workspaceName?: string;
+  workspaceName: string;
 }) => {
   const runtime = useContext(RuntimeContext);
 
@@ -51,7 +51,7 @@ export const LauncherSection = (props: {
   // icon maybe 𓃑 or ☰
 
   const launchApp = (icon: typeof icons[number]) => {
-    launchNewIntent(runtime, workspaceName, {
+    launchNewIntent(runtime, props.workspaceName, {
       receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app@v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
       action: icon.launcherIcon.action,
       category: 'app.dist.Launcher',

@@ -51,7 +51,7 @@ export const FrameContainer = (props: {
         <div className="window-title">Launcher</div>
       );
       content = (
-        <LauncherWindow onLifecycle={setLifecycle} />
+        <LauncherWindow onLifecycle={setLifecycle} workspaceName={props.workspaceName} />
       );
       break;
     }
