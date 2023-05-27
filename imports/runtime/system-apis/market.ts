@@ -7,6 +7,7 @@ import { ApplicationEntity, IconSpec } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
 import { ArbitraryEntity } from "/imports/entities/core";
+import { marketUrl } from "/imports/settings";
 
 /**
  * # market.v1alpha1.dist.app
@@ -65,7 +66,7 @@ export async function serveMarketApi(rpc: {
     const listedApps = listings.map(({ns, entity: appRes}) => {
       return {
         id: appRes.metadata.uid,
-        appDataUrl: `ddp-catalog://dist-v1alpha1.deno.dev/${encodeURIComponent(appRes.spec.developmentDistUrl!.split(':')[1])}`,
+        appDataUrl: `ddp-catalog://${marketUrl.split('/')[2]}/${encodeURIComponent(appRes.spec.developmentDistUrl!.split(':')[1])}`,
         url: `entity://${ns}/${appRes.apiVersion}/${appRes.kind}/${encodeURIComponent(appRes.metadata.name)}`,
         // appUri: 'dist-registry:'+encodeURIComponent(appRes.spec.developmentDistUrl ?? ''),
         appRes,

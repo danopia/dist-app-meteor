@@ -14,6 +14,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { ErrorFallback } from '../lib/error-fallback';
 import { AppInstallationEntity } from '../entities/profile';
 import { launchNewIntent } from './logic/launch-app';
+import { marketUrl } from '../settings';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -132,22 +133,7 @@ export const ViewportSwitcher = (props: {
           }],
         }});
 
-      engine.addNamespace({
-        name: 'market-index',
-        spec: {
-          layers: [{
-            mode: 'ReadOnly',
-            accept: [{
-              apiGroup: 'market.dist.app',
-            }],
-            storage: {
-              type: 'foreign-ddp',
-              remoteUrl: 'https://dist-v1alpha1.deno.dev',
-              catalogId: 'public-index',
-            },
-          }],
-        },
-      });
+      engine.useRemoteNamespace(marketUrl);
     }
 
     // engine.addNamespace({

@@ -342,6 +342,11 @@ export class EntityEngine {
 
       if (this.namespaces.has(appNs)) return appNs;
 
+      let protocol = 'https:';
+      if (server?.split(':')[0].match(/\.?localhost$/i)) {
+        protocol = 'http:';
+      }
+
       this.addNamespace({
         name: appNs,
         spec: {
@@ -352,7 +357,7 @@ export class EntityEngine {
             }],
             storage: {
               type: 'foreign-ddp',
-              remoteUrl: 'https://'+server,
+              remoteUrl: protocol+'//'+server,
               catalogId: `${catalogId}`,
             },
           }],

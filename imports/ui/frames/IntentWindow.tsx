@@ -13,6 +13,7 @@ import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { extractTraceAnnotations, LogicTracer, wrapAsyncWithSpan } from "/imports/lib/tracing";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
+import { marketUrl } from "/imports/settings";
 import { RuntimeContext } from "/imports/ui/contexts";
 
 type IntentWindowProps = {
@@ -154,7 +155,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         return (<div className="activity-contents-wrap">Loading intent...</div>);
       }
 
-      if (intent.action == 'app.dist.InstallApp' && namespace == 'market-index' && kind == 'AppListing') {
+      if (intent.action == 'app.dist.InstallApp' && kind == 'AppListing') {
         // @ts-expect-error extras is not typed yet
         const targetNamespace = intent.extras?.['target-profile'] ?? 'profile:guest';
         console.log('Want to install', name, 'into', targetNamespace);
@@ -166,7 +167,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         }
         // console.log({appListing})
 
-        const appDataUrl = `ddp-catalog://dist-v1alpha1.deno.dev/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
+        const appDataUrl = `ddp-catalog://${marketUrl.split('/')[2]}/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
         const appNs = runtime.useRemoteNamespace(appDataUrl);
 
         const [app] = runtime.listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application', appNs);
@@ -177,7 +178,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           <AppIcon className="appIcon" sizeRatio={3} iconSpec={appListing.spec.icon ?? null}  />
           <h2 style={{margin: 0}}>{appListing.metadata.title}</h2>
           <p style={{margin: 0}}>from:</p>
-          <h4 style={{margin: 0}}>https://dist-v1alpha1.deno.dev</h4>
+          <h4 style={{margin: 0}}>https://{marketUrl.split('/')[2]}</h4>
           <p style={{margin: 0}}>This application will have access to:</p>
           <h4 style={{margin: 0}}>TODO</h4>
           <button onClick={() => {
