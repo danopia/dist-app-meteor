@@ -1,13 +1,13 @@
 import { Meteor } from "meteor/meteor";
 import { ProfilesCollection } from "/imports/db/profiles";
-import { newEngineWithGuestProfile } from "/imports/engine/EngineFactory";
+import { EntityEngine } from "/imports/engine/EntityEngine";
 import { AsyncCache } from "/imports/runtime/async-cache";
 
 function makeEntityEngine(profileId: string) {
-  const runtime = newEngineWithGuestProfile();
+  const runtime = new EntityEngine();
 
   runtime.addNamespace({
-    name: 'profile:user',
+    name: 'session',
     spec: {
       // TODO: replace the 'profile' layer with the proper stack of 'catalog' layers
       layers: [{

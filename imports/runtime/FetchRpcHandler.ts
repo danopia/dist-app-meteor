@@ -184,7 +184,7 @@ export class FetchRpcHandler {
         if (!credentials.length) {
           console.info('No ApiCredentials found for scaleway');
 
-          if (!namespaces.includes('profile:user')) {
+          if (!namespaces.includes('session')) {
             throw new Error(`Cannot store credential without user profile`);
           }
 
@@ -197,7 +197,7 @@ export class FetchRpcHandler {
             apiVersion: 'profile.dist.app/v1alpha1',
             kind: 'ApiCredential',
             metadata: {
-              namespace: 'profile:user',
+              namespace: 'session',
               name: accountType.spec.vendorDomain+'-'+crypto.randomUUID().split('-')[1],
             },
             spec: {

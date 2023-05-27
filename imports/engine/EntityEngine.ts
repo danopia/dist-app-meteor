@@ -284,7 +284,7 @@ export class EntityEngine {
 
         // TODO: retry this if we raced someone else
         try {
-          await layer.impl.updateEntity(entity, span);
+          await layer.impl.updateEntity(entity, span ?? undefined);
           return;
         } catch (err) {
           if (err instanceof Meteor.Error && err.error == 'no-update') {
@@ -337,12 +337,7 @@ export class EntityEngine {
 
     //   appUri: ddp-catalog://dist-v1alpha1.deno.dev/f6534a8a
     if (appUrl.protocol == 'ddp-catalog:') {
-      const match = new URLPattern({
-        protocol: 'ddp-catalog:',
-        pathname: '//:server/:catalogId',
-      }).exec(appUrl);
-      if (!match) throw new Error(`BUG: match expected on ${appUri}`);
-      const { catalogId, server } = match.pathname.groups
+      const {catalogId, server} = parseDdpUrl(appUrl)
       const appNs = `ddp:${catalogId}`;
 
       if (this.namespaces.has(appNs)) return appNs;
@@ -414,4 +409,32 @@ export class EntityEngine {
         .map(entity => ({ ns: x, entity })));
   }
 
+}
+
+// e.g. ddp-catalog://dist-v1alpha1.deno.dev/f6534a8a
+function parseDdpUrl(url: URL) {
+
+  { // browsers:
+    const match = new URLPattern({
+      protocol: 'ddp-catalog:',
+      pathname: '//:server/:catalogId',
+    }).exec(url);
+    if (match) {
+      const { catalogId, server } = match.pathname.groups
+      return { catalogId, server };
+    }
+  }
+
+  { // nodejs:
+    const match = new URLPattern({
+      protocol: 'ddp-catalog:',
+      pathname: '/:catalogId',
+    }).exec(url);
+    if (match) {
+      const { catalogId } = match.pathname.groups
+      return { catalogId, server: match.hostname.input };
+    }
+  }
+
+  throw new Error(`BUG: DDP match expected on ${url}`);
 }
