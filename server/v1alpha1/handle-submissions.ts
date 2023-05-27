@@ -39,11 +39,18 @@ export async function handleCapCall(userId: string | null, entity: ArbitraryEnti
     throw new Meteor.Error(`no-entity`, `AppInstallation not found.`);
   const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
   // TODO: seems to be arriving double-encoded?
-  const apiBinding = runtime.getEntity<ApiBindingEntity>(
+  let apiBinding = runtime.getEntity<ApiBindingEntity>(
     'manifest.dist.app/v1alpha1', 'ApiBinding',
     appNamespace, decodeURIComponent(entity.spec.cap.apiBindingRef.split('/')[1]));
-  if (!apiBinding) throw new Meteor.Error(`no-entity`,
-    `ApiBinding not found.`);
+  if (!apiBinding) {
+    // TODO: remove this data race when entities aren't downloaded yet
+    await new Promise(ok => setTimeout(ok, 2000));
+    apiBinding = runtime.getEntity<ApiBindingEntity>(
+      'manifest.dist.app/v1alpha1', 'ApiBinding',
+      appNamespace, decodeURIComponent(entity.spec.cap.apiBindingRef.split('/')[1]));
+    if (!apiBinding) throw new Meteor.Error(`no-entity`,
+      `ApiBinding not found.`);
+  }
 
   const apiCredentialNames = entity.spec.cap.apiCredentialRef
     ?.split('/').map(x => decodeURIComponent(x));
