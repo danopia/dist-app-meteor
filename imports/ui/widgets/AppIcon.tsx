@@ -3,26 +3,30 @@ import type { IconSpec } from "/imports/entities/manifest";
 
 export const AppIcon = (props: {
   className: string;
+  sizeRatio?: number;
   iconSpec: IconSpec | null;
 }) => {
 
   // TODO: when?
   if (!props.iconSpec) return (
     <div className={props.className} style={{
+        fontSize: props.sizeRatio ? `${props.sizeRatio}em` : undefined,
         backgroundColor: 'gray',
       }} />
   );
 
   if (props.iconSpec.type == 'glyph') return (
     <div className={props.className} style={{
-        backgroundColor: props.iconSpec.glyph.backgroundColor,
+      fontSize: props.sizeRatio ? `${props.sizeRatio}em` : undefined,
+      backgroundColor: props.iconSpec.glyph.backgroundColor,
         color: props.iconSpec.glyph.foregroundColor,
       }}>{props.iconSpec.glyph.text}</div>
   );
 
   if (props.iconSpec.type == 'svg') return (
     <div className={props.className} style={{
-        backgroundImage: `url("data:image/svg+xml;base64,${btoa(props.iconSpec.svg.textData)}")`,
+      fontSize: props.sizeRatio ? `${props.sizeRatio}em` : undefined,
+      backgroundImage: `url("data:image/svg+xml;base64,${btoa(props.iconSpec.svg.textData)}")`,
         backgroundColor: props.iconSpec.svg.backgroundColor,
         backgroundRepeat: "no-repeat",
         backgroundPosition: 'center',
@@ -31,6 +35,8 @@ export const AppIcon = (props: {
   );
 
   return (
-    <div className={props.className}>Icon TODO</div>
+    <div className={props.className} style={{
+      fontSize: props.sizeRatio ? `${props.sizeRatio}em` : undefined,
+    }}>Icon TODO</div>
   );
 }

@@ -48,9 +48,10 @@ export interface NamespaceEntity {
       } | {
         type: 'profile';
         profileId: string;
-      // } | {
-      //   storage: 'imported';
-      //   remoteUrl: unknown;
+      } | {
+        type: 'foreign-ddp';
+        remoteUrl: string;
+        catalogId: string;
       };
     }>;
 

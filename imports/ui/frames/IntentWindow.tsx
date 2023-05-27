@@ -4,13 +4,15 @@ import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
+import { AppIcon } from "../widgets/AppIcon";
 
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { EntityHandle } from "/imports/engine/EntityHandle";
-import { ActivityEntity } from "/imports/entities/manifest";
+import { ActivityEntity, ApplicationEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { extractTraceAnnotations, LogicTracer, wrapAsyncWithSpan } from "/imports/lib/tracing";
+import { AppListingEntity } from "/imports/runtime/system-apis/market";
 import { RuntimeContext } from "/imports/ui/contexts";
 
 type IntentWindowProps = {
@@ -148,6 +150,58 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
           runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
         }
+
+        return (<div className="activity-contents-wrap">Loading intent...</div>);
+      }
+
+      if (intent.action == 'app.dist.InstallApp' && namespace == 'market-index' && kind == 'AppListing') {
+        // @ts-expect-error extras is not typed yet
+        const targetNamespace = intent.extras?.['target-profile'] ?? 'profile:guest';
+        console.log('Want to install', name, 'into', targetNamespace);
+
+        const appListing = runtime.getEntity<AppListingEntity>('market.dist.app/v1alpha1', 'AppListing', namespace, name);
+        if (!appListing) {
+          throw new Error(`no AppListing yet, try again`);
+          return (<div className="activity-contents-wrap">No AppListing yet...</div>);
+        }
+        // console.log({appListing})
+
+        const appDataUrl = `ddp-catalog://dist-v1alpha1.deno.dev/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
+        const appNs = runtime.useRemoteNamespace(appDataUrl);
+
+        const [app] = runtime.listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application', appNs);
+        console.log({app})
+
+        return (<div className="activity-contents-wrap" style={{display: 'flex', flexDirection: 'column', gap: '1em', margin: '1em', alignItems: 'center'}}>
+          You are about to install:
+          <AppIcon className="appIcon" sizeRatio={3} iconSpec={appListing.spec.icon ?? null}  />
+          <h2 style={{margin: 0}}>{appListing.metadata.title}</h2>
+          <p style={{margin: 0}}>from:</p>
+          <h4 style={{margin: 0}}>https://dist-v1alpha1.deno.dev</h4>
+          <p style={{margin: 0}}>This application will have access to:</p>
+          <h4 style={{margin: 0}}>TODO</h4>
+          <button onClick={() => {
+            runtime.insertEntity<AppInstallationEntity>({
+              apiVersion: 'profile.dist.app/v1alpha1',
+              kind: 'AppInstallation',
+              metadata: {
+                name: `app-${appListing.metadata.name}`,
+                namespace: targetNamespace,
+              },
+              spec: {
+                appUri: appDataUrl,
+                // isInLauncher: true,
+                launcherIcons: [{
+                  action: 'app.dist.Main',
+                }],
+                preferences: {},
+              },
+            });
+
+            runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+            runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          }}>Install development version</button>
+        </div>);
 
         return (<div className="activity-contents-wrap">Loading intent...</div>);
       }

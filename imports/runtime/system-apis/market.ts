@@ -6,6 +6,7 @@ import { StaticCatalogs } from "/imports/engine/StaticCatalogs";
 import { ApplicationEntity, IconSpec } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
+import { ArbitraryEntity } from "/imports/entities/core";
 
 /**
  * # market.v1alpha1.dist.app
@@ -24,51 +25,74 @@ export async function serveMarketApi(rpc: {
 
   if (rpc.path == 'list-available-apps' && rpc.request.method == 'GET') {
 
-    // Find the user's available applications
-    const applications = rpc.context.runtime.findAllEntities<ApplicationEntity>(
-      'manifest.dist.app/v1alpha1', 'Application');
+    // // Find the applications which are already available
+    // const applications = rpc.context.runtime.findAllEntities<ApplicationEntity>(
+    //   'manifest.dist.app/v1alpha1', 'Application');
+
+    // Find applications which we could access if desired
+    let listings = rpc.context.runtime.findAllEntities<AppListingEntity>(
+      'market.dist.app/v1alpha1', 'AppListing');
+    if (listings.length == 0) {
+      // TODO: better way of waiting until we have the app listings downloaded
+      await new Promise(ok => setTimeout(ok, 2000));
+      listings = rpc.context.runtime.findAllEntities<AppListingEntity>(
+        'market.dist.app/v1alpha1', 'AppListing');
+    }
 
     // Find the user's app installations
     const installations = rpc.context.runtime.findAllEntities<AppInstallationEntity>(
       'profile.dist.app/v1alpha1', 'AppInstallation');
 
+    // const bundledApps = Array.from(StaticCatalogs.entries()).map(([id, catalog]) => {
+    //   const appRes = catalog.flatMap(x => x.kind == 'Application' ? [x] : [])[0];
+    //   return {
+    //     id: 'bundled:'+id.slice(4),
+    //     url: `entity://bundled/manifest.dist.app/v1alpha1/Application/${encodeURIComponent(id)}`,
+    //     appUri: 'bundled:'+encodeURIComponent(id),
+    //     appRes,
+    //   };
+    // });
 
-    const bundledApps = Array.from(StaticCatalogs.entries()).map(([id, catalog]) => {
-      const appRes: ApplicationEntity | undefined = catalog.flatMap(x => x.kind == 'Application' ? [x] : [])[0];
+    // const discoveredApps = applications.map(({ns, entity: appRes}) => {
+    //   return {
+    //     id: 'bundled:'+ns.slice(4),
+    //     url: `entity://bundled/manifest.dist.app/v1alpha1/Application/${encodeURIComponent(ns)}`,
+    //     appUri: 'bundled:'+encodeURIComponent(ns),
+    //     appRes,
+    //   };
+    // });
+
+    const listedApps = listings.map(({ns, entity: appRes}) => {
       return {
-        id: 'bundled:'+id.slice(4),
-        url: `entity://bundled/manifest.dist.app@v1alpha1/Application/${encodeURIComponent(id)}`,
-        appUri: 'bundled:'+encodeURIComponent(id),
+        id: appRes.metadata.uid,
+        appDataUrl: `ddp-catalog://dist-v1alpha1.deno.dev/${encodeURIComponent(appRes.spec.developmentDistUrl!.split(':')[1])}`,
+        url: `entity://${ns}/${appRes.apiVersion}/${appRes.kind}/${encodeURIComponent(appRes.metadata.name)}`,
+        // appUri: 'dist-registry:'+encodeURIComponent(appRes.spec.developmentDistUrl ?? ''),
         appRes,
       };
     });
 
-    const discoveredApps = applications.map(({ns, entity: appRes}) => {
-      return {
-        id: 'bundled:'+ns.slice(4),
-        url: `entity://bundled/manifest.dist.app@v1alpha1/Application/${encodeURIComponent(ns)}`,
-        appUri: 'bundled:'+encodeURIComponent(ns),
-        appRes,
-      };
-    });
-
-    const seenAppUrls = new Set<string>(bundledApps.map(x => x.url));
+    // const seenAppUrls = new Set<string>(bundledApps.map(x => x.url));
     const allApps = [
-      ...bundledApps,
-      ...discoveredApps.filter(x => !seenAppUrls.has(x.url)),
+      // ...bundledApps,
+      // ...discoveredApps.filter(x => !seenAppUrls.has(x.url)),
+      ...listedApps,
     ]
+      .sort((a,b) => a.appRes.metadata.title?.localeCompare(b.appRes.metadata.title ?? '') ?? 1)
       .map(appInfo => {
         // Know where the app is already present
         const appInstalls = installations.filter(x => {
-          return x.entity.spec.appUri == appInfo.appUri;
+          return appInfo.appDataUrl == x.entity.spec.appUri;
         });
 
         return {
           id: appInfo.id,
           url: appInfo.url,
+          appDataUrl: appInfo.appDataUrl,
           title: appInfo.appRes.metadata.title ?? 'N/A',
           description: appInfo.appRes.metadata.description ?? 'N/A',
           iconUrl: brandImageUrlForApp(appInfo.appRes),
+          status: appInstalls.length > 0 ? 'Installed' : 'Available',
           currentInstallations: appInstalls.map(x => ({
             profileNamespace: x.ns,
             appInstallName: x.entity.metadata.name,
@@ -86,11 +110,8 @@ export async function serveMarketApi(rpc: {
       // }),
       body: JSON.stringify({
         profiles: [{
-          namespace: 'profile:user',
+          namespace: 'session',
           title: 'Current user account',
-        }, {
-          namespace: 'profile:guest',
-          title: 'Guest session',
         }],
         listings: allApps,
       }),
@@ -103,7 +124,7 @@ export async function serveMarketApi(rpc: {
   };
 }
 
-function brandImageUrlForApp(appRes: ApplicationEntity) {
+function brandImageUrlForApp(appRes: {spec: {brandImageUrl?: string; icon?: IconSpec}}) {
   if (appRes.spec.brandImageUrl) return appRes.spec.brandImageUrl;
   if (appRes.spec.icon) return brandImageUrlForIcon(appRes.spec.icon);
   return null;
@@ -130,3 +151,21 @@ function brandImageUrlForIcon(icon: IconSpec) {
     }
   }
 }
+
+
+export interface AppListingEntity extends ArbitraryEntity {
+  apiVersion: 'market.dist.app/v1alpha1';
+  kind: 'AppListing';
+  spec: {
+    icon?: IconSpec;
+    brandImageUrl?: string;
+    developmentDistUrl?: string;
+  };
+  status?: {
+    latestRelease?: string;
+    releaseHistory: Array<{
+      publishedAt: Date;
+      releaseName: string;
+    }>;
+  };
+};

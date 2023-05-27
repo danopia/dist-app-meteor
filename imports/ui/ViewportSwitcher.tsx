@@ -131,6 +131,23 @@ export const ViewportSwitcher = (props: {
             },
           }],
         }});
+
+      engine.addNamespace({
+        name: 'market-index',
+        spec: {
+          layers: [{
+            mode: 'ReadOnly',
+            accept: [{
+              apiGroup: 'market.dist.app',
+            }],
+            storage: {
+              type: 'foreign-ddp',
+              remoteUrl: 'https://dist-v1alpha1.deno.dev',
+              catalogId: 'public-index',
+            },
+          }],
+        },
+      });
     }
 
     // engine.addNamespace({

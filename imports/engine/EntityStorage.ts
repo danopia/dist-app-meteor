@@ -2,10 +2,12 @@ import { Mongo } from "meteor/mongo";
 import { Entity } from "/imports/entities";
 import { ArbitraryEntity } from "../entities/core";
 import { ProfilesCollection } from "../db/profiles";
-import { EntitiesCollection } from "../db/entities";
+import { EntitiesCollection, EntityDoc } from "../db/entities";
 import { meteorCallAsyncWithSpan } from "../lib/meteor-call";
 import { Meteor } from "meteor/meteor";
 import { Span } from "@opentelemetry/api";
+import { DDP } from "meteor/ddp";
+import { Tracker } from "meteor/tracker";
 
 export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
@@ -227,16 +229,50 @@ export class MongoEntityStorage implements EntityStorage {
 
 }
 
+const remoteConns = new Map<string, DDP.DDPStatic>();
+const entitiesColls = new Map<DDP.DDPStatic, Mongo.Collection<EntityDoc>>();
+
 export class MeteorEntityStorage implements EntityStorage {
   constructor(private readonly props: {
+    remoteUrl?: string;
     catalogId: string;
     namespace: string;
   }) {
+    let coll = EntitiesCollection;
+
+    if (props.remoteUrl) {
+      let remoteConn = remoteConns.get(props.remoteUrl);
+      if (!remoteConn) {
+        console.info('Connecting to', props.remoteUrl);
+        //@ts-expect-error second argument is untyped
+        remoteConn = DDP.connect(props.remoteUrl, {
+          _sockjsOptions: {
+            // prevent XHR fallback
+            transports: ['websocket'],
+          },
+        });
+        remoteConns.set(props.remoteUrl, remoteConn);
+      }
+
+      let remoteColl = entitiesColls.get(remoteConn);
+      if (!remoteColl) {
+        remoteColl = new Mongo.Collection('Entities', {
+          connection: remoteConn,
+        });
+        entitiesColls.set(remoteConn, remoteColl);
+      }
+
+      Tracker.nonreactive(() => {
+        remoteConn?.subscribe('/v1alpha1/catalogs/by-id/composite', props.catalogId);
+      });
+      coll = remoteColl;
+    }
+
     this.readStorage = new MongoEntityStorage({
-      collection: EntitiesCollection,
+      collection: coll,
       catalogId: props.catalogId,
       namespace: props.namespace,
-    })
+    });
   }
   private readonly readStorage: MongoEntityStorage;
 

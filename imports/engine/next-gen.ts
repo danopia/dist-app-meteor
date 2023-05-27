@@ -1,6 +1,6 @@
 import { Mongo } from "meteor/mongo";
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
-import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
+import { MeteorEntityStorage, MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { StaticCatalogs } from "./StaticCatalogs";
 // import { MongoEntityStorage } from "./next-gen-layer";
 
@@ -18,6 +18,12 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
       return new StaticEntityStorage(staticCat);
     case 'profile':
       return new MongoProfileStorage(layerSpec.storage.profileId, namespaceName);
+    case 'foreign-ddp':
+      return new MeteorEntityStorage({
+        remoteUrl: layerSpec.storage.remoteUrl,
+        catalogId: layerSpec.storage.catalogId,
+        namespace: namespaceName,
+      });
   }
   //@ts-expect-error should be exhaustive thus 'never'
   throw new Error(`BUG: nobody built ${JSON.stringify(layerSpec.storage.type)} layer`);

@@ -335,6 +335,37 @@ export class EntityEngine {
 
     const appUrl = new URL(appUri);
 
+    //   appUri: ddp-catalog://dist-v1alpha1.deno.dev/f6534a8a
+    if (appUrl.protocol == 'ddp-catalog:') {
+      const match = new URLPattern({
+        protocol: 'ddp-catalog:',
+        pathname: '//:server/:catalogId',
+      }).exec(appUrl);
+      if (!match) throw new Error(`BUG: match expected on ${appUri}`);
+      const { catalogId, server } = match.pathname.groups
+      const appNs = `ddp:${catalogId}`;
+
+      if (this.namespaces.has(appNs)) return appNs;
+
+      this.addNamespace({
+        name: appNs,
+        spec: {
+          layers: [{
+            mode: 'ReadWrite',
+            accept: [{
+              // apiGroup: 'manifest.dist.app',
+            }],
+            storage: {
+              type: 'foreign-ddp',
+              remoteUrl: 'https://'+server,
+              catalogId: `${catalogId}`,
+            },
+          }],
+        },
+      });
+      return appNs;
+    }
+
     if (appUrl.protocol == 'bundled:') {
 
       // TODO: the fixed namespace sucks!
