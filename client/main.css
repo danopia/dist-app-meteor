@@ -97,7 +97,7 @@ iframe.activity-contents-wrap {
 .shell-window-grip {
   border-left: 2px solid #3c7fe8;
   border-right: 2px solid #3c7fe8;
-  margin: 1em 30%;
+  margin: 2em 30% 1em;
   flex: 1;
 }
 .intent-frame .shell-window-handle {

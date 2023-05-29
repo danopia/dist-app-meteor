@@ -34,7 +34,7 @@ export const IframeHost = (props: {
   const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
   if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
-  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity), [runtime, props.activityTask, props.activity]);
+  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity, shell), [runtime, props.activityTask, props.activity, shell]);
 
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, implementation]);
   useEffect(() => {

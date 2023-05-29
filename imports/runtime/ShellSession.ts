@@ -3,8 +3,9 @@ import { ActivityEntity } from "../entities/manifest";
 import { WorkspaceEntity, CommandEntity, FrameEntity, ActivityTaskEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 import { AppInstallationEntity } from "../entities/profile";
-import { injectTraceAnnotations, syncSpan } from "../lib/tracing";
+import { asyncSpan, asyncSpan, injectTraceAnnotations, syncSpan } from "../lib/tracing";
 import { context, propagation, TextMapSetter } from "@opentelemetry/api";
+import { Tracker } from "meteor/tracker";
 
 export class ShellSession {
 
@@ -228,6 +229,93 @@ export class ShellSession {
         },
         spec: commandSpec,
       });
+    });
+  }
+
+  async runTaskCommandForResult(task: FrameEntity, activityTask: ActivityTaskEntity | null, commandSpec: CommandEntity["spec"]) {
+    return await asyncSpan(`ShellSession task: ${commandSpec.type}`, {}, async () => {
+      const commandName = crypto.randomUUID().split('-')[0];
+
+      const command: CommandEntity = {
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Command',
+        metadata: {
+          name: commandName,
+          namespace: task.metadata.namespace,
+          annotations: injectTraceAnnotations(),
+          ownerReferences: [
+            ...task.metadata.ownerReferences ?? [],
+            {
+              apiVersion: 'runtime.dist.app/v1alpha1',
+              kind: 'Frame',
+              name: task.metadata.name,
+              uid: task.metadata.uid,
+            },
+            ...(activityTask ? [{
+              apiVersion: 'runtime.dist.app/v1alpha1',
+              kind: 'ActivityTask',
+              name: activityTask.metadata.name,
+              uid: activityTask.metadata.uid,
+            }] : []),
+          ],
+        },
+        spec: commandSpec,
+      }
+
+      await this.runtime.insertEntity(command);
+
+      await this.runtime.insertEntity<FrameEntity>({
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Frame',
+        metadata: {
+          name: commandName,
+          namespace: this.namespace,
+          ownerReferences: [
+            ...command.metadata.ownerReferences?.filter(x => x.kind == 'Workspace') ?? [],
+            {
+              apiVersion: command.apiVersion,
+              kind: command.kind,
+              name: command.metadata.name,
+            },
+          ],
+        },
+        spec: {
+          contentRef: '../Command/'+commandName,
+          sizeConstraint: {
+            maxWidth: 600, // TODO
+          },
+          placement: {
+            current: 'floating',
+            grid: {
+              area: 'fullscreen',
+            },
+            floating: {
+              left: 200,
+              top: 200,
+            },
+            rolledWindow: false,
+          },
+        },
+      });
+
+      let computation: Tracker.Computation | null = null;
+      return await new Promise<CommandEntity>((ok, fail) => {
+        computation = Tracker.autorun(() => {
+          const cmd = this.runtime.getEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', command.metadata.namespace, command.metadata.name);
+          if (!cmd?.status) return;
+          switch (cmd.status.outcome) {
+            case 'Completed':
+              ok(cmd);
+              break;
+            case 'Failed':
+              fail(`Failed: ${cmd.status.message ?? 'no message given'}`);
+              break;
+            case 'Denied':
+              fail(`Denied: ${cmd.status.message ?? 'no message given'}`);
+              break;
+          }
+        });
+      }).finally(() => computation?.stop());
     });
   }
 

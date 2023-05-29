@@ -39,6 +39,9 @@ export interface CommandEntity {
   };
   status?: {
     frameName?: string;
+    outcome?: 'Completed' | 'Denied' | 'Failed';
+    message?: string;
+    resultRef?: string;
   };
 }
 

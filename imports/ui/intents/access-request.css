@@ -1,0 +1,55 @@
+.access-request-table th {
+  vertical-align: text-top;
+  text-align: right;
+  padding: 1.3em 0.5em;
+}
+
+.access-request-table .button {
+  display: block;
+  padding: 0.5em;
+  background-color: rgba(127, 127, 127, 0.15);
+  color: inherit;
+  border: 2px outset #999;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  font-size: 1em;
+  border-radius: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .access-request-table .button {
+    border-color: #666;
+  }
+}
+
+.access-request-table .big.button {
+  text-align: center;
+  border-width: 3px;
+}
+
+.access-request-table .button:active {
+  border-style: inset;
+}
+
+.access-request-table .button[disabled],
+.access-request-table .button:has(input[disabled]) {
+  border-style: solid;
+  border-color: #ccc;
+  color: #999;
+}
+@media (prefers-color-scheme: dark) {
+  .access-request-table .button[disabled],
+  .access-request-table .button:has(input[disabled]) {
+    border-color: #444;
+    color: #999;
+  }
+}
+
+.access-request-table .button:has(input:checked) {
+  background-color: rgba(127, 127, 127, 0.4);
+}
+
+.access-request-table input[type=radio] {
+  margin-right: 0.75em;
+}

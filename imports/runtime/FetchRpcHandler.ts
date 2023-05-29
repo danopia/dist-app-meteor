@@ -5,7 +5,7 @@ import "urlpattern-polyfill";
 import { EntityEngine } from "../engine/EntityEngine";
 import { ActivityEntity, ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
-import { ActivityTaskEntity } from "../entities/runtime";
+import { ActivityTaskEntity, CommandEntity, FrameEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
 import { serveSessionApi } from "./system-apis/session";
@@ -15,6 +15,7 @@ import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch
 import { LogicTracer } from "../lib/tracing";
 import { SpanKind } from "@opentelemetry/api";
 import { serveTelemetryApi } from "./system-apis/telemetry";
+import { ShellSession } from "./ShellSession";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -39,6 +40,7 @@ export class FetchRpcHandler {
     public readonly runtime: EntityEngine,
     public readonly activityTask: ActivityTaskEntity,
     public readonly activity: ActivityEntity,
+    public readonly shell: ShellSession,
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -135,154 +137,174 @@ export class FetchRpcHandler {
   async handleMountBinding(rpc: FetchRequestEntity, binding: ApiBindingEntity, apiEntity: ApiEntity, apiSpec: OpenAPIV3.Document, defaultServer: string): Promise<Omit<FetchResponseEntity, 'origId'>> {
     console.warn(`TODO: /mount`, {rpc, binding, apiEntity, apiSpec, defaultServer});
 
-    // TODO: we don't need to send HTTP thru the server if CORS is allowed & the credential is held by the client
-    // apiEntity.spec.crossOriginResourceSharing
-
-    const securitySchemes = apiSpec.components?.securitySchemes;
-    if (!securitySchemes) {
-      return await this.createCap(binding, defaultServer, null);
-    }
-
-    const securitySchemeList = Object.entries(securitySchemes).map(x => {
-      if ('$ref' in x[1]) throw new Error(`TODO: $ref`);
-      return { def: x[1], id: x[0] };
+    const frame = this.runtime.getEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.activityTask.metadata.namespace, this.activityTask.metadata.ownerReferences?.find(x => x.kind == 'Frame')?.name ?? '');
+    if (!frame) throw new Error(`no frame, wweird!`);
+    const cmd = await this.shell.runTaskCommandForResult(frame, this.activityTask, {
+      type: 'launch-intent',
+      intent: {
+        contextRef: `entity://${binding.metadata.namespace}/manifest.dist.app/v1alpha1/ApiBinding/${binding.metadata.name}`,
+        action: 'app.dist.AuthorizeApiBinding',
+        category: 'app.dist.Default',
+        // extras: {
+        //   'vendor-domain': apiEntity.spec.vendorDomain,
+        // },
+        // data: '/profile@v1alpha1/AppInstallation/bundledguestapp-app:welcome',
+      },
     });
-
-    const accountTypes = this.runtime.listEntities<WebAccountTypeEntity>(
-      'manifest.dist.app/v1alpha1', 'WebAccountType',
-      this.activity.metadata.namespace);
-    for (const accountType of accountTypes) {
-      if (accountType.spec.vendorDomain !== apiEntity.spec.vendorDomain) continue;
-
-      if (accountType.spec.credentialScheme == 'ApiKeyOnly') {
-        const tokenScheme = securitySchemeList.find(x => x.def.type == 'apiKey');
-        if (tokenScheme?.def.type != 'apiKey') throw new Error('apiKey securityScheme not found');
-
-        // TODO!!: there should really be a 'choose account' intent that shows UI
-
-        // Find places where we can find the user's existing credentials
-        const namespaces = Array
-          .from(this.runtime
-            .getNamespacesServingApi({
-              apiVersion: 'profile.dist.app/v1alpha1',
-              kind: 'ApiCredential',
-              op: 'Read',
-            })
-            .keys());
-
-        // Find existing api credentials
-        // TODO: why is namespace kept as a separate field?
-        const credentials = namespaces
-          .flatMap(x => this.runtime
-            .listEntities<ApiCredentialEntity>(
-              'profile.dist.app/v1alpha1', 'ApiCredential', x)
-            .map(entity => ({ ns: x, entity })));
-
-        // const apiCredentials = this.runtime.listEntities<ApiCredentialEntity>(
-        //   'profile.dist.app/v1alpha1', 'ApiCredential',
-        //   this.activityTask.metadata.namespace);
-        if (!credentials.length) {
-          console.info('No ApiCredentials found for scaleway');
-
-          if (!namespaces.includes('session')) {
-            throw new Error(`Cannot store credential without user profile`);
-          }
-
-          const knownApiKey = prompt(stripIndent`
-            Enter an apiKey for ${defaultServer}
-            Will be stored in user profile!
-            (as ${accountType.spec.vendorDomain})`);
-          if (!knownApiKey) throw new Error(`TODO: no apikey given`);
-          const credential: ApiCredentialEntity = {
-            apiVersion: 'profile.dist.app/v1alpha1',
-            kind: 'ApiCredential',
-            metadata: {
-              namespace: 'session',
-              name: accountType.spec.vendorDomain+'-'+crypto.randomUUID().split('-')[1],
-            },
-            spec: {
-              accountTypeId: accountType.spec.vendorDomain,
-              authType: 'api-key',
-              exit: {
-                type: 'internet',
-                targetUrl: defaultServer,
-              },
-              logging: 'MetadataOnly',
-              validation: 'Enforced',
-              exportable: false,
-            },
-            secret: {
-              accessToken: knownApiKey,
-            },
-          };
-          await this.runtime.insertEntity<ApiCredentialEntity>(credential);
-
-          credentials.push({ns: credential.metadata.namespace!, entity: credential});
-        }
-
-        if (credentials.length == 1) {
-          return await this.createCap(binding, defaultServer, credentials[0].entity);
-        }
-
-        // TODO:
-        console.log({scheme: tokenScheme.def, accountType, credentials });
-      }
+    console.log('Got command result:', cmd);
+    if (cmd.status?.outcome == 'Completed' && cmd.status.resultRef?.startsWith('cap:')) {
+      await this.runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', cmd.metadata.namespace, cmd.metadata.name);
+      return makeTextResponse(200, cmd.status.resultRef.slice(4));
     }
+    // TODO: how can we wait for the task to complete and take its result?
+    return makeStatusResponse(506,
+      `Command result: ${cmd.status?.outcome}. TODO: handle unhappy path`);
 
-    return makeStatusResponse(420,
-      `Sober up and implement this`);
+    // const securitySchemes = apiSpec.components?.securitySchemes;
+    // if (!securitySchemes) {
+    //   return await this.createCap(binding, defaultServer, null);
+    // }
+
+    // const securitySchemeList = Object.entries(securitySchemes).map(x => {
+    //   if ('$ref' in x[1]) throw new Error(`TODO: $ref`);
+    //   return { def: x[1], id: x[0] };
+    // });
+
+    // const accountTypes = this.runtime.listEntities<WebAccountTypeEntity>(
+    //   'manifest.dist.app/v1alpha1', 'WebAccountType',
+    //   this.activity.metadata.namespace);
+    // for (const accountType of accountTypes) {
+    //   if (accountType.spec.vendorDomain !== apiEntity.spec.vendorDomain) continue;
+
+    //   if (accountType.spec.credentialScheme == 'ApiKeyOnly') {
+    //     const tokenScheme = securitySchemeList.find(x => x.def.type == 'apiKey');
+    //     if (tokenScheme?.def.type != 'apiKey') throw new Error('apiKey securityScheme not found');
+
+    //     // TODO!!: there should really be a 'choose account' intent that shows UI
+
+    //     // Find places where we can find the user's existing credentials
+    //     const namespaces = Array
+    //       .from(this.runtime
+    //         .getNamespacesServingApi({
+    //           apiVersion: 'profile.dist.app/v1alpha1',
+    //           kind: 'ApiCredential',
+    //           op: 'Read',
+    //         })
+    //         .keys());
+
+    //     // Find existing api credentials
+    //     // TODO: why is namespace kept as a separate field?
+    //     const credentials = namespaces
+    //       .flatMap(x => this.runtime
+    //         .listEntities<ApiCredentialEntity>(
+    //           'profile.dist.app/v1alpha1', 'ApiCredential', x)
+    //         .map(entity => ({ ns: x, entity })));
+
+    //     // const apiCredentials = this.runtime.listEntities<ApiCredentialEntity>(
+    //     //   'profile.dist.app/v1alpha1', 'ApiCredential',
+    //     //   this.activityTask.metadata.namespace);
+    //     if (!credentials.length) {
+    //       console.info('No ApiCredentials found for scaleway');
+
+    //       if (!namespaces.includes('session')) {
+    //         throw new Error(`Cannot store credential without user profile`);
+    //       }
+
+    //       const knownApiKey = prompt(stripIndent`
+    //         Enter an apiKey for ${defaultServer}
+    //         Will be stored in user profile!
+    //         (as ${accountType.spec.vendorDomain})`);
+    //       if (!knownApiKey) throw new Error(`TODO: no apikey given`);
+    //       const credential: ApiCredentialEntity = {
+    //         apiVersion: 'profile.dist.app/v1alpha1',
+    //         kind: 'ApiCredential',
+    //         metadata: {
+    //           namespace: 'session',
+    //           name: accountType.spec.vendorDomain+'-'+crypto.randomUUID().split('-')[1],
+    //         },
+    //         spec: {
+    //           accountTypeId: accountType.spec.vendorDomain,
+    //           authType: 'api-key',
+    //           exit: {
+    //             type: 'internet',
+    //             targetUrl: defaultServer,
+    //           },
+    //           logging: 'MetadataOnly',
+    //           validation: 'Enforced',
+    //           exportable: false,
+    //         },
+    //         secret: {
+    //           accessToken: knownApiKey,
+    //         },
+    //       };
+    //       await this.runtime.insertEntity<ApiCredentialEntity>(credential);
+
+    //       credentials.push({ns: credential.metadata.namespace!, entity: credential});
+    //     }
+
+    //     if (credentials.length == 1) {
+    //       return await this.createCap(binding, defaultServer, credentials[0].entity);
+    //     }
+
+    //     // TODO:
+    //     console.log({scheme: tokenScheme.def, accountType, credentials });
+    //   }
+    // }
+
+    // return makeStatusResponse(420,
+    //   `Sober up and implement this`);
   }
 
-  @tracer.InternalSpan
-  async createCap(binding: ApiBindingEntity, defaultServer: string, usingCred: ApiCredentialEntity | null) {
-    const [app] = this.runtime.listEntities<ApplicationEntity>(
-      'manifest.dist.app/v1alpha1', 'Application',
-      binding.metadata.namespace);
+  // @tracer.InternalSpan
+  // async createCap(binding: ApiBindingEntity, defaultServer: string, usingCred: ApiCredentialEntity | null) {
+  //   const [app] = this.runtime.listEntities<ApplicationEntity>(
+  //     'manifest.dist.app/v1alpha1', 'Application',
+  //     binding.metadata.namespace);
 
-    const message = [
-      `NETWORK ACCESS REQUEST:\n`,
-      `Application ${JSON.stringify(app.metadata.title)}`,
-      `AppBinding ${JSON.stringify(binding.metadata.name)}\n`,
-    ];
+  //   const message = [
+  //     `NETWORK ACCESS REQUEST:\n`,
+  //     `Application ${JSON.stringify(app.metadata.title)}`,
+  //     `AppBinding ${JSON.stringify(binding.metadata.name)}\n`,
+  //   ];
 
-    const serverUrl = usingCred
-      ? usingCred.spec.exit.targetUrl
-      : defaultServer;
-    const credRef = usingCred
-      ? `${usingCred?.metadata.namespace}/${usingCred?.metadata.name}`
-      : undefined;
+  //   const serverUrl = usingCred
+  //     ? usingCred.spec.exit.targetUrl
+  //     : defaultServer;
+  //   const credRef = usingCred
+  //     ? `${usingCred?.metadata.namespace}/${usingCred?.metadata.name}`
+  //     : undefined;
 
-    if (usingCred) {
-      message.push(`Credential ${credRef}`);
-      message.push(`Server ${serverUrl}\n`);
-      message.push(`Allow this application to use your credential (!) and access that server through your network?`);
-    } else {
-      message.push(`Server ${serverUrl}\n`);
-      message.push(`Allow this application access that server through your network?`);
-    }
+  //   if (usingCred) {
+  //     message.push(`Credential ${credRef}`);
+  //     message.push(`Server ${serverUrl}\n`);
+  //     message.push(`Allow this application to use your credential (!) and access that server through your network?`);
+  //   } else {
+  //     message.push(`Server ${serverUrl}\n`);
+  //     message.push(`Allow this application access that server through your network?`);
+  //   }
 
-    const gonogo = confirm(message.join('\n'));
-    if (!gonogo) return makeStatusResponse(403, 'Mount access denied');
+  //   const gonogo = confirm(message.join('\n'));
+  //   if (!gonogo) return makeStatusResponse(403, 'Mount access denied');
 
-    const capId = crypto.randomUUID().split('-')[0];
-    await this.runtime.mutateEntity<ActivityTaskEntity>(
-      'runtime.dist.app/v1alpha1', 'ActivityTask',
-      this.activityTask.metadata.namespace, this.activityTask.metadata.name,
-      ent => {
-        ent.state.caps ??= {};
-        if (capId in ent.state.caps) throw new Error(`cap ${capId} already taken??`);
-        // TODO: separate Capability kind?
-        ent.state.caps[capId] = {
-          type: 'HttpClient',
-          apiBindingRef: `${binding.metadata.namespace}/${binding.metadata.name}`,
-          apiCredentialRef: credRef,
-          baseUrl: serverUrl,
-        };
-      });
+  //   const capId = crypto.randomUUID().split('-')[0];
+  //   await this.runtime.mutateEntity<ActivityTaskEntity>(
+  //     'runtime.dist.app/v1alpha1', 'ActivityTask',
+  //     this.activityTask.metadata.namespace, this.activityTask.metadata.name,
+  //     ent => {
+  //       ent.state.caps ??= {};
+  //       if (capId in ent.state.caps) throw new Error(`cap ${capId} already taken??`);
+  //       // TODO: separate Capability kind?
+  //       ent.state.caps[capId] = {
+  //         type: 'HttpClient',
+  //         apiBindingRef: `${binding.metadata.namespace}/${binding.metadata.name}`,
+  //         apiCredentialRef: credRef,
+  //         baseUrl: serverUrl,
+  //       };
+  //     });
 
-    console.log('Returning cap', {capId, server: serverUrl, usingCred: credRef});
-    return makeTextResponse(200, capId);
-  }
+  //   console.log('Returning cap', {capId, server: serverUrl, usingCred: credRef});
+  //   return makeTextResponse(200, capId);
+  // }
 
   @tracer.InternalSpan
   async handleCap(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {

@@ -4,14 +4,16 @@ import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
+import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent";
 import { AppIcon } from "../widgets/AppIcon";
 
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { EntityHandle } from "/imports/engine/EntityHandle";
-import { ActivityEntity, ApplicationEntity } from "/imports/entities/manifest";
+import { ActivityEntity, ApiBindingEntity, ApplicationEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { extractTraceAnnotations, LogicTracer, wrapAsyncWithSpan } from "/imports/lib/tracing";
+import { ShellSession } from "/imports/runtime/ShellSession";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
 import { marketUrl } from "/imports/settings";
 import { RuntimeContext } from "/imports/ui/contexts";
@@ -22,6 +24,7 @@ type IntentWindowProps = {
   workspaceName: string;
   // cmdName: string;
   // intent: LaunchIntentEntity['spec'],
+  shell?: ShellSession | null;
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
 };
 
@@ -31,7 +34,6 @@ const tracer = new LogicTracer({
 })
 
 export const IntentWindow = (props: IntentWindowProps) => {
-  console.log(props.command.metadata);
   const ctx = extractTraceAnnotations(props.command?.metadata?.annotations ?? {});
   return context.with(ctx, () => tracer.syncSpan('<IntentWindow/>', {
     attributes: {
@@ -73,6 +75,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           Open {intent.data}
         </a>
       </nav>
+    );
+  }
+
+  if (intent.action == 'app.dist.AuthorizeApiBinding' && intent.contextRef) {
+    return (
+      <AuthorizeApiBindingIntent runtime={runtime} command={props.command} cmdFrame={props.frame} shell={props.shell} />
     );
   }
 

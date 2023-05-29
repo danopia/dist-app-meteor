@@ -68,13 +68,22 @@ export const FrameContainer = (props: {
 
     case "Command": {
       classNames.push("intent-frame");
-      title = (
-        <div className="window-title">
-          TODO: command titlebar. {contentRaw.kind} {contentRaw.metadata.name}
-        </div>
-      )
+      // TODO: better titlebar for commands
+      if (contentRaw.spec.type == 'launch-intent') {
+        title = (
+          <div className="window-title">
+            Intent: {contentRaw.spec.intent.action}
+          </div>
+        );
+      } else {
+        title = (
+          <div className="window-title">
+            {contentRaw.spec.type} command [{contentRaw.metadata.name}]
+          </div>
+        );
+      }
       content = (
-        <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
+        <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} shell={shell} onLifecycle={setLifecycle} />
       );
       break;
     }
