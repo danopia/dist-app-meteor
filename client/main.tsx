@@ -30,7 +30,7 @@ window.addEventListener('error', evt => {
 });
 
 // Side-effect: register serviceWorker
-import './install-worker';
+// import './install-worker';
 
 import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
