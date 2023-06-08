@@ -4,6 +4,7 @@ import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
 import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
+import { AddWebAccountIntent } from "../intents/AddWebAccountIntent";
 import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent";
 import { AppIcon } from "../widgets/AppIcon";
 
@@ -81,6 +82,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   if (intent.action == 'app.dist.AuthorizeApiBinding' && intent.contextRef) {
     return (
       <AuthorizeApiBindingIntent runtime={runtime} command={props.command} cmdFrame={props.frame} shell={props.shell} />
+    );
+  }
+
+  if (intent.action == 'app.dist.AddWebAccount' && intent.contextRef) {
+    return (
+      <AddWebAccountIntent runtime={runtime} command={props.command} cmdFrame={props.frame} shell={props.shell} />
     );
   }
 

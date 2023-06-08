@@ -25,8 +25,12 @@ export interface ApiCredentialEntity {
     authType: 'http-basic' | 'http-digest' | 'api-key' | 'oauth2' | 'oidc';
     exit: {
       type: 'internet';
-      targetUrl: string;
+      targetUrl?: string;
       corsAllowed?: boolean;
+    };
+    restrictions: {
+      keepOnServer?: boolean;
+      blockExport?: boolean;
     };
     exportable?: boolean;
     validation: 'None' | 'CheckOnly' | 'Enforced';

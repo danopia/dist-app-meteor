@@ -240,7 +240,11 @@ class ApiBindingMount {
   async fetch(req: string, opts?: RequestInit) {
     // const headers = new Headers(opts?.headers);
     // headers.append('Authorization', `Bearer ${this.token}`);
-    return await this.distApp.fetch(`/cap/${this.token}/${req.slice(1)}`, {
+    const apiPath = req.startsWith('/') ? req.slice(1) : (() => {
+      const url = new URL(req);
+      return url.pathname.slice(1) + url.search + url.hash;
+    })();
+    return await this.distApp.fetch(`/cap/${this.token}/${apiPath}`, {
       ...opts,
       // headers,
     });

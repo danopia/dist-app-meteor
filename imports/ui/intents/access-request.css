@@ -50,6 +50,10 @@
   background-color: rgba(127, 127, 127, 0.4);
 }
 
-.access-request-table input[type=radio] {
+.access-request-table label input {
   margin-right: 0.75em;
+}
+
+.access-request-table input[type=text] {
+  padding: 0.5em 1em;
 }

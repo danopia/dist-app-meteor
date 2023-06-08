@@ -11,6 +11,7 @@ import { ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } 
 import { ApiCredentialEntity, AppInstallationEntity } from '/imports/entities/profile';
 import { ActivityTaskEntity, CommandEntity, FrameEntity } from '/imports/entities/runtime';
 import { ShellSession } from '/imports/runtime/ShellSession';
+import { RadioButtonList } from './RadioButtonList';
 
 export const AuthorizeApiBindingIntent = (props: {
   runtime: EntityEngine,
@@ -33,7 +34,7 @@ export const AuthorizeApiBindingIntent = (props: {
   if (api !== 'manifest.dist.app' || kind !== 'ApiBinding') throw new Error(`not an ApiBinding`);
 
   const entities = useTracker(() => {
-    console.warn('fetching entities for AuthorizeApiBinding');
+    // console.warn('fetching entities for AuthorizeApiBinding');
     const apiBinding = props.runtime.getEntity<ApiBindingEntity>(
       'manifest.dist.app/v1alpha1', 'ApiBinding',
       namespace, name);
@@ -76,8 +77,8 @@ export const AuthorizeApiBindingIntent = (props: {
       app,
       apiCredentials,
     };
-  }, [props.runtime, props.command, props.runtime, name, namespace]);
-  console.log('authapibinding', {entities});
+  }, [props.runtime, props.command, name, namespace]);
+  // console.log('authapibinding', {entities});
 
   const apiSpec = useMemo(() => {
     if (!entities.api) return null;
@@ -97,9 +98,9 @@ export const AuthorizeApiBindingIntent = (props: {
     );
   }
   return (
-    <form className="activity-contents-wrap" style={{display: 'flex', flexDirection: 'column', gap: '1em', margin: '1em', alignItems: 'center'}} onSubmit={evt => {
+    <form className="activity-contents-wrap" style={{display: 'flex', flexDirection: 'column', gap: '1em', padding: '1em', alignItems: 'center'}} onSubmit={evt => {
       evt.preventDefault();
-      const target = evt.target as {
+      const target = evt.currentTarget as {
         serverUrl?: RadioNodeList;
         deviceName?: RadioNodeList;
         credentialName?: RadioNodeList;
@@ -258,70 +259,3 @@ export const AuthorizeApiBindingIntent = (props: {
   );
 
 };
-
-// const [app] = this.runtime.listEntities<ApplicationEntity>(
-//   'manifest.dist.app/v1alpha1', 'Application',
-//   binding.metadata.namespace);
-
-// const message = [
-//   `NETWORK ACCESS REQUEST:\n`,
-//   `Application ${JSON.stringify(app.metadata.title)}`,
-//   `AppBinding ${JSON.stringify(binding.metadata.name)}\n`,
-// ];
-
-// const serverUrl = usingCred
-//   ? usingCred.spec.exit.targetUrl
-//   : defaultServer;
-// const credRef = usingCred
-//   ? `${usingCred?.metadata.namespace}/${usingCred?.metadata.name}`
-//   : undefined;
-
-// if (usingCred) {
-//   message.push(`Credential ${credRef}`);
-//   message.push(`Server ${serverUrl}\n`);
-//   message.push(`Allow this application to use your credential (!) and access that server through your network?`);
-// } else {
-//   message.push(`Server ${serverUrl}\n`);
-//   message.push(`Allow this application access that server through your network?`);
-// }
-
-const RadioButtonList = (props: {
-  name: string;
-  required?: boolean;
-  options: Array<{
-    id: string;
-    label: string;
-    disabled?: boolean;
-    message?: string;
-  }>;
-  newOption?: {
-    label: string;
-    onActivate: () => void;
-  };
-}) => {
-  return (
-    <ul style={{padding: 0, margin: 0, listStyle: 'none'}}>
-      {props.options.map(x => (
-        <li style={{padding: '0.1em 0'}}>
-          <label className="button">
-            <input key={x.id}
-                name={props.name} type="radio" required={props.required}
-                value={x.id} disabled={x.disabled}
-              />{x.label}
-            {x.message ? (
-              <div style={{color: '#a77', fontSize: '0.8em', textIndent: '2.3em'}}>{x.message}</div>
-            ) : []}
-          </label>
-        </li>
-      )) ?? []}
-      {props.newOption ? (
-        <li style={{padding: '0.1em 0'}}>
-          <button type="button" className="button" onClick={props.newOption.onActivate}>
-            <span style={{margin: '0 0.25em'}}>➕</span>
-            {props.newOption.label}
-          </button>
-        </li>
-      ) : []}
-    </ul>
-  );
-}

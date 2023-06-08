@@ -47,7 +47,7 @@ export async function performHttpRequest(runtime: EntityEngine, opts: {
   // return makeStatusResponse(512, 'Deprecated - update to mount API');
 
   const realUrl = new URL(subPath, server.url).toString();
-  if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt?`);
+  if (!realUrl.startsWith(server.url)) throw new Error(`url breakout attempt? ${realUrl} vs. ${server.url}`);
 
   const pathConfig = Object.entries(apiSpec.paths).filter(x => {
     const patStr = x[0].replace(/\{([^{}]+)\}/g, y => `:${y.slice(1,-1)}`);
@@ -55,7 +55,7 @@ export async function performHttpRequest(runtime: EntityEngine, opts: {
     return pat.test(new URL('/'+subPath, 'https://.'));
   }).map(x => ({...(x[1] ?? {}), path: x[0]}))[0];
   const methodConfig = pathConfig?.[opts.rpc.spec.method.toLowerCase() as 'get'];
-  if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${subPath} failed`); // TODO: HTTP 430
+  if (!pathConfig || !methodConfig) throw new Error(`API lookup of ${opts.rpc.spec.method} ${subPath} failed`); // TODO: HTTP 430
 
   // TODO: replace this with proper ApiCredential stuff
   secLoop: for (const security of methodConfig.security ?? apiSpec.security ?? []) {
@@ -71,9 +71,22 @@ export async function performHttpRequest(runtime: EntityEngine, opts: {
         if (!opts.apiCredential.secret?.accessToken) return makeStatusResponse(403,
           `BUG: Available ApiCredential doesn't have a secret`);
         opts.rpc.spec.headers ??= [];
+        opts.rpc.spec.headers = opts.rpc.spec.headers.filter(x => x[0].toLowerCase() !== secDef.name.toLowerCase());
         opts.rpc.spec.headers.push([secDef.name, opts.apiCredential.secret.accessToken]);
         break secLoop;
-      }; break;
+      } break;
+      case 'http': {
+        if (secDef.scheme !== 'bearer') throw new Error(`TODO: http scheme ${secDef.scheme}`);
+        // TODO: actual secret storage i hope
+        if (!opts.apiCredential) return makeStatusResponse(403,
+          `No ApiCredential available for request`);
+        if (!opts.apiCredential.secret?.accessToken) return makeStatusResponse(403,
+          `BUG: Available ApiCredential doesn't have a secret`);
+        opts.rpc.spec.headers ??= [];
+        opts.rpc.spec.headers = opts.rpc.spec.headers.filter(x => x[0].toLowerCase() !== 'authorization');
+        opts.rpc.spec.headers.push(['authorization', 'Bearer '+opts.apiCredential.secret.accessToken]);
+        break secLoop;
+      } break;
       default: throw new Error(`TODO: openapi sec type ${secDef.type}`);
     }
   }
