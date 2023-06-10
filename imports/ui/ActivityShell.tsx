@@ -3,7 +3,7 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { RuntimeContext } from './contexts';
-import { ShellTopBar } from './ShellTopBar';
+// import { ShellTopBar } from './ShellTopBar';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { FrameContainer } from './FrameContainer';
 import { ErrorFallback } from '../lib/error-fallback';
@@ -43,12 +43,18 @@ export const ActivityShell = (props: {
   // TODO: pass entity handles and APIs down, to parameterize namespace
   return (
     <>
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <MyCommandPalette parentElement=".activity-shell-parent" workspaceName={workspaceName} />
-      </ErrorBoundary>
-      <ShellTopBar savedSessionName={props.savedSessionName}>
+      <section className="shell-powerbar">
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          <MyCommandPalette parentElement=".activity-shell-parent" workspaceName={workspaceName} />
+        </ErrorBoundary>
+        <select disabled>
+          <option>floating</option>
+          <option disabled>tabbed</option>
+          <option disabled>grid</option>
+        </select>
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
-      </ShellTopBar>
+        <div style={{flex: 1}}></div>
+      </section>
       <div className="shell-backdrop" />
       {props.savedSessionName == workspace.spec.savedSessionName ? (
         <div className="shell-floating-layer" key={floatingLayerKey}>

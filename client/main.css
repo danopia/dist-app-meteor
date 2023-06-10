@@ -286,6 +286,9 @@ body.ReactModal__Body--open .ReactModal__Overlay {
   max-height: initial;
 }
 
+.react-command-palette {
+  display: flex;
+}
 .palette-suggestion {
   display: flex;
   align-items: center;
@@ -329,4 +332,43 @@ body.ReactModal__Body--open .ReactModal__Overlay {
 
 .chrome-category.Drawer {
   background: rgb(0, 149, 136);
+}
+
+
+.switcher-menu {
+  background-color: #eee;
+  color: #333;
+  border-right: 1px solid #ccc;
+}
+.switcher-menu select, .switcher-menu button {
+  background-color: #eee;
+  color: #333;
+  /* padding: 0 1em; */
+  border: 1px solid #ccc;
+  border-width: 1px;
+  border-radius: 0.3em;
+}
+.switcher-menu select:hover:not([disabled]), .switcher-menu button:hover:not([disabled]) {
+  background-color: #ddd;
+}
+.switcher-menu select[disabled], .switcher-menu button[disabled] {
+  color: #888;
+}
+@media (prefers-color-scheme: dark) {
+  .switcher-menu {
+    background-color: #333;
+    color: #eee;
+    border-right-color: #555;
+  }
+  .switcher-menu select, .switcher-menu button {
+    background-color: #333;
+    color: #eee;
+    border-color: #555;
+  }
+  .switcher-menu select:hover:not([disabled]), .switcher-menu button:hover:not([disabled]) {
+    background-color: #444;
+  }
+  .switcher-menu select[disabled], .switcher-menu button[disabled] {
+    color: #aaa;
+  }
 }

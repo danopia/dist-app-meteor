@@ -6,13 +6,9 @@ import { useBodyClass } from '../lib/use-body-class';
 import { ProfilesCollection } from '../db/profiles';
 import { useNavigate } from 'raviger';
 import { ActivityShell } from './ActivityShell';
-import { MyCommandPalette } from './CommandPalette';
 import { EntityEngine } from '../engine/EntityEngine';
 import { WorkspaceEntity } from '../entities/runtime';
 import { RuntimeContext } from './contexts';
-import { ErrorBoundary } from 'react-error-boundary';
-import { ErrorFallback } from '../lib/error-fallback';
-import { AppInstallationEntity } from '../entities/profile';
 import { launchNewIntent } from './logic/launch-app';
 import { marketUrl } from '../settings';
 import { remoteConns } from '../engine/EntityStorage';
@@ -257,7 +253,6 @@ export const ViewportSwitcher = (props: {
               padding: '0.5em',
               gap: '0.5em',
               listStyle: 'none',
-              borderRight: '1px solid gray',
               gridColumn: '1',
             }}>
             <li style={{
@@ -266,7 +261,6 @@ export const ViewportSwitcher = (props: {
                 height: '3em',
               }}>
               <button style={{
-                  border: '1px solid gray',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -295,11 +289,9 @@ export const ViewportSwitcher = (props: {
                   height: '3em',
                 }}>
                 <button style={{
-                    border: '1px solid gray',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    borderRadius: '0.2em',
                   }} onClick={() => {
                     navigate(`/profile/${profile._id}/workspace/${x.metadata.name}`);
                   }}>Shell</button>
@@ -311,11 +303,9 @@ export const ViewportSwitcher = (props: {
                 height: '3em',
               }}>
               <button style={{
-                  border: '1px solid gray',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  borderRadius: '0.2em',
                 }} onClick={async () => {
                   const workspaceName = `shell-${Math.random().toString(16).slice(2,6)}`;
                   await engine.insertEntity<WorkspaceEntity>({
@@ -333,13 +323,19 @@ export const ViewportSwitcher = (props: {
                 }}>+</button>
             </li>
 
+            <div style={{flex: 1}} />
+
             {connections.map((conn, connIdx) => (
               <li>
                 <div title={conn.label}>srv{connIdx}</div>
                 <div style={{fontSize: '0.6em'}}>{conn.status.status}</div>
-                <button style={{fontSize: '0.6em', padding: 0, display: 'block'}} disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
+                <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', width: '100%'}} type="button" disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
               </li>
             ))}
+
+            {user ? (<>
+              <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>
+            </>) : []}
 
           </ul>
         ) : []}

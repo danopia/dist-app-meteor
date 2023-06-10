@@ -106,7 +106,7 @@ export const MyCommandPalette = (props: {
     <CommandPalette
         closeOnSelect={true}
         commands={commands as Command[]}
-        trigger={null}
+        // trigger={null}
         reactModalParentSelector={props.parentElement ?? "#react-target"}
         resetInputOnOpen={true}
         options={{
