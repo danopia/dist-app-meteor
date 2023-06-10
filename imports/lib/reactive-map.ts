@@ -107,9 +107,9 @@ export class ReactiveMap<Tkey extends string, Tvalue> {
     }
   }
 
-  set(dict: Map<Tkey, Tvalue>): typeof this;
-  set(key: Tkey, value: Tvalue): typeof this;
-  set(): typeof this {
+  set(dict: Map<Tkey, Tvalue>): this;
+  set(key: Tkey, value: Tvalue): this;
+  set(): this {
     if (arguments.length === 1 && arguments[0] instanceof Map) {
       this._setMany.apply(this, arguments as any);
     } else if (arguments.length === 2) {

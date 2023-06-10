@@ -15,6 +15,7 @@ import { ErrorFallback } from '../lib/error-fallback';
 import { AppInstallationEntity } from '../entities/profile';
 import { launchNewIntent } from './logic/launch-app';
 import { marketUrl } from '../settings';
+import { remoteConns } from '../engine/EntityStorage';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -163,6 +164,22 @@ export const ViewportSwitcher = (props: {
       Meteor.callAsync('/v1alpha1/get user profile');
     }
   }, [user]);
+
+  const connections = useTracker(() => {
+    const allConns = [{
+      label: Meteor.absoluteUrl(),
+      reconnect: () => Meteor.reconnect(),
+      status: Meteor.status(),
+    }];
+    for (const [url, conn] of remoteConns.entries()) {
+      allConns.push({
+        label: url,
+        reconnect: () => conn.reconnect(),
+        status: conn.status(),
+      });
+    }
+    return allConns;
+  }, []);
 
   // if (!user) {
   //   // TODO: render the 'login' profile w/o sidebar switcher
@@ -315,6 +332,15 @@ export const ViewportSwitcher = (props: {
                   navigate(`/profile/${profile._id}/workspace/${workspaceName}`);
                 }}>+</button>
             </li>
+
+            {connections.map((conn, connIdx) => (
+              <li>
+                <div title={conn.label}>srv{connIdx}</div>
+                <div style={{fontSize: '0.6em'}}>{conn.status.status}</div>
+                <button style={{fontSize: '0.6em', padding: 0, display: 'block'}} disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
+              </li>
+            ))}
+
           </ul>
         ) : []}
         {content}

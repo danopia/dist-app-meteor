@@ -8,6 +8,7 @@ import { Meteor } from "meteor/meteor";
 import { Span } from "@opentelemetry/api";
 import { DDP } from "meteor/ddp";
 import { Tracker } from "meteor/tracker";
+import { ReactiveMap } from "../lib/reactive-map";
 
 export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
@@ -229,7 +230,7 @@ export class MongoEntityStorage implements EntityStorage {
 
 }
 
-const remoteConns = new Map<string, DDP.DDPStatic>();
+export const remoteConns = new ReactiveMap<string, DDP.DDPStatic>();
 const entitiesColls = new Map<DDP.DDPStatic, Mongo.Collection<EntityDoc>>();
 
 export class MeteorEntityStorage implements EntityStorage {
