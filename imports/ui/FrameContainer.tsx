@@ -1,5 +1,5 @@
 import { useTracker } from "meteor/react-meteor-data";
-import React, { ReactNode, useContext, useState } from "react";
+import React, { Fragment, ReactNode, useContext, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
@@ -12,6 +12,7 @@ import { LauncherWindow } from "./frames/LauncherWindow";
 import { IframeHost } from "./IframeHost";
 import { AppIcon } from "./widgets/AppIcon";
 import { WindowFrame } from "./widgets/WindowFrame";
+import { GridLoader } from "react-spinners";
 
 export const FrameContainer = (props: {
   zIndex?: number;
@@ -19,6 +20,7 @@ export const FrameContainer = (props: {
   workspaceName: string;
   className?: string | null;
   frame: FrameEntity;
+  frameMode: "windowing" | "tabbed";
   // sessionCatalog: SessionCatalog,
 }) => {
   const frameEntity = props.frame;
@@ -140,6 +142,50 @@ export const FrameContainer = (props: {
     }
   }
 
+  const titleSection = (
+    <section className="shell-powerbar">
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        {title}
+      </ErrorBoundary>
+      <nav className="window-buttons">
+        <button onClick={() => shell.runTaskCommand(frameEntity, null, {
+          type: 'delete-task',
+        })}>
+          <svg version="1.1" height="20" viewBox="0 0 10 10">
+            <path d="m3 2-1 0 0 1 2 2-2 2 0 1 1 0 2-2 2 2 1 0 0-1-2-2 2-2 0-1-1 0-2 2z"/>
+          </svg>
+        </button>
+      </nav>
+    </section>
+  );
+  const bodySection = (
+    <ErrorBoundary FallbackComponent={(props: FallbackProps) => (
+        <div className="activity-contents-wrap frame-loader">
+          <ErrorFallback {...props} />
+        </div>
+      )}>
+      {content}
+    </ErrorBoundary>
+  );
+
+  if (props.frameMode == 'tabbed') {
+    return (
+      <div className={'shell-window '+classNames.join(' ')}>
+        {titleSection}
+        {bodySection}
+        {(lifeCycle !== 'ready') ? (<Fragment>
+          <div className="activity-contents-wrap" style={{
+            backgroundColor: 'rgba(0,0,0,0.5)',
+          }} />
+          <GridLoader className="activity-contents-wrap frame-loader" style={{
+            alignSelf: 'center',
+            justifySelf: 'center',
+          }} />
+        </Fragment>) : []}
+      </div>
+    );
+  }
+
   // TODO: move WindowFrame invocation into ActivityShell?
   return (
     <WindowFrame
@@ -192,27 +238,8 @@ export const FrameContainer = (props: {
             state: 'toggle',
           })}>
       </button>
-      <section className="shell-powerbar">
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          {title}
-        </ErrorBoundary>
-        <nav className="window-buttons">
-          <button onClick={() => shell.runTaskCommand(frameEntity, null, {
-            type: 'delete-task',
-          })}>
-            <svg version="1.1" height="20" viewBox="0 0 10 10">
-              <path d="m3 2-1 0 0 1 2 2-2 2 0 1 1 0 2-2 2 2 1 0 0-1-2-2 2-2 0-1-1 0-2 2z"/>
-            </svg>
-          </button>
-        </nav>
-      </section>
-      <ErrorBoundary FallbackComponent={(props: FallbackProps) => (
-          <div className="activity-contents-wrap frame-loader">
-            <ErrorFallback {...props} />
-          </div>
-        )}>
-        {content}
-      </ErrorBoundary>
+      {titleSection}
+      {bodySection}
     </WindowFrame>
   );
 }

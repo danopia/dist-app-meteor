@@ -45,6 +45,14 @@ iframe.activity-contents-wrap {
   overflow: hidden;
   z-index: 10;
 }
+
+.shell-grid-layer {
+  grid-area: activity;
+  display: grid;
+  overflow: hidden;
+  z-index: 10;
+}
+
 .shell-backdrop {
   background: url("/bliss-optimized.svg") 50% 50%;
   background-size: cover;
@@ -56,16 +64,16 @@ iframe.activity-contents-wrap {
     background-image: url("/bliss-darkened-optimized.svg");
   }
 }
+
+
 .shell-window {
-  position: absolute;
-  /* left: 50px;
-  top: 50px;
-  width: 200px;
-  height: 150px; */
   overflow: hidden;
   background-color: #fff;
   /* border: 2px solid gray; */
   display: grid;
+}
+.shell-floating-layer .shell-window {
+  position: absolute;
   grid-template-areas: "rollupbtn powerbar" "handle activity";
   grid-template-rows: 2em 1fr;
   grid-template-columns: 1.5em 1fr;
@@ -73,6 +81,12 @@ iframe.activity-contents-wrap {
   min-width: 200px;
   min-height: 50px;
   box-shadow: 2px 4px 16px 2px rgba(0,0,0,0.3), 2px 4px 8px 2px rgba(0,0,0,0.2);
+}
+.shell-grid-layer .shell-window {
+  grid-area: 1 / 1;
+  grid-template-areas: "powerbar" "activity";
+  grid-template-rows: 2em 1fr;
+  grid-template-columns: 1fr;
 }
 .shell-window.topmost {
   box-shadow:

@@ -6,6 +6,7 @@ export interface WorkspaceEntity {
   kind: "Workspace";
   metadata: EntityMetadata;
   spec: {
+    frameMode?: 'windowing' | 'tabbed';
     windowOrder: Array<string>;
     savedSessionName?: string;
   };
