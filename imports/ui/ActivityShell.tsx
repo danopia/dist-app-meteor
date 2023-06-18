@@ -20,6 +20,10 @@ export const ActivityShell = (props: {
   const workspaceName = props.workspaceName ?? "main";
 
   const runtime = useContext(RuntimeContext);
+
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName)
+  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
+
   const workspace = useTracker(() => runtime
     .getEntity<WorkspaceEntity>(
       'runtime.dist.app/v1alpha1', 'Workspace',
@@ -45,10 +49,10 @@ export const ActivityShell = (props: {
 
   const frameMode = workspace.spec.frameMode ?? 'windowing';
 
-  const order = workspace.spec.windowOrder;
-  const orderedFrames = frames.slice(0).sort((a,b) => {
-    return order.indexOf(b.metadata.name) - order.indexOf(a.metadata.name);
-  })
+  // const order = workspace.spec.windowOrder;
+  // const orderedFrames = frames.slice(0).sort((a,b) => {
+  //   return order.indexOf(b.metadata.name) - order.indexOf(a.metadata.name);
+  // })
 
   // console.log({old:  workspace,  prop: props.savedSessionName})
 
@@ -68,10 +72,24 @@ export const ActivityShell = (props: {
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
         <div style={{flex: 1}}></div>
       </section>
-      <div className="shell-backdrop" />
+      {frameMode == 'windowing' ? (
+        <div className="shell-backdrop" />
+      ) : []}
       {props.savedSessionName == workspace.spec.savedSessionName ? (
         <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={floatingLayerKey}>
-          {orderedFrames.map(task => (
+          {frameMode == 'tabbed' ? (
+            <div className="shell-tabs">
+              <h4>Moin</h4>
+              {frames.map(frame => (
+                <button key={frame.metadata.name} type="button" onClick={() => {
+                  shell.runTaskCommand(frame, null, {
+                    type: 'bring-to-top',
+                  });
+                }}>{frame.metadata?.title ?? frame.metadata.name}</button>
+              ))}
+            </div>
+          ) : []}
+          {frames.map(task => (
             <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
               <FrameContainer
                   frame={task}
