@@ -14,6 +14,7 @@ import { trace } from "@opentelemetry/api";
 Meteor.methods({
 
   async '/v1alpha1/Entity/submit'(entity: unknown) {
+    this.unblock();
     check(entity, Match.ObjectIncluding({kind: String}));
     // TODO: wrap submissions in their own span by kind
     trace.getActiveSpan()?.setAttributes({
@@ -26,18 +27,21 @@ Meteor.methods({
   },
 
   async '/v1alpha1/Entity/insert'(catalogId: unknown, entity: unknown) {
+    this.unblock();
     check(catalogId, String);
     check(entity, Object);
     return await insertEntity(this.userId, catalogId, entity as ArbitraryEntity);
   },
 
   async '/v1alpha1/Entity/update'(catalogId: unknown, newEntity: unknown) {
+    this.unblock();
     check(catalogId, String);
     check(newEntity, Object);
     return await updateEntity(this.userId, catalogId, newEntity as ArbitraryEntity);
   },
 
   async '/v1alpha1/Entity/delete'(catalogId: unknown, apiVersion: unknown, kind: unknown, name: unknown) {
+    this.unblock();
     check(catalogId, String);
     check(apiVersion, String);
     check(kind, String);
@@ -53,6 +57,7 @@ Meteor.methods({
   },
 
   async 'poc-FetchRequestEntity'(req: FetchRequestEntity) {
+    this.unblock();
     check(req, Object);
     check(req.kind, String);
     return await fetchRequestEntity(req);

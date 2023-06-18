@@ -404,6 +404,7 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
         name: workspaceName,
         // uid: this.workspaceEntity.metadata.uid,
       }],
+      title: firstActivity.metadata.title,
     },
     spec: {
       placement: {
