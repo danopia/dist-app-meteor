@@ -55,13 +55,20 @@ iframe.activity-contents-wrap {
   grid-template-columns: 12em 1fr;
   /* gap: 1em; */
 }
+.shell-grid-layer .shell-tabs h4 {
+  margin: 1em 0.5em 0.2em;
+}
 .shell-grid-layer .shell-tabs {
   grid-area: tabs;
   display: flex;
   gap: 0.25em;
   flex-direction: column;
 }
-.shell-grid-layer .shell-tabs button {
+.shell-grid-layer .shell-tabs .one-tab {
+  display: flex;
+}
+.shell-grid-layer .shell-tabs button.main {
+  flex: 1;
   border: none;
   text-align: left;
   background-color: #eee;

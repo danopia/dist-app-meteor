@@ -22,7 +22,6 @@ export const ActivityShell = (props: {
   const runtime = useContext(RuntimeContext);
 
   const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName)
-  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
   const workspace = useTracker(() => runtime
     .getEntity<WorkspaceEntity>(
@@ -41,9 +40,13 @@ export const ActivityShell = (props: {
   // useBodyClass('shell-workspace-floating');
 
   if (!workspace) {
-    // throw new Error(`no workspace `+workspaceName);
     return (
       <div>BUG: no workspace {workspaceName}</div>
+    );
+  }
+  if (!shell) {
+    return (
+      <div>BUG: no shell ${props.workspaceName}</div>
     );
   }
 
@@ -79,13 +82,20 @@ export const ActivityShell = (props: {
         <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={floatingLayerKey}>
           {frameMode == 'tabbed' ? (
             <div className="shell-tabs">
-              <h4>Moin</h4>
+              <h4>Moin Moin</h4>
               {frames.map(frame => (
-                <button key={frame.metadata.name} type="button" onClick={() => {
-                  shell.runTaskCommand(frame, null, {
-                    type: 'bring-to-top',
-                  });
-                }}>{frame.metadata?.title ?? frame.metadata.name}</button>
+                <div className="one-tab">
+                  <button className="main" key={frame.metadata.name} type="button" onClick={() => {
+                    shell.runTaskCommand(frame, null, {
+                      type: 'bring-to-top',
+                    });
+                  }}>{frame.metadata?.title ?? frame.metadata.name}</button>
+                  <button className="action" key={frame.metadata.name} type="button" onClick={() => {
+                    shell.runTaskCommand(frame, null, {
+                      type: 'delete-task',
+                    });
+                  }}>x</button>
+                </div>
               ))}
             </div>
           ) : []}
