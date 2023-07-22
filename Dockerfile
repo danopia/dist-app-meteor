@@ -2,7 +2,7 @@
 # Example: https://github.com/disney/meteor-base/blob/main/example/default.dockerfile
 
 # The tag here should match the Meteor version of your app, per .meteor/release
-FROM geoffreybooth/meteor-base:2.11.0 AS build
+FROM geoffreybooth/meteor-base:2.12 AS build
 WORKDIR /opt/src
 
 COPY ./package*.json ./
