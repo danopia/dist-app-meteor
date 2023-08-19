@@ -95,7 +95,7 @@ export const FrameContainer = (props: {
 
       const {app, activity} = useTracker(() => {
         const appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', contentRaw.spec.installationNamespace, contentRaw.spec.installationName);
-        if (!appInstallation) throw new Error(`TODO: no appInstallation`);
+        if (!appInstallation) return {}; // throw new Error(`TODO: no appInstallation`);
         const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
 
         return {
