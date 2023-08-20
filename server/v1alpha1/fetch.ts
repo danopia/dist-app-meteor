@@ -1,6 +1,8 @@
 import { fetch, Headers } from 'meteor/fetch';
 import { FetchErrorEntity, FetchRequestEntity, FetchResponseEntity } from '/imports/entities/protocol';
 import { Log } from '/imports/lib/logging';
+import { Meteor } from 'meteor/meteor';
+import { settings } from '/imports/settings';
 
 export async function fetchRequestEntity(req: FetchRequestEntity): Promise<FetchResponseEntity | FetchErrorEntity> {
   Log.info({ message: 'poc-http-fetch', request: req });
@@ -44,8 +46,12 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
       headers: Array<[string,string]>;
       body?: string;
     }} = JSON.parse(req.spec.body);
-    if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
-      `This domain is not reachable for the current user`);
+
+    const userId = Meteor.userId();
+    if (!userId || !settings.adminUserIds?.includes(userId)) {
+      if (!spec.input.url.startsWith('https://da.gd/')) throw new Meteor.Error('http-sandbox',
+        `This domain is not reachable for the current user [id ${userId}]`);
+    }
 
     try {
       const resp = await fetch(spec.input.url, {

@@ -2,6 +2,8 @@ import { Meteor } from "meteor/meteor";
 
 export const settings: {
 
+  adminUserIds?: Array<string>;
+
   public: {
     marketUrl?: string;
   };
