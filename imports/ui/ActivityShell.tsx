@@ -68,9 +68,9 @@ export const ActivityShell = (props: {
         </ErrorBoundary>
         <select onChange={(evt) => runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', workspace.metadata.namespace, workspace.metadata.name, x => {
             x.spec.frameMode = evt.currentTarget.value as 'windowing' | 'tabbed';
-          })}>
-          <option selected={frameMode == 'windowing'} value="windowing">windowing</option>
-          <option selected={frameMode == 'tabbed'} value="tabbed">tabbed</option>
+          })} defaultValue={frameMode}>
+          <option value="windowing">windowing</option>
+          <option value="tabbed">tabbed</option>
         </select>
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
         <div style={{flex: 1}}></div>
@@ -84,13 +84,13 @@ export const ActivityShell = (props: {
             <div className="shell-tabs">
               <h4>Moin Moin</h4>
               {frames.map(frame => (
-                <div className="one-tab">
-                  <button className="main" key={frame.metadata.name} type="button" onClick={() => {
+                <div className="one-tab" key={frame.metadata.name}>
+                  <button className="main" type="button" onClick={() => {
                     shell.runTaskCommand(frame, null, {
                       type: 'bring-to-top',
                     });
                   }}>{frame.metadata?.title ?? frame.metadata.name}</button>
-                  <button className="action" key={frame.metadata.name} type="button" onClick={() => {
+                  <button className="action" type="button" onClick={() => {
                     shell.runTaskCommand(frame, null, {
                       type: 'delete-task',
                     });

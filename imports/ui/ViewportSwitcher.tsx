@@ -326,7 +326,7 @@ export const ViewportSwitcher = (props: {
             <div style={{flex: 1}} />
 
             {connections.map((conn, connIdx) => (
-              <li>
+              <li key={connIdx}>
                 <div title={conn.label}>srv{connIdx}</div>
                 <div style={{fontSize: '0.6em'}}>{conn.status.status}</div>
                 <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', width: '100%'}} type="button" disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
