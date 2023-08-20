@@ -68,7 +68,10 @@ export class ShellSession {
         if (!taskName) throw new Error('Unknown task name');
         this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
           if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
-          spaceSnap.spec.windowOrder.unshift(taskName);
+          spaceSnap.spec.windowOrder = [
+            taskName,
+            ...spaceSnap.spec.windowOrder.filter(x => x !== taskName),
+          ];
         });
         break;
       }
