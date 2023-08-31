@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import React, { useEffect, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 
 import { useBodyClass } from '../lib/use-body-class';
@@ -7,11 +7,13 @@ import { ProfilesCollection } from '../db/profiles';
 import { useNavigate } from 'raviger';
 import { ActivityShell } from './ActivityShell';
 import { EntityEngine } from '../engine/EntityEngine';
-import { WorkspaceEntity } from '../entities/runtime';
+import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { RuntimeContext } from './contexts';
 import { launchNewIntent } from './logic/launch-app';
 import { marketUrl } from '../settings';
 import { remoteConns } from '../engine/EntityStorage';
+
+import './ViewportSwitcher.css';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -239,38 +241,16 @@ export const ViewportSwitcher = (props: {
   return (
     <RuntimeContext.Provider value={engine}>
     {/* <RuntimeProvider profileId={profile._id} engine={engine}> */}
-      <div className="switcher-root" style={{
-          display: 'grid',
-          gridTemplateColumns: 'min-content 1fr',
-          width: '100vw',
-          height: '100vh',
-        }}>
+      <div className="switcher-root">
         {showSwitcher ? (
-          <ul className="switcher-menu" style={{
-              display: 'flex',
-              flexDirection: 'column',
-              margin: 0,
-              padding: '0.5em',
-              gap: '0.5em',
-              listStyle: 'none',
-              gridColumn: '1',
-            }}>
-            <li style={{
-                display: 'grid',
-                width: '3em',
-                height: '3em',
-              }}>
-              <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '50%',
+          <ul className="switcher-menu">
+            <li className="switcher-icon" style={{justifyItems: 'center'}}>
+              <button className="switcher-profile-photo" style={{
                   backgroundColor: 'gray',
                 }} />
             </li>
             <li style={{
                 display: 'grid',
-                width: '3em',
               }}>
               <select style={{
                   width: '100%',
@@ -282,12 +262,8 @@ export const ViewportSwitcher = (props: {
                 )) ?? []}
               </select>
             </li>
-            {workspaces.map(x => (
-              <li key={x.metadata.name} style={{
-                  display: 'grid',
-                  width: '3em',
-                  height: '3em',
-                }}>
+            {workspaces.map(x => (<>
+              <li key={x.metadata.name} className="switcher-icon">
                 <button style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -296,12 +272,12 @@ export const ViewportSwitcher = (props: {
                     navigate(`/profile/${profile._id}/workspace/${x.metadata.name}`);
                   }}>Shell</button>
               </li>
-            ))}
-            <li style={{
-                display: 'grid',
-                width: '3em',
-                height: '3em',
-              }}>
+              <WorkspaceContents key={x.metadata.name+"-contents"}
+                  workspaceName={x.metadata.name}
+                  profileId={profile._id}
+                />
+            </>))}
+            <li className="switcher-icon">
               <button style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -345,3 +321,42 @@ export const ViewportSwitcher = (props: {
   );
 
 };
+
+const WorkspaceContents = (props: {
+  workspaceName: string;
+  profileId: string;
+}) => {
+
+  const navigate = useNavigate();
+
+  const runtime = useContext(RuntimeContext);
+
+  // please let this techdebt die
+  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
+
+  const frames = useTracker(() => runtime
+    .listEntities<FrameEntity>(
+      'runtime.dist.app/v1alpha1', 'Frame',
+      'session',
+    )
+    .filter(x => x.metadata.ownerReferences?.some(y => y.name == props.workspaceName))
+  , [runtime, props.workspaceName]);
+
+  return (<>
+    {frames.map(frame => (
+      <div className="one-tab" key={frame.metadata.name}>
+        <button className="main" type="button" onClick={() => {
+          navigate(`/profile/${props.profileId}/workspace/${props.workspaceName}`);
+          shell?.runTaskCommand(frame, null, {
+            type: 'bring-to-top',
+          });
+        }}>{frame.metadata?.title ?? frame.metadata.name}</button>
+        <button className="action" type="button" onClick={() => {
+          shell?.runTaskCommand(frame, null, {
+            type: 'delete-task',
+          });
+        }}>x</button>
+      </div>
+    ))}
+  </>);
+}

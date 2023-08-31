@@ -80,25 +80,6 @@ export const ActivityShell = (props: {
       ) : []}
       {props.savedSessionName == workspace.spec.savedSessionName ? (
         <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={floatingLayerKey}>
-          {frameMode == 'tabbed' ? (
-            <div className="shell-tabs">
-              <h4>Moin Moin</h4>
-              {frames.map(frame => (
-                <div className="one-tab" key={frame.metadata.name}>
-                  <button className="main" type="button" onClick={() => {
-                    shell.runTaskCommand(frame, null, {
-                      type: 'bring-to-top',
-                    });
-                  }}>{frame.metadata?.title ?? frame.metadata.name}</button>
-                  <button className="action" type="button" onClick={() => {
-                    shell.runTaskCommand(frame, null, {
-                      type: 'delete-task',
-                    });
-                  }}>x</button>
-                </div>
-              ))}
-            </div>
-          ) : []}
           {frames.map(task => (
             <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
               <FrameContainer

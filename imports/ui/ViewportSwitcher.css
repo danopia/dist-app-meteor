@@ -1,0 +1,109 @@
+
+.switcher-menu {
+  background-color: #eee;
+  color: #333;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+.switcher-menu select, .switcher-menu button {
+  background-color: #eee;
+  color: #333;
+  /* padding: 0 1em; */
+  border: 1px solid #ccc;
+  border-width: 1px;
+  border-radius: 0.3em;
+  min-height: 2em;
+}
+.switcher-menu select:hover:not([disabled]), .switcher-menu button:hover:not([disabled]) {
+  background-color: #ddd;
+}
+.switcher-menu select[disabled], .switcher-menu button[disabled] {
+  color: #888;
+}
+@media (prefers-color-scheme: dark) {
+  .switcher-menu {
+    background-color: #333;
+    color: #eee;
+    border-right-color: #555;
+  }
+  .switcher-menu select, .switcher-menu button {
+    background-color: #333;
+    color: #eee;
+    border-color: #555;
+  }
+  .switcher-menu select:hover:not([disabled]), .switcher-menu button:hover:not([disabled]) {
+    background-color: #444;
+  }
+  .switcher-menu select[disabled], .switcher-menu button[disabled] {
+    color: #aaa;
+  }
+}
+
+
+
+
+
+.switcher-root {
+  display: grid;
+  grid-template-columns: 5em 1fr;
+  width: 100vw;
+  height: 100vh;
+}
+
+.switcher-menu {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0.5em;
+  gap: 0.5em;
+  list-style: none;
+  grid-column: 1;
+}
+
+.switcher-icon {
+  display: grid;
+}
+
+.switcher-icon .switcher-profile-photo {
+  aspect-ratio: 1;
+  display: flex;
+  /* align-items: center;
+  justify-content: center; */
+  width: 3em;
+  border-radius: 50%;
+}
+
+@media (min-width: 1024px) {
+  .switcher-root {
+    grid-template-columns: 10em 1fr;
+  }
+  .switcher-icon .switcher-profile-photo {
+    width: 5em;
+  }
+  .switcher-menu .one-tab button.main {
+    /* margin-right: 1em; */
+  }
+}
+@media (max-width: 1023px) {
+  .switcher-menu .one-tab button[class=action] {
+    display: none;
+  }
+}
+
+
+
+.switcher-menu .one-tab {
+  display: flex;
+}
+.switcher-menu .one-tab button.main {
+  flex: 1;
+  border: none;
+  text-align: left;
+  /* background-color: #eee; */
+  padding: 0.25em 0.5em;
+  border-radius: 0 8px 8px 0;
+
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
