@@ -270,7 +270,7 @@ export const ViewportSwitcher = (props: {
                     justifyContent: 'center',
                   }} onClick={() => {
                     navigate(`/profile/${profile._id}/workspace/${x.metadata.name}`);
-                  }}>Shell</button>
+                  }}>{x.metadata.title ?? 'Shell'}</button>
               </li>
               <WorkspaceContents key={x.metadata.name+"-contents"}
                   workspaceName={x.metadata.name}
