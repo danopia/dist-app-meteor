@@ -27,6 +27,8 @@ export interface CommandEntity {
       dataRef?: string;
       data?: string;
       flags?: Array<'new-task'>;
+      /** @deprecated @TODO not really sure what this will look like yet */
+      extras?: {};
     };
   } | {
     type: 'bring-to-top' | 'close-task' | 'delete-task';

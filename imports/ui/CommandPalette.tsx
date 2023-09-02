@@ -8,6 +8,7 @@ import { AppInstallationEntity } from '../entities/profile';
 import { CommandPaletteItem } from './CommandPaletteItem';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { CommandEntity, WorkspaceEntity } from '../entities/runtime';
+import { EntityHandle } from '../engine/EntityHandle';
 
 export interface PaletteCommand {
   id?: string | number;
@@ -22,7 +23,7 @@ function command() {}
 
 export const MyCommandPalette = (props: {
   parentElement?: string;
-  workspaceName: string;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
 }) => {
 
   const runtime = useContext(RuntimeContext);
@@ -103,11 +104,6 @@ export const MyCommandPalette = (props: {
     // },
   ];
 
-  const hWorkspace = useMemo(() => runtime
-    .getEntityHandle<WorkspaceEntity>(
-      'runtime.dist.app/v1alpha1', 'Workspace',
-      'session', props.workspaceName), [runtime]);
-
   return (
     <CommandPalette
         closeOnSelect={true}
@@ -121,7 +117,7 @@ export const MyCommandPalette = (props: {
         renderCommand={CommandPaletteItem}
         onSelect={(selected: Partial<PaletteCommand>) => {
           if (selected.intent) {
-            launchNewIntent(hWorkspace, selected.intent);
+            launchNewIntent(props.hWorkspace, selected.intent);
           }
         }}
       />

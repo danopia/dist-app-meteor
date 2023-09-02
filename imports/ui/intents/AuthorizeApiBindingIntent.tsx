@@ -10,16 +10,16 @@ import { EntityEngine } from '/imports/engine/EntityEngine';
 import { ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from '/imports/entities/manifest';
 import { ApiCredentialEntity, AppInstallationEntity } from '/imports/entities/profile';
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from '/imports/entities/runtime';
-import { ShellSession } from '/imports/runtime/ShellSession';
 import { RadioButtonList } from './RadioButtonList';
-import { deleteFrame } from '/imports/runtime/workspace-actions';
+import { deleteFrame, runTaskCommandForResult } from '/imports/runtime/workspace-actions';
+import { EntityHandle } from '/imports/engine/EntityHandle';
 
 export const AuthorizeApiBindingIntent = (props: {
-  runtime: EntityEngine,
+  runtime: EntityEngine;
   // apiBinding: ApiBindingEntity;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
   command: CommandEntity;
   cmdFrame: FrameEntity;
-  shell?: ShellSession | null;
 }) => {
   if (props.command.spec.type !== 'launch-intent') throw new Error(`not a launch-intent command`);
   const intent = props.command.spec.intent;
@@ -30,7 +30,7 @@ export const AuthorizeApiBindingIntent = (props: {
     pathname: "//:namespace/:api/:version/:kind/:name",
   }).exec(intent.contextRef);
   if (!match) throw new Error(`failed urlpattern on ${intent.contextRef}`);
-  const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
+  const {api, kind, name, namespace} = match.pathname.groups as Record<string,string>;
   // console.log({api, kind, name, namespace, version})
   if (api !== 'manifest.dist.app' || kind !== 'ApiBinding') throw new Error(`not an ApiBinding`);
 
@@ -145,9 +145,7 @@ export const AuthorizeApiBindingIntent = (props: {
               resultRef: `cap:${capId}`,
             };
           });
-        if (props.shell?.workspaceHandle) {
-          deleteFrame(props.shell?.workspaceHandle, props.cmdFrame.metadata.name);
-        }
+        await deleteFrame(props.hWorkspace, props.cmdFrame.metadata.name);
       })();
     }}>
       <h2 style={{margin: 0}}>Internet Access Request</h2>
@@ -198,7 +196,7 @@ export const AuthorizeApiBindingIntent = (props: {
                 options={[
                   {
                     id: 'browser',
-                    label: `Browser (${navigator.userAgentData.brands[0].brand})`,
+                    label: `Browser (${(navigator as any).userAgentData.brands[0].brand})`,
                     ...(entities.api.spec.crossOriginResourceSharing !== 'open' ? {
                       disabled: true,
                       message: 'URL disallows cross-origin requests',
@@ -226,8 +224,7 @@ export const AuthorizeApiBindingIntent = (props: {
                   newOption={{
                     label: 'Add new account...',
                     onActivate: async () => {
-                      if (!props.shell) throw new Error(`no shell in props`);
-                      const cmd = await props.shell.runTaskCommandForResult(props.cmdFrame, entities.activityTask, {
+                      const cmd = await runTaskCommandForResult(props.hWorkspace, props.cmdFrame, entities.activityTask, {
                         type: 'launch-intent',
                         intent: {
                           contextRef: `entity://${entities.api.metadata.namespace}/manifest.dist.app/v1alpha1/Api/${entities.api.metadata.name}`,

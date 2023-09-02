@@ -1,8 +1,5 @@
 import { context } from "@opentelemetry/api";
-import { Meteor } from "meteor/meteor";
-import { useTracker } from "meteor/react-meteor-data";
 import React, { ReactNode, useContext, useEffect } from "react";
-import GoogleButton from 'react-google-button';
 import "urlpattern-polyfill";
 import { AddWebAccountIntent } from "../intents/AddWebAccountIntent";
 import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent";
@@ -13,11 +10,12 @@ import { ActivityEntity, ApplicationEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { extractTraceAnnotations, LogicTracer } from "/imports/lib/tracing";
-import { ShellSession } from "/imports/runtime/ShellSession";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
 import { marketUrl } from "/imports/settings";
 import { RuntimeContext } from "/imports/ui/contexts";
 import { bringToTop, deleteFrame } from "/imports/runtime/workspace-actions";
+import { EntityHandle } from "/imports/engine/EntityHandle";
+import { AddPlatformAccountIntent } from "../intents/AddPlatformAccountIntent";
 
 type IntentWindowProps = {
   frame: FrameEntity;
@@ -25,7 +23,7 @@ type IntentWindowProps = {
   workspaceName: string;
   // cmdName: string;
   // intent: LaunchIntentEntity['spec'],
-  shell?: ShellSession | null;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
 };
 
@@ -59,7 +57,6 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   //     .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
 
   let children: ReactNode;
-  const user = useTracker(() => Meteor.user() ?? (Meteor.loggingIn() ? 'waiting' : false), []);
 
   if (props.command.spec.type != 'launch-intent') throw new Error(`TODO: other commands`);
   const { intent } = props.command.spec;
@@ -72,10 +69,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         <a href={intent.data} target="_blank" onClick={() => {
           // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-            'runtime.dist.app/v1alpha1', 'Workspace',
-            'session', props.workspaceName);
-          deleteFrame(hWorkspace, props.frame.metadata.name);
+          deleteFrame(props.hWorkspace, props.frame.metadata.name);
         }}>
           Open {intent.data}
         </a>
@@ -85,52 +79,20 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
   if (intent.action == 'app.dist.AuthorizeApiBinding' && intent.contextRef) {
     return (
-      <AuthorizeApiBindingIntent runtime={runtime} command={props.command} cmdFrame={props.frame} shell={props.shell} />
+      <AuthorizeApiBindingIntent runtime={runtime} command={props.command} cmdFrame={props.frame} hWorkspace={props.hWorkspace} />
     );
   }
 
   if (intent.action == 'app.dist.AddWebAccount' && intent.contextRef) {
     return (
-      <AddWebAccountIntent runtime={runtime} command={props.command} cmdFrame={props.frame} shell={props.shell} />
+      <AddWebAccountIntent runtime={runtime} command={props.command} cmdFrame={props.frame} hWorkspace={props.hWorkspace} />
     );
   }
 
-  //@ts-expect-error extras is untyped
-  if (intent.action == 'settings.AddAccount' && intent.extras.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
-
-    if (user) return (
-      <div className="activity-contents-wrap" style={{padding: '0 1em 2em'}}>
-        <h2>Add Platform Account</h2>
-        <p>You are already logged in to <strong>{new URL(Meteor.absoluteUrl()).origin}</strong>!</p>
-      </div>
-    );
-
-    const startLogin = (loginFunc: typeof Meteor.loginWithGoogle) => {
-      loginFunc({}, (err) => {
-        if (err) {
-          alert(err.message ?? err);
-        } else {
-          // TODO: this cleanup shall be done by deleteFrame
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-            'runtime.dist.app/v1alpha1', 'Workspace',
-            'session', props.workspaceName);
-          deleteFrame(hWorkspace, props.frame.metadata.name);
-
-          // navigate('/my/new-shell');
-        }
-      });
-    };
-
+  // @ts-expect-error extras is untyped
+  if (intent.action == 'settings.AddAccount' && intent.extras?.AccountTypes?.includes('v1alpha1.platform.dist.app')) {
     return (
-      <div className="activity-contents-wrap" style={{padding: '0 1em 2em'}}>
-        <h2>Add Platform Account</h2>
-        <p>By signing in, your data will be stored on <strong>{new URL(Meteor.absoluteUrl()).origin}</strong>. You will then be able to keep your sessions around for later.</p>
-        <div style={{ textAlign: 'center' }}>
-          <GoogleButton style={{ display:'inline-block' }} disabled={!!user}
-            onClick={() => startLogin(Meteor.loginWithGoogle)} />
-        </div>
-      </div>
+      <AddPlatformAccountIntent hWorkspace={props.hWorkspace} command={props.command} cmdFrame={props.frame} />
     );
   }
 
@@ -174,10 +136,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
           // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-            'runtime.dist.app/v1alpha1', 'Workspace',
-            'session', props.workspaceName);
-          deleteFrame(hWorkspace, props.frame.metadata.name);
+          deleteFrame(props.hWorkspace, props.frame.metadata.name);
         }
 
         return (<div className="activity-contents-wrap">Loading intent...</div>);
@@ -229,10 +188,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
             // TODO: this cleanup shall be done by deleteFrame
             runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-            const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-              'runtime.dist.app/v1alpha1', 'Workspace',
-              'session', props.workspaceName);
-            deleteFrame(hWorkspace, props.frame.metadata.name);
+            deleteFrame(props.hWorkspace, props.frame.metadata.name);
 
           }}>Install development version</button>
         </div>);
@@ -341,15 +297,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
+          const taskId = createTask(props.hWorkspace, runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
           // console.log('Created task', taskId);
 
           // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-            'runtime.dist.app/v1alpha1', 'Workspace',
-            'session', props.workspaceName);
-          deleteFrame(hWorkspace, props.frame.metadata.name);
+          deleteFrame(props.hWorkspace, props.frame.metadata.name);
 
           return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
@@ -367,15 +320,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
+          const taskId = createTask(props.hWorkspace, runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
           // console.log('Created task', taskId);
 
           // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-            'runtime.dist.app/v1alpha1', 'Workspace',
-            'session', props.workspaceName);
-          deleteFrame(hWorkspace, props.frame.metadata.name);
+          deleteFrame(props.hWorkspace, props.frame.metadata.name);
 
           return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
@@ -395,12 +345,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
 
 
-function createTask(runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
+function createTask(hWorkspace: EntityHandle<WorkspaceEntity>, runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
   const taskId = taskName; // Random.id();
   const actInstId = taskName; // Random.id();
 
   if (runtime.getEntity<ActivityTaskEntity>("runtime.dist.app/v1alpha1", 'ActivityTask', 'session', actInstId)) {
-    console.log(`BUG: double createTask`, actInstId);
+    console.log(`double createTask`, actInstId);
     return actInstId;
   }
 
@@ -458,9 +408,6 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
     },
   });
 
-  const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-    'runtime.dist.app/v1alpha1', 'Workspace',
-    'session', workspaceName);
   bringToTop(hWorkspace, taskId);
 
   return taskId;

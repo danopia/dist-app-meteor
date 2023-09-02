@@ -1,6 +1,6 @@
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ActivityShell } from '../ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
@@ -14,6 +14,7 @@ import { FrameSwitcher } from '../FrameSwitcher';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
+import { EntityHandle } from '/imports/engine/EntityHandle';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -80,24 +81,27 @@ export const LaunchPublicApp = (props: {
     return engine;
   }, [props.appListingName]);
 
+  // TODO: why does putting useRemoteNamespace before launchNewIntent block the intent?
+  const publicIndex = useMemo(() => engine
+    .useRemoteNamespace(marketUrl)
+  , [engine, marketUrl]);
+
   const hWorkspace = useMemo(() => engine
     .getEntityHandle<WorkspaceEntity>(
       'runtime.dist.app/v1alpha1', 'Workspace',
       'session', 'primary'), [engine]);
 
   // For debugging purposes, also open an Explorer:
+  const explorerSetup = useRef<typeof hWorkspace | null>(null);
   useEffect(() => {
+    if (explorerSetup.current == hWorkspace) return;
+    explorerSetup.current = hWorkspace;
     launchNewIntent(hWorkspace, {
       receiverRef: `internal://explorer`,
       action: 'app.dist.Main',
       category: 'app.dist.Launcher',
     }, 'default-explorer');
-  }, [hWorkspace]);
-
-  // TODO: why does putting useRemoteNamespace before launchNewIntent block the intent?
-  const publicIndex = useMemo(() => engine
-    .useRemoteNamespace(marketUrl)
-  , [engine, marketUrl]);
+  }, [hWorkspace, explorerSetup]);
 
   const appListing = useTracker(() => engine
     .getEntity<AppListingEntity>(
@@ -106,8 +110,12 @@ export const LaunchPublicApp = (props: {
   , [engine, publicIndex, props.appListingName]);
 
   // Effect: install and launch the app, once its AppListing is available
+  const appSetup = useRef<typeof hWorkspace | null>(null);
   useEffect(() => {
     if (!appListing) return;
+
+    if (appSetup.current == hWorkspace) return;
+    appSetup.current = hWorkspace;
 
     const appDataUrl = `ddp-catalog://${marketUrl.split('/')[2]}/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
     // appUri: `bundled:${encodeURIComponent('app:welcome')}`,
@@ -139,7 +147,7 @@ export const LaunchPublicApp = (props: {
       }, 'default-app');
     });
 
-  }, [engine, appListing]);
+  }, [appSetup, engine, appListing]);
 
   const workspace = useTracker(() => hWorkspace.get(), [hWorkspace]);
 
@@ -217,7 +225,7 @@ export const LaunchPublicApp = (props: {
               </select>
             </li> */}
               <FrameSwitcher
-                  workspaceName={workspace.metadata.name}
+                  hWorkspace={hWorkspace}
                 />
 
             <div style={{flex: 1}} />

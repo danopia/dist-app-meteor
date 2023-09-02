@@ -1,21 +1,20 @@
 import { OpenAPIV3 } from "openapi-types";
 import { parse } from "yaml";
+import { SpanKind } from "@opentelemetry/api";
 import "urlpattern-polyfill";
 
 import { EntityEngine } from "../engine/EntityEngine";
-import { ActivityEntity, ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from "../entities/manifest";
+import { ActivityEntity, ApiBindingEntity, ApiEntity } from "../entities/manifest";
 import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
-import { ActivityTaskEntity, CommandEntity, FrameEntity } from "../entities/runtime";
+import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
 import { serveSessionApi } from "./system-apis/session";
-import { ApiCredentialEntity } from "../entities/profile";
-import { stripIndent } from "common-tags";
 import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch-responses";
 import { LogicTracer } from "../lib/tracing";
-import { SpanKind } from "@opentelemetry/api";
 import { serveTelemetryApi } from "./system-apis/telemetry";
-import { ShellSession } from "./ShellSession";
+import { EntityHandle } from "../engine/EntityHandle";
+import { runTaskCommandForResult } from "./workspace-actions";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -40,7 +39,7 @@ export class FetchRpcHandler {
     public readonly runtime: EntityEngine,
     public readonly activityTask: ActivityTaskEntity,
     public readonly activity: ActivityEntity,
-    public readonly shell: ShellSession,
+    public readonly hWorkspace: EntityHandle<WorkspaceEntity>,
   ) {}
 
   async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
@@ -139,7 +138,7 @@ export class FetchRpcHandler {
 
     const frame = this.runtime.getEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.activityTask.metadata.namespace, this.activityTask.metadata.ownerReferences?.find(x => x.kind == 'Frame')?.name ?? '');
     if (!frame) throw new Error(`no frame, wweird!`);
-    const cmd = await this.shell.runTaskCommandForResult(frame, this.activityTask, {
+    const cmd = await runTaskCommandForResult(this.hWorkspace, frame, this.activityTask, {
       type: 'launch-intent',
       intent: {
         contextRef: `entity://${binding.metadata.namespace}/manifest.dist.app/v1alpha1/ApiBinding/${binding.metadata.name}`,

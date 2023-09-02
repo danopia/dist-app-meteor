@@ -3,17 +3,20 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
 import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
-import { ActivityTaskEntity, FrameEntity } from '../entities/runtime';
+import { ActivityTaskEntity, FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { useObjectURL } from '../lib/use-object-url';
 import * as protocol from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 import { compileIframeSrc } from '../lib/compile-iframe-src';
 import { Meteor } from 'meteor/meteor';
+import { EntityHandle } from '../engine/EntityHandle';
+import { runTaskCommand } from '../runtime/workspace-actions';
 
 // TODO: rename AppWindow or IframeWindow, put in frames/
 export const IframeHost = (props: {
   task: FrameEntity;
-  workspaceName: string;
+  // workspaceName: string;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
   activityTask: ActivityTaskEntity;
   activity: ActivityEntity;
   className?: string;
@@ -31,14 +34,13 @@ export const IframeHost = (props: {
   }, []);
 
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
-  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
-  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity, shell), [runtime, props.activityTask, props.activity, shell]);
+  const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity, props.hWorkspace), [runtime, props.activityTask, props.activity, props.hWorkspace]);
 
   const messageHost = useMemo(() => new MessageHost(), [contentWindow, implementation]);
   useEffect(() => {
     if (contentWindow) {
+      //@ts-expect-error TODO undocumented field
       if (props.activity.spec.implementation.disableCommunication) {
         props.onLifecycle('ready');
         console.log('WARN: Disabling communication with activity');
@@ -61,7 +63,7 @@ export const IframeHost = (props: {
     });
     messageHost.addRpcListener<protocol.LaunchIntentEntity>('LaunchIntent', ({rpc}) => {
       console.log('handling LaunchIntent', rpc);
-      shell.runTaskCommand(props.task, props.activityTask, {
+      runTaskCommand(props.hWorkspace, props.task, props.activityTask, {
         type: 'launch-intent',
         intent: rpc.spec,
       });

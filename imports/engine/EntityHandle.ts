@@ -34,13 +34,17 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
   async insertNeighbor<Tother extends ArbitraryEntity>(
     neighbor: Tother,
   ) {
-    return await this.engine.insertEntity<Tother>({
+    await this.engine.insertEntity<Tother>({
       ...neighbor,
       metadata: {
         ...neighbor.metadata,
         namespace: this.coords.namespace,
       },
     });
+
+    return this.getNeighborHandle<Tother>(
+      neighbor.apiVersion, neighbor.kind,
+      neighbor.metadata.name);
   }
 
   async mutate(mutationCb: (x: Tself) => void | Symbol) {

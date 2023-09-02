@@ -162,7 +162,14 @@ export const ViewportSwitcher = (props: {
 
   const workspaces = useTracker(() => engine
     .listEntities<WorkspaceEntity>(
-      'runtime.dist.app/v1alpha1', 'Workspace', 'session')) as WorkspaceEntity[];
+      'runtime.dist.app/v1alpha1', 'Workspace', 'session')
+    .map(entity => ({
+      entity,
+      hWorkspace: engine
+        .getEntityHandle<WorkspaceEntity>(
+          'runtime.dist.app/v1alpha1', 'Workspace',
+          'session', entity.metadata.name),
+    })), [engine]);
 
   useEffect(() => {
     if (!profile) {
@@ -240,7 +247,7 @@ export const ViewportSwitcher = (props: {
       </div>
     );
   } else if (workspaces.length >= 1) {
-    navigate(`/profile/${profile._id}/workspace/${workspaces[0].metadata.name}`);
+    navigate(`/profile/${profile._id}/workspace/${workspaces[0].entity.metadata.name}`);
   }
 
   //     meteorCallAsync('/v1alpha1/get user profile').then(x => {
@@ -270,17 +277,17 @@ export const ViewportSwitcher = (props: {
               </select>
             </li>
             {workspaces.map(x => (<>
-              <li key={x.metadata.name} className="switcher-icon">
+              <li key={x.entity.metadata.name} className="switcher-icon">
                 <button style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }} onClick={() => {
-                    navigate(`/profile/${profile._id}/workspace/${x.metadata.name}`);
-                  }}>{x.metadata.title ?? 'Shell'}</button>
+                    navigate(`/profile/${profile._id}/workspace/${x.entity.metadata.name}`);
+                  }}>{x.entity.metadata.title ?? 'Shell'}</button>
               </li>
-              <FrameSwitcher key={x.metadata.name+"-contents"}
-                  workspaceName={x.metadata.name}
+              <FrameSwitcher key={x.entity.metadata.name+"-contents"}
+                  hWorkspace={x.hWorkspace}
                   profileId={profile._id}
                 />
             </>))}

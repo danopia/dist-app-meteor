@@ -1,9 +1,9 @@
 import { useTracker } from "meteor/react-meteor-data";
-import React, { Fragment, ReactNode, useContext, useState } from "react";
+import React, { Fragment, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { ErrorBoundary, FallbackProps } from "react-error-boundary";
 import { ActivityEntity, ApplicationEntity } from "../entities/manifest";
 import { AppInstallationEntity } from "../entities/profile";
-import { FrameEntity, ActivityTaskEntity, CommandEntity } from "../entities/runtime";
+import { FrameEntity, ActivityTaskEntity, CommandEntity, WorkspaceEntity } from "../entities/runtime";
 import { ErrorFallback } from "../lib/error-fallback";
 import { RuntimeContext } from "./contexts";
 import { ExplorerWindow } from "./frames/ExplorerWindow";
@@ -13,21 +13,21 @@ import { IframeHost } from "./IframeHost";
 import { AppIcon } from "./widgets/AppIcon";
 import { WindowFrame } from "./widgets/WindowFrame";
 import { GridLoader } from "react-spinners";
+import { EntityHandle } from "../engine/EntityHandle";
+import { runTaskCommand } from "../runtime/workspace-actions";
 
 export const FrameContainer = (props: {
   zIndex?: number;
-  sessionNamespace: string;
   workspaceName: string;
   className?: string | null;
   frame: FrameEntity;
   frameMode: "windowing" | "tabbed";
+  hWorkspace: EntityHandle<WorkspaceEntity>;
   // sessionCatalog: SessionCatalog,
 }) => {
   const frameEntity = props.frame;
 
   const runtime = useContext(RuntimeContext);
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName)
-  if (!shell) throw new Error(`no shell ${props.workspaceName}`);
 
   // const frameEntity = useTracker(() => runtime.getEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.sessionNamespace, props.frameName));
   // if (!frameEntity) throw new Error(`No Frame entity`);
@@ -38,8 +38,8 @@ export const FrameContainer = (props: {
     if (ref == 'internal://explorer') return {kind: 'Explorer' as const};
     const [_, kind, name] = ref.split('/');
     if (kind !== 'ActivityTask' && kind !== 'Command') throw new Error(`TODO: other contentRefs (${frameEntity.spec.contentRef})`);
-    return runtime.getEntity<ActivityTaskEntity|CommandEntity>('runtime.dist.app/v1alpha1', kind, props.sessionNamespace, name);
-  });
+    return props.hWorkspace.getNeighborHandle<ActivityTaskEntity|CommandEntity>('runtime.dist.app/v1alpha1', kind, name).get();
+  }, [frameEntity, props.hWorkspace]);
 
   const [lifeCycle, setLifecycle] = useState<'loading' | 'connecting' | 'ready' | 'finished'>('loading');
 
@@ -84,14 +84,15 @@ export const FrameContainer = (props: {
           </div>
         );
       }
+      // content = useMemo(() => (
       content = (
-        <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} shell={shell} onLifecycle={setLifecycle} />
+        <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} hWorkspace={props.hWorkspace} onLifecycle={setLifecycle} />
       );
+      // ), [frameEntity, contentRaw, props.workspaceName, props.hWorkspace, setLifecycle]);
       break;
     }
 
     case "ActivityTask": {
-      const runtime = useContext(RuntimeContext);
 
       const {app, activity} = useTracker(() => {
         const appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', contentRaw.spec.installationNamespace, contentRaw.spec.installationName);
@@ -121,7 +122,7 @@ export const FrameContainer = (props: {
 
         switch (activity.spec.implementation.type) {
           case 'iframe': content = (
-            <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} workspaceName={props.workspaceName} onLifecycle={setLifecycle} />
+            <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} hWorkspace={props.hWorkspace} onLifecycle={setLifecycle} />
           ); break;
           default: content = (
             <div style={{gridArea: 'activity'}}>
@@ -148,7 +149,7 @@ export const FrameContainer = (props: {
         {title}
       </ErrorBoundary>
       <nav className="window-buttons">
-        <button onClick={() => shell.runTaskCommand(frameEntity, null, {
+        <button onClick={() => runTaskCommand(props.hWorkspace, frameEntity, null, {
           type: 'delete-task',
         })}>
           <svg version="1.1" height="20" viewBox="0 0 10 10">
@@ -199,7 +200,7 @@ export const FrameContainer = (props: {
         showLoader={lifeCycle !== 'ready'}
         isRolledUp={frameEntity.spec.placement.rolledWindow}
         onInteraction={() => {
-          shell.runTaskCommand(frameEntity, null, {
+          runTaskCommand(props.hWorkspace, frameEntity, null, {
             type: 'bring-to-top',
           });
         }}
@@ -210,12 +211,16 @@ export const FrameContainer = (props: {
               Math.floor(placement.floating.height ?? -1) == Math.floor(newSize.height)) {
             return;
           }
-          runtime.mutateEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', frameEntity.metadata.namespace, frameEntity.metadata.name, x => {
-            x.spec.placement.floating.width = newSize.width;
-            if (!x.spec.placement.rolledWindow) {
-              x.spec.placement.floating.height = newSize.height;
-            }
-          });
+          props.hWorkspace
+            .getNeighborHandle<FrameEntity>(
+              'runtime.dist.app/v1alpha1', 'Frame',
+              frameEntity.metadata.name)
+            .mutate(x => {
+              x.spec.placement.floating.width = newSize.width;
+              if (!x.spec.placement.rolledWindow) {
+                x.spec.placement.floating.height = newSize.height;
+              }
+            });
           // shell.runTaskCommand(frameEntity, null, {
           //   type: 'resize-window',
           //   xAxis: newSize.width,
@@ -225,7 +230,7 @@ export const FrameContainer = (props: {
         onMoved={newPos => {
           const { placement } = frameEntity.spec;
           if (placement.current !== 'floating') return;
-          shell.runTaskCommand(frameEntity, null, {
+          runTaskCommand(props.hWorkspace, frameEntity, null, {
             type: 'move-window',
             xAxis: newPos.left,
             yAxis: newPos.top,
@@ -233,7 +238,7 @@ export const FrameContainer = (props: {
         }}
       >
       <button className="window-rollup-toggle"
-          onClick={() => shell.runTaskCommand(frameEntity, null, {
+          onClick={() => runTaskCommand(props.hWorkspace, frameEntity, null, {
             type: 'set-task-rollup',
             state: 'toggle',
           })}>

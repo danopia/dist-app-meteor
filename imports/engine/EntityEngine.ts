@@ -4,7 +4,6 @@ import { Log } from "../lib/logging";
 import { ReactiveMap } from "../lib/reactive-map";
 import { LogicTracer } from "../lib/tracing";
 // import { AsyncCache, AsyncKeyedCache } from "../runtime/async-cache";
-import { ShellSession } from "../runtime/ShellSession";
 import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { LayeredNamespace } from "./next-gen";
 import { EntityHandle } from "./EntityHandle";
@@ -21,42 +20,12 @@ const tracer = new LogicTracer({
   requireParent: true,
 });
 
-function loadFunc(this: EntityEngine, input: ArbitraryEntity, key: string) {
-  if (input.apiVersion == 'runtime.dist.app/v1alpha1') {
-    // if (input.kind == 'ForeignNamespace') {
-    //   // return new
-    // }
-    if (input.kind == 'Workspace') {
-      return new ShellSession(this, input.metadata.namespace ?? 'bug', input.metadata.name);
-    }
-    if (input.kind == 'Activity') {
-      throw new Error(`TODO: activity class`)
-    }
-  }
-  throw new Error('TODO: loadFunc for '+key);
-}
-
 export class EntityEngine {
   constructor(
     // primaryCatalog
   ) { }
 
   namespaces = new ReactiveMap<string, LayeredNamespace>();
-  loadedMap = new Map<string, ShellSession>();
-  // loader = new AsyncKeyedCache<ArbitraryEntity, string, | ShellSession>({
-  //   keyFunc: x => [x.metadata.namespace, x.apiVersion, x.kind, x.metadata.name].join('_'),
-  //   loadFunc: async (input, key) => {
-  //     if (input.apiVersion == 'runtime.dist.app/v1alpha1') {
-  //       if (input.kind == 'ForeignNamespace') {
-  //         // return new
-  //       }
-  //       if (input.kind == 'Workspace') {
-  //         return new ShellSession(this, input.metadata.namespace ?? 'bug', input.metadata.name);
-  //       }
-  //     }
-  //     throw new Error('TODO: loadFunc for '+key);
-  //   },
-  // })
 
   addNamespace(opts: {
     name: string;
@@ -154,7 +123,12 @@ export class EntityEngine {
         'distapp.entity.namespace': entity.metadata.namespace,
         'distapp.entity.name': entity.metadata.name,
       },
-    }, async () => await layer?.impl.insertEntity<T>(entity));
+    }, async () => {
+      await layer?.impl.insertEntity<T>(entity);
+      return this.getEntityHandle<T>(
+        entity.apiVersion, entity.kind,
+        entity.metadata.namespace ?? 'default', entity.metadata.name);
+    });
   }
 
   listEntities<T extends ArbitraryEntity>(
@@ -218,25 +192,6 @@ export class EntityEngine {
       apiVersion, apiKind,
       namespace, name,
     });
-  }
-
-  /** @deprecated Use getEntityHandle and action functions instead. */
-  loadEntity<T extends ArbitraryEntity>(
-    apiVersion: T["apiVersion"],
-    kind: T["kind"],
-    namespace: string | undefined,
-    name: string
-  ) {
-    const key = [namespace, apiVersion, kind, name].join('_');
-    let exists = this.loadedMap.get(key);
-    if (!exists) {
-      const entity = this.getEntity(apiVersion, kind, namespace, name);
-      if (!entity) return null;
-      exists = loadFunc.call(this, entity, key);
-      this.loadedMap.set(key, exists);
-    }
-    return exists;
-    // return await this.loader.get(entity);
   }
 
   async updateEntity<T extends ArbitraryEntity>(newEntity: T) {

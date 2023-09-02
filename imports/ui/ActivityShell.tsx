@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useMemo, useState } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import { ErrorBoundary } from 'react-error-boundary';
 
@@ -21,13 +21,13 @@ export const ActivityShell = (props: {
 
   const runtime = useContext(RuntimeContext);
 
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', workspaceName)
-
-  const workspace = useTracker(() => runtime
-    .getEntity<WorkspaceEntity>(
+  const hWorkspace = useMemo(() => runtime
+    .getEntityHandle<WorkspaceEntity>(
       'runtime.dist.app/v1alpha1', 'Workspace',
-      'session', workspaceName,
-    ), [runtime, workspaceName]);
+      'session', workspaceName)
+  , [runtime, workspaceName]);
+
+  const workspace = useTracker(() => hWorkspace.get(), [hWorkspace]);
   const frames = useTracker(() => runtime
     .listEntities<FrameEntity>(
       'runtime.dist.app/v1alpha1', 'Frame',
@@ -42,11 +42,6 @@ export const ActivityShell = (props: {
   if (!workspace) {
     return (
       <div>BUG: no workspace {workspaceName}</div>
-    );
-  }
-  if (!shell) {
-    return (
-      <div>BUG: no shell ${props.workspaceName}</div>
     );
   }
 
@@ -64,7 +59,7 @@ export const ActivityShell = (props: {
     <>
       <section className="shell-powerbar">
         <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <MyCommandPalette parentElement=".activity-shell-parent" workspaceName={workspaceName} />
+          <MyCommandPalette parentElement=".activity-shell-parent" hWorkspace={hWorkspace} />
         </ErrorBoundary>
         <select onChange={(evt) => runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', workspace.metadata.namespace, workspace.metadata.name, x => {
             x.spec.frameMode = evt.currentTarget.value as 'windowing' | 'tabbed';
@@ -83,10 +78,10 @@ export const ActivityShell = (props: {
           {frames.map(task => (
             <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
               <FrameContainer
+                  hWorkspace={hWorkspace}
                   frame={task}
                   zIndex={10+workspace.spec.windowOrder.length-workspace.spec.windowOrder.indexOf(task.metadata.name)}
                   className={workspace.spec.windowOrder.indexOf(task.metadata.name) == 0 ? 'topmost' : null} workspaceName={workspaceName}
-                  sessionNamespace={"session"}
                   frameMode={frameMode}
                 />
             </ErrorBoundary>

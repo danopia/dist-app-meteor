@@ -1,25 +1,23 @@
 import './access-request.css';
 
-import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import { OpenAPIV3 } from 'openapi-types';
 import React, { useMemo, useState } from 'react';
 import { parse } from 'yaml';
-import { AppIcon } from '../widgets/AppIcon';
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from '/imports/entities/manifest';
-import { ApiCredentialEntity, AppInstallationEntity } from '/imports/entities/profile';
-import { ActivityTaskEntity, CommandEntity, FrameEntity } from '/imports/entities/runtime';
-import { ShellSession } from '/imports/runtime/ShellSession';
+import { ApiEntity, WebAccountTypeEntity } from '/imports/entities/manifest';
+import { ApiCredentialEntity } from '/imports/entities/profile';
+import { CommandEntity, FrameEntity, WorkspaceEntity } from '/imports/entities/runtime';
 import { RadioButtonList } from './RadioButtonList';
 import { deleteFrame } from '/imports/runtime/workspace-actions';
+import { EntityHandle } from '/imports/engine/EntityHandle';
 
 export const AddWebAccountIntent = (props: {
   runtime: EntityEngine,
   // apiBinding: ApiBindingEntity;
   command: CommandEntity;
   cmdFrame: FrameEntity;
-  shell?: ShellSession | null;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
 }) => {
   if (props.command.spec.type !== 'launch-intent') throw new Error(`not a launch-intent command`);
   const intent = props.command.spec.intent;
@@ -30,7 +28,7 @@ export const AddWebAccountIntent = (props: {
     pathname: "//:namespace/:api/:version/:kind/:name",
   }).exec(intent.contextRef);
   if (!match) throw new Error(`failed urlpattern on ${intent.contextRef}`);
-  const {api, kind, name, namespace, version} = match.pathname.groups as Record<string,string>;
+  const {api, kind, name, namespace} = match.pathname.groups as Record<string,string>;
   // console.log({api, kind, name, namespace, version})
   if (api !== 'manifest.dist.app' || kind !== 'Api') throw new Error(`not an Api`);
 
@@ -58,7 +56,7 @@ export const AddWebAccountIntent = (props: {
   }, [entities.api]);
 
   // const [serverUrl, setServerUrl] = useState('');
-  const [customUrl, setCustomUrl] = useState('');
+  // const [customUrl, setCustomUrl] = useState('');
   // const [deviceRef, setDeviceRef] = useState('');
   // const [credentialRef, setCredentialRef] = useState('');
   const [securityScheme, setSecurityScheme] = useState('');
@@ -147,9 +145,7 @@ export const AddWebAccountIntent = (props: {
               resultRef: `credential:${credential.metadata.name}`,
             };
           });
-        if (props.shell?.workspaceHandle) {
-          deleteFrame(props.shell?.workspaceHandle, props.cmdFrame.metadata.name);
-        }
+        deleteFrame(props.hWorkspace, props.cmdFrame.metadata.name);
       })();
     }}>
       <h2 style={{margin: 0}}>Add Web Account</h2>
