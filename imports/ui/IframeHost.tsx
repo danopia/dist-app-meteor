@@ -25,7 +25,6 @@ export const IframeHost = (props: {
   const { implementation } = props.activity.spec;
   if (implementation.type != 'iframe') throw new Error(`TODO: non-iframe activities`);
 
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [contentWindow, setContentWindow] = useState<Window | null>(null);
   const [iframeKey, setIframeKey] = useState(() => Math.random());
 
@@ -105,7 +104,7 @@ export const IframeHost = (props: {
     const parsed = new URL(implementation.source.url);
     if (parsed.protocol !== 'https:') throw new Error(`Only HTTPS allowed`);
     return (
-      <iframe ref={iframeRef} key={iframeKey}
+      <iframe key={iframeKey}
           className={props.className}
           src={implementation.source.url}
           sandbox={implementation.sandboxing?.join(' ') ?? ""}
@@ -126,7 +125,7 @@ export const IframeHost = (props: {
     <div className={props.className}></div>
   );
   return (
-    <iframe ref={iframeRef} key={iframeKey}
+    <iframe key={iframeKey}
         className={props.className}
         src={frameUrl.objectURL}
         sandbox={implementation.sandboxing?.join(' ') ?? ""}

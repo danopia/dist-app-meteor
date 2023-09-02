@@ -200,49 +200,56 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   }
 
   if (intent.receiverRef?.startsWith('internal://')) {
+
+    if (runtime.getEntity<FrameEntity>("runtime.dist.app/v1alpha1", 'Frame', 'session', props.command.metadata.name+'-333')) {
+      console.log(`double createTask`, props.command.metadata.name+'-333');
+      // return actInstId;
+      return (
+        <div>TODO 234332</div>
+      );
+    }
+
     const frameName = props.command.metadata.name+'-333';
-    (async () => {
-      runtime.insertEntity<FrameEntity>({
-        apiVersion: 'runtime.dist.app/v1alpha1',
-        kind: 'Frame',
-        metadata: {
-          name: frameName,
-          title: `${intent.receiverRef?.split('://')[1]}`,
-          namespace: 'session',
-          ownerReferences: [{
-            apiVersion: 'runtime.dist.app/v1alpha1',
-            kind: 'Workspace',
-            name: props.workspaceName,
-          }],
-        },
-        spec: {
-          contentRef: intent.receiverRef!,
-          placement: {
-            current: 'floating',
-            floating: {
-              left: 15,
-              top: 15,
-              width: 500,
-              height: 300,
-            },
-            grid: {
-              area: 'fullscreen',
-            },
-            rolledWindow: false,
+    runtime.insertEntity<FrameEntity>({
+      apiVersion: 'runtime.dist.app/v1alpha1',
+      kind: 'Frame',
+      metadata: {
+        name: frameName,
+        title: `${intent.receiverRef?.split('://')[1]}`,
+        namespace: 'session',
+        ownerReferences: [{
+          apiVersion: 'runtime.dist.app/v1alpha1',
+          kind: 'Workspace',
+          name: props.workspaceName,
+        }],
+      },
+      spec: {
+        contentRef: intent.receiverRef!,
+        placement: {
+          current: 'floating',
+          floating: {
+            left: 15,
+            top: 15,
+            width: 500,
+            height: 300,
           },
+          grid: {
+            area: 'fullscreen',
+          },
+          rolledWindow: false,
         },
-      });
+      },
+    });
 
-      const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
-        'runtime.dist.app/v1alpha1', 'Workspace',
-        'session', props.workspaceName);
-      bringToTop(hWorkspace, frameName);
+    bringToTop(props.hWorkspace, frameName);
 
-      // TODO: this cleanup shall be done by deleteFrame
-      runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-      deleteFrame(hWorkspace, props.frame.metadata.name);
-    })();
-    return;
+    // TODO: this cleanup shall be done by deleteFrame
+    runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+    deleteFrame(props.hWorkspace, props.frame.metadata.name);
+
+    return (
+      <div>TODO 43i5435</div>
+    );
   }
 
   if (!children && typeof intent.receiverRef == 'string') {
@@ -280,6 +287,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         baseUrl = `entity://${appNamespace}/manifest.dist.app/v1alpha1/`;
         // throw {stack: JSON.stringify({appInstallation, intent}, null, 2)};
       }
+    }
+
+    if (baseUrl == 'entity://' && !intent.receiverRef.startsWith('entity://')) {
+      return (
+        <div>BUG: 234iogjs</div>
+      );
     }
 
     const receiverUrl = new URL(intent.receiverRef, baseUrl);

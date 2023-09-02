@@ -100,9 +100,13 @@ export class MessageHost {
 // Listen for global messages in case an existing Window wants to re-establish comms
 window.addEventListener('message', evt => {
   if (!evt.source) return;
-  const host = WindowMap.get(evt.source);
-  if (!host) return;
-
   if (evt.data.protocol !== 'protocol.dist.app/v1alpha1') return;
-  host.rebindWindow(evt.source as Window);
+
+  const host = WindowMap.get(evt.source);
+  if (host) {
+    console.log('refusing rebind for because it breaks things');
+    // host.rebindWindow(evt.source as Window);
+  } else {
+    console.log('refusing rebind for missing WindowMap');
+  }
 });
