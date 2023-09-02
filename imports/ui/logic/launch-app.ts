@@ -1,11 +1,17 @@
 import { Random } from "meteor/random";
 import { EntityEngine } from "/imports/engine/EntityEngine";
-import { CommandEntity, FrameEntity } from "/imports/entities/runtime";
+import { CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { injectTraceAnnotations } from "/imports/lib/tracing";
 
-export function launchNewIntent(runtime: EntityEngine, workspaceName: string, intent: (CommandEntity['spec'] & {type: 'launch-intent'})['intent']) {
-  const commandName = Random.id();
-  runtime.insertEntity<CommandEntity>({
+export async function launchNewIntent(
+  runtime: EntityEngine,
+  workspaceName: string,
+  intent: (CommandEntity['spec'] & {type: 'launch-intent'})['intent'],
+  fixedCommandName?: string,
+) {
+  const commandName = fixedCommandName ?? Random.id();
+
+  await runtime.insertEntity<CommandEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
     kind: 'Command',
     metadata: {
@@ -23,7 +29,8 @@ export function launchNewIntent(runtime: EntityEngine, workspaceName: string, in
       intent,
     },
   });
-  runtime.insertEntity<FrameEntity>({
+
+  await runtime.insertEntity<FrameEntity>({
     apiVersion: 'runtime.dist.app/v1alpha1',
     kind: 'Frame',
     metadata: {
@@ -50,5 +57,11 @@ export function launchNewIntent(runtime: EntityEngine, workspaceName: string, in
       },
     },
   });
-  // throw new Error(`TODO: launch app ${appInstall.metadata.name}`);
+
+  await runtime.mutateEntity<WorkspaceEntity>(
+    'runtime.dist.app/v1alpha1', 'Workspace',
+    'session', workspaceName,
+    workspace => {
+      workspace.spec.windowOrder.unshift(commandName);
+    });
 };

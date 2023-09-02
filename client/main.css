@@ -79,7 +79,7 @@ iframe.activity-contents-wrap {
 @media (max-width: 800px) {
   /* TODO: proper mobile display */
   .shell-grid-layer {
-    grid-template-columns: 0 1fr;
+    grid-template-columns: /*0*/ 1fr;
   }
   /* .shell-grid-layer .shell-tabs {
     display: none;

@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import React, { useContext, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 
 import { useBodyClass } from '../lib/use-body-class';
@@ -7,11 +7,12 @@ import { ProfilesCollection } from '../db/profiles';
 import { useNavigate } from 'raviger';
 import { ActivityShell } from './ActivityShell';
 import { EntityEngine } from '../engine/EntityEngine';
-import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
+import { WorkspaceEntity } from '../entities/runtime';
 import { RuntimeContext } from './contexts';
 import { launchNewIntent } from './logic/launch-app';
 import { marketUrl } from '../settings';
 import { remoteConns } from '../engine/EntityStorage';
+import { FrameSwitcher } from './FrameSwitcher';
 
 import './ViewportSwitcher.css';
 
@@ -272,7 +273,7 @@ export const ViewportSwitcher = (props: {
                     navigate(`/profile/${profile._id}/workspace/${x.metadata.name}`);
                   }}>{x.metadata.title ?? 'Shell'}</button>
               </li>
-              <WorkspaceContents key={x.metadata.name+"-contents"}
+              <FrameSwitcher key={x.metadata.name+"-contents"}
                   workspaceName={x.metadata.name}
                   profileId={profile._id}
                 />
@@ -321,42 +322,3 @@ export const ViewportSwitcher = (props: {
   );
 
 };
-
-const WorkspaceContents = (props: {
-  workspaceName: string;
-  profileId: string;
-}) => {
-
-  const navigate = useNavigate();
-
-  const runtime = useContext(RuntimeContext);
-
-  // please let this techdebt die
-  const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
-
-  const frames = useTracker(() => runtime
-    .listEntities<FrameEntity>(
-      'runtime.dist.app/v1alpha1', 'Frame',
-      'session',
-    )
-    .filter(x => x.metadata.ownerReferences?.some(y => y.name == props.workspaceName))
-  , [runtime, props.workspaceName]);
-
-  return (<>
-    {frames.map(frame => (
-      <div className="one-tab" key={frame.metadata.name}>
-        <button className="main" type="button" onClick={() => {
-          navigate(`/profile/${props.profileId}/workspace/${props.workspaceName}`);
-          shell?.runTaskCommand(frame, null, {
-            type: 'bring-to-top',
-          });
-        }}>{frame.metadata?.title ?? frame.metadata.name}</button>
-        <button className="action" type="button" onClick={() => {
-          shell?.runTaskCommand(frame, null, {
-            type: 'delete-task',
-          });
-        }}>x</button>
-      </div>
-    ))}
-  </>);
-}

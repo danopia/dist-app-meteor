@@ -1,13 +1,11 @@
 import React from 'react';
-import { useRedirect, useRoutes } from 'raviger';
+import { useRoutes } from 'raviger';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useSubscribe } from 'meteor/react-meteor-data';
 
 import { ActivityShell } from './ActivityShell';
-import { RuntimeProvider } from './RuntimeProvider';
 import { ErrorFallback } from '../lib/error-fallback';
-import { MyCommandPalette } from './CommandPalette';
 import { ViewportSwitcher } from './ViewportSwitcher';
+import { LaunchPublicApp } from './routes/LaunchPublicApp';
 // import { ShellSelector } from './ShellSelector';
 
 const routes = {
@@ -19,6 +17,10 @@ const routes = {
     profileId: string;
     workspaceName: string;
   }) => <ViewportSwitcher profileId={params.profileId} workspaceName={params.workspaceName} />,
+
+  '/public-index/apps/:listingName/launch': (params: {
+    listingName: string;
+  }) => <LaunchPublicApp appListingName={params.listingName} />,
 
   // '/desktop': () => <ShellSelector />,
   '/desktop/guest': () => <ActivityShell guest={true} />,
