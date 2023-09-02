@@ -9,15 +9,15 @@ import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent"
 import { AppIcon } from "../widgets/AppIcon";
 
 import { EntityEngine } from "/imports/engine/EntityEngine";
-import { EntityHandle } from "/imports/engine/EntityHandle";
-import { ActivityEntity, ApiBindingEntity, ApplicationEntity } from "/imports/entities/manifest";
+import { ActivityEntity, ApplicationEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
-import { extractTraceAnnotations, LogicTracer, wrapAsyncWithSpan } from "/imports/lib/tracing";
+import { extractTraceAnnotations, LogicTracer } from "/imports/lib/tracing";
 import { ShellSession } from "/imports/runtime/ShellSession";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
 import { marketUrl } from "/imports/settings";
 import { RuntimeContext } from "/imports/ui/contexts";
+import { bringToTop, deleteFrame } from "/imports/runtime/workspace-actions";
 
 type IntentWindowProps = {
   frame: FrameEntity;
@@ -70,8 +70,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
       <nav className="activity-contents-wrap launcher-window">
         <h2>Open Web URL</h2>
         <a href={intent.data} target="_blank" onClick={() => {
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
-          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          // TODO: this cleanup shall be done by deleteFrame
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+            'runtime.dist.app/v1alpha1', 'Workspace',
+            'session', props.workspaceName);
+          deleteFrame(hWorkspace, props.frame.metadata.name);
         }}>
           Open {intent.data}
         </a>
@@ -106,8 +110,13 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         if (err) {
           alert(err.message ?? err);
         } else {
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', props.command.metadata.namespace, props.command.metadata.name);
-          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          // TODO: this cleanup shall be done by deleteFrame
+          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
+          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+            'runtime.dist.app/v1alpha1', 'Workspace',
+            'session', props.workspaceName);
+          deleteFrame(hWorkspace, props.frame.metadata.name);
+
           // navigate('/my/new-shell');
         }
       });
@@ -163,8 +172,12 @@ const IntentWindowInner = (props: IntentWindowProps) => {
             },
           });
 
+          // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+            'runtime.dist.app/v1alpha1', 'Workspace',
+            'session', props.workspaceName);
+          deleteFrame(hWorkspace, props.frame.metadata.name);
         }
 
         return (<div className="activity-contents-wrap">Loading intent...</div>);
@@ -214,8 +227,13 @@ const IntentWindowInner = (props: IntentWindowProps) => {
               },
             });
 
+            // TODO: this cleanup shall be done by deleteFrame
             runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-            runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+            const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+              'runtime.dist.app/v1alpha1', 'Workspace',
+              'session', props.workspaceName);
+            deleteFrame(hWorkspace, props.frame.metadata.name);
+
           }}>Install development version</button>
         </div>);
 
@@ -233,6 +251,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         kind: 'Frame',
         metadata: {
           name: frameName,
+          title: `${intent.receiverRef?.split('://')[1]}`,
           namespace: 'session',
           ownerReferences: [{
             apiVersion: 'runtime.dist.app/v1alpha1',
@@ -257,20 +276,25 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           },
         },
       });
-      runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(frameName)});
+
+      const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+        'runtime.dist.app/v1alpha1', 'Workspace',
+        'session', props.workspaceName);
+      bringToTop(hWorkspace, frameName);
+
+      // TODO: this cleanup shall be done by deleteFrame
       runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-      runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+      deleteFrame(hWorkspace, props.frame.metadata.name);
     })();
     return;
   }
 
   if (!children && typeof intent.receiverRef == 'string') {
-    const hCommand = new EntityHandle<CommandEntity>(runtime, {
-      apiVersion: 'runtime.dist.app/v1alpha1',
-      apiKind: 'Command',
-      namespace: props.command.metadata.namespace ?? 'default',
-      name: props.command.metadata.name,
-    });
+    const hCommand = runtime.getEntityHandle<CommandEntity>(
+      'runtime.dist.app/v1alpha1', 'Command',
+      props.command.metadata.namespace ?? 'default',
+      props.command.metadata.name,
+    );
 
     let baseUrl = 'entity://';
     let appInstallation: AppInstallationEntity | null = null;
@@ -319,8 +343,13 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
           const taskId = createTask(runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
           // console.log('Created task', taskId);
+
+          // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+            'runtime.dist.app/v1alpha1', 'Workspace',
+            'session', props.workspaceName);
+          deleteFrame(hWorkspace, props.frame.metadata.name);
 
           return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
@@ -340,8 +369,13 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
           const taskId = createTask(runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
           // console.log('Created task', taskId);
+
+          // TODO: this cleanup shall be done by deleteFrame
           runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.frame.metadata.namespace, props.frame.metadata.name);
+          const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
+            'runtime.dist.app/v1alpha1', 'Workspace',
+            'session', props.workspaceName);
+          deleteFrame(hWorkspace, props.frame.metadata.name);
 
           return (<div className="activity-contents-wrap">Loading intent...</div>);
         }
@@ -424,12 +458,10 @@ function createTask(runtime: EntityEngine, workspaceName: string, installationNa
     },
   });
 
-  runtime.mutateEntity<WorkspaceEntity>(
+  const hWorkspace = runtime.getEntityHandle<WorkspaceEntity>(
     'runtime.dist.app/v1alpha1', 'Workspace',
-    'session', workspaceName,
-    spaceSNap => {
-      spaceSNap.spec.windowOrder.unshift(taskId);
-    });
+    'session', workspaceName);
+  bringToTop(hWorkspace, taskId);
 
   return taskId;
 }

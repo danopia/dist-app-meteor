@@ -12,6 +12,7 @@ import { ApiCredentialEntity, AppInstallationEntity } from '/imports/entities/pr
 import { ActivityTaskEntity, CommandEntity, FrameEntity } from '/imports/entities/runtime';
 import { ShellSession } from '/imports/runtime/ShellSession';
 import { RadioButtonList } from './RadioButtonList';
+import { deleteFrame } from '/imports/runtime/workspace-actions';
 
 export const AddWebAccountIntent = (props: {
   runtime: EntityEngine,
@@ -146,7 +147,9 @@ export const AddWebAccountIntent = (props: {
               resultRef: `credential:${credential.metadata.name}`,
             };
           });
-        await props.runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.cmdFrame.metadata.namespace, props.cmdFrame.metadata.name);
+        if (props.shell?.workspaceHandle) {
+          deleteFrame(props.shell?.workspaceHandle, props.cmdFrame.metadata.name);
+        }
       })();
     }}>
       <h2 style={{margin: 0}}>Add Web Account</h2>

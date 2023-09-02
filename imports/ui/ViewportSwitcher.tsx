@@ -9,7 +9,7 @@ import { ActivityShell } from './ActivityShell';
 import { EntityEngine } from '../engine/EntityEngine';
 import { WorkspaceEntity } from '../entities/runtime';
 import { RuntimeContext } from './contexts';
-import { launchNewIntent } from './logic/launch-app';
+import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { marketUrl } from '../settings';
 import { remoteConns } from '../engine/EntityStorage';
 import { FrameSwitcher } from './FrameSwitcher';
@@ -106,7 +106,13 @@ export const ViewportSwitcher = (props: {
           windowOrder: [],
         },
       });
-      launchNewIntent(engine, 'login', {
+
+      const hWorkspace = engine
+        .getEntityHandle<WorkspaceEntity>(
+          'runtime.dist.app/v1alpha1', 'Workspace',
+          'session', 'login');
+
+      launchNewIntent(hWorkspace, {
         receiverRef: `entity://login/profile.dist.app/v1alpha1/AppInstallation/app:welcome`,
         action: 'app.dist.Main',
         category: 'app.dist.Launcher',

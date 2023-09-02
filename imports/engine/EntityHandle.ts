@@ -15,12 +15,48 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
   }
   // snapshot: Tself | null;
 
+  getNeighborHandle<Tother extends ArbitraryEntity>(
+    apiVersion: Tother["apiVersion"],
+    apiKind: Tother["kind"],
+    name: string,
+  ): EntityHandle<Tother> {
+    return this.engine.getEntityHandle<Tother>(
+      apiVersion, apiKind,
+      this.coords.namespace, name);
+  }
+
   get() {
     return this.engine.getEntity<Tself>(
       this.coords.apiVersion, this.coords.apiKind,
       this.coords.namespace, this.coords.name);
   }
 
+  async insertNeighbor<Tother extends ArbitraryEntity>(
+    neighbor: Tother,
+  ) {
+    return await this.engine.insertEntity<Tother>({
+      ...neighbor,
+      metadata: {
+        ...neighbor.metadata,
+        namespace: this.coords.namespace,
+      },
+    });
+  }
+
+  async mutate(mutationCb: (x: Tself) => void | Symbol) {
+    return await this.engine.mutateEntity<Tself>(
+      this.coords.apiVersion, this.coords.apiKind,
+      this.coords.namespace, this.coords.name,
+      mutationCb);
+  }
+
+  async delete() {
+    return await this.engine.deleteEntity<Tself>(
+      this.coords.apiVersion, this.coords.apiKind,
+      this.coords.namespace, this.coords.name);
+  }
+
+  /** @deprecated @todo Should return a further EntityHandle instead of raw entity */
   followOwnerReference<Towner extends ArbitraryEntity>(
     apiVersion: Towner["apiVersion"],
     apiKind: Towner["kind"],

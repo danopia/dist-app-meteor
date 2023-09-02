@@ -9,9 +9,10 @@ import { AppIcon } from '../widgets/AppIcon';
 import { EntityEngine } from '/imports/engine/EntityEngine';
 import { ApiBindingEntity, ApiEntity, ApplicationEntity, WebAccountTypeEntity } from '/imports/entities/manifest';
 import { ApiCredentialEntity, AppInstallationEntity } from '/imports/entities/profile';
-import { ActivityTaskEntity, CommandEntity, FrameEntity } from '/imports/entities/runtime';
+import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from '/imports/entities/runtime';
 import { ShellSession } from '/imports/runtime/ShellSession';
 import { RadioButtonList } from './RadioButtonList';
+import { deleteFrame } from '/imports/runtime/workspace-actions';
 
 export const AuthorizeApiBindingIntent = (props: {
   runtime: EntityEngine,
@@ -144,7 +145,9 @@ export const AuthorizeApiBindingIntent = (props: {
               resultRef: `cap:${capId}`,
             };
           });
-        await props.runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.cmdFrame.metadata.namespace, props.cmdFrame.metadata.name);
+        if (props.shell?.workspaceHandle) {
+          deleteFrame(props.shell?.workspaceHandle, props.cmdFrame.metadata.name);
+        }
       })();
     }}>
       <h2 style={{margin: 0}}>Internet Access Request</h2>

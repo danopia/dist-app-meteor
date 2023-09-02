@@ -1,12 +1,11 @@
 import React, { Fragment, useContext, useEffect } from "react";
-import { Random } from "meteor/random";
 import { useTracker } from "meteor/react-meteor-data";
 
 import { RuntimeContext } from "/imports/ui/contexts";
 import { LauncherIcon } from "/imports/ui/LauncherIcon";
 import { AppInstallationEntity } from "/imports/entities/profile";
-import { CommandEntity, FrameEntity } from "/imports/entities/runtime";
-import { launchNewIntent } from "../logic/launch-app";
+import { launchNewIntent } from '/imports/runtime/workspace-actions';
+import { WorkspaceEntity } from "/imports/entities/runtime";
 
 export const LauncherWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
@@ -51,7 +50,13 @@ export const LauncherSection = (props: {
   // icon maybe 𓃑 or ☰
 
   const launchApp = (icon: typeof icons[number]) => {
-    launchNewIntent(runtime, props.workspaceName, {
+
+    const hWorkspace = runtime
+      .getEntityHandle<WorkspaceEntity>(
+        'runtime.dist.app/v1alpha1', 'Workspace',
+        'session', props.workspaceName);
+
+    launchNewIntent(hWorkspace, {
       receiverRef: `entity://${icon.installation.metadata.namespace}/profile.dist.app/v1alpha1/AppInstallation/${icon.installation.metadata.name}`,
       action: icon.launcherIcon.action,
       category: 'app.dist.Launcher',

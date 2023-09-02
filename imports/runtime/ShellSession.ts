@@ -3,9 +3,10 @@ import { ActivityEntity } from "../entities/manifest";
 import { WorkspaceEntity, CommandEntity, FrameEntity, ActivityTaskEntity } from "../entities/runtime";
 import { EntityEngine } from "../engine/EntityEngine";
 import { AppInstallationEntity } from "../entities/profile";
-import { asyncSpan, asyncSpan, injectTraceAnnotations, syncSpan } from "../lib/tracing";
-import { context, propagation, TextMapSetter } from "@opentelemetry/api";
+import { asyncSpan, injectTraceAnnotations, syncSpan } from "../lib/tracing";
 import { Tracker } from "meteor/tracker";
+import { bringToTop, deleteFrame } from "./workspace-actions";
+import { EntityHandle } from "../engine/EntityHandle";
 
 export class ShellSession {
 
@@ -13,8 +14,13 @@ export class ShellSession {
     public readonly runtime: EntityEngine,
     public readonly namespace: string,
     public readonly sessionName: string,
-  ) {}
+  ) {
+    this.workspaceHandle = this.runtime.getEntityHandle<WorkspaceEntity>(
+      'runtime.dist.app/v1alpha1', 'Workspace',
+      this.namespace, this.sessionName);
+  }
   // public readonly manifestCatalog = new SessionCatalog('system:bundled-apps');
+  public readonly workspaceHandle: EntityHandle<WorkspaceEntity>;
 
   handleCommand(command: CommandEntity) {
     const taskName = command.metadata.ownerReferences?.find(x => x.kind == 'Frame')?.name;
@@ -46,35 +52,22 @@ export class ShellSession {
             case 'toggle': x.spec.placement.rolledWindow = !x.spec.placement.rolledWindow; break;
           }
         });
-        this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
-          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
-          spaceSnap.spec.windowOrder.unshift(taskName);
-        });
+        bringToTop(this.workspaceHandle, taskName);
         break;
       }
 
       case 'delete-task': {
         if (!taskName) throw new Error('Unknown task name');
-        // TODO: garbage-collect whatever contentRef points to (maybe ownerReferences helps)
-        this.runtime.deleteEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', this.namespace, taskName);
-        this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
-          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
-          spaceSnap.spec.windowOrder.unshift(taskName);
-        });
+        deleteFrame(this.workspaceHandle, taskName);
         break;
       }
 
       case 'bring-to-top': {
         if (!taskName) throw new Error('Unknown task name');
-        this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSnap => {
-          if (spaceSnap.spec.windowOrder[0] == taskName) return Symbol.for('no-op');
-          spaceSnap.spec.windowOrder = [
-            taskName,
-            ...spaceSnap.spec.windowOrder.filter(x => x !== taskName),
-          ];
-        });
+        bringToTop(this.workspaceHandle, taskName);
         break;
       }
+
       case 'move-window': {
         if (!taskName) throw new Error('Unknown task name');
         const {xAxis, yAxis} = command.spec;
@@ -112,6 +105,7 @@ export class ShellSession {
           apiVersion: 'runtime.dist.app/v1alpha1',
           kind: 'Frame',
           metadata: {
+            title: `Launch Intent`,
             name: commandName,
             namespace: this.namespace,
             ownerReferences: command.metadata.ownerReferences?.filter(x => x.kind == 'Workspace'),
@@ -134,6 +128,8 @@ export class ShellSession {
             },
           },
         });
+
+        bringToTop(this.workspaceHandle, commandName);
       };
     }
   }
@@ -174,6 +170,7 @@ export class ShellSession {
       apiVersion: 'runtime.dist.app/v1alpha1',
       kind: 'Frame',
       metadata: {
+        title: firstActivity.metadata.title,
         name: taskId,
         // TODO: if this namespace is left off, this goes into default? why does it work
         // namespace: this.namespace,
@@ -202,7 +199,7 @@ export class ShellSession {
       },
     });
 
-    this.runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', this.namespace, this.sessionName, spaceSNap => {spaceSNap.spec.windowOrder.unshift(taskId)});
+    bringToTop(this.workspaceHandle, taskId);
   }
 
   runTaskCommand(task: FrameEntity, activityTask: ActivityTaskEntity | null, commandSpec: CommandEntity["spec"]) {
@@ -271,6 +268,9 @@ export class ShellSession {
         apiVersion: 'runtime.dist.app/v1alpha1',
         kind: 'Frame',
         metadata: {
+          title: commandSpec.type == 'launch-intent'
+            ? commandSpec.intent.action?.split('.').slice(-1)[0]
+            : commandSpec.type,
           name: commandName,
           namespace: this.namespace,
           ownerReferences: [
@@ -300,6 +300,7 @@ export class ShellSession {
           },
         },
       });
+      bringToTop(this.workspaceHandle, commandName);
 
       let computation: Tracker.Computation | null = null;
       return await new Promise<CommandEntity>((ok, fail) => {

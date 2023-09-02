@@ -7,6 +7,7 @@ import { LogicTracer } from "../lib/tracing";
 import { ShellSession } from "../runtime/ShellSession";
 import { MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { LayeredNamespace } from "./next-gen";
+import { EntityHandle } from "./EntityHandle";
 
 // type ApiFilter<T extends ArbitraryEntity> = {
 //   apiVersion: T["apiVersion"];
@@ -207,6 +208,19 @@ export class EntityEngine {
     });
   }
 
+  getEntityHandle<T extends ArbitraryEntity>(
+    apiVersion: T["apiVersion"],
+    apiKind: T["kind"],
+    namespace: string,
+    name: string
+  ) {
+    return new EntityHandle<T>(this, {
+      apiVersion, apiKind,
+      namespace, name,
+    });
+  }
+
+  /** @deprecated Use getEntityHandle and action functions instead. */
   loadEntity<T extends ArbitraryEntity>(
     apiVersion: T["apiVersion"],
     kind: T["kind"],

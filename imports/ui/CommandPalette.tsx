@@ -1,4 +1,4 @@
-import React, { useCallback, useContext } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import { useTracker } from 'meteor/react-meteor-data';
 import CommandPalette, { Command } from 'react-command-palette';
 
@@ -6,7 +6,8 @@ import { RuntimeContext } from './contexts';
 import { ActivityEntity, ApplicationEntity, IconSpec } from '../entities/manifest';
 import { AppInstallationEntity } from '../entities/profile';
 import { CommandPaletteItem } from './CommandPaletteItem';
-import { launchNewIntent } from './logic/launch-app';
+import { launchNewIntent } from '/imports/runtime/workspace-actions';
+import { CommandEntity, WorkspaceEntity } from '../entities/runtime';
 
 export interface PaletteCommand {
   id?: string | number;
@@ -14,14 +15,14 @@ export interface PaletteCommand {
   category?: string;
   icon?: IconSpec | null;
   extraNames?: string;
-  intent?: Parameters<typeof launchNewIntent>[2];
+  intent?: (CommandEntity['spec'] & {type: 'launch-intent'})['intent'];
   command: () => void;
 }
 function command() {}
 
 export const MyCommandPalette = (props: {
   parentElement?: string;
-  workspaceName?: string;
+  workspaceName: string;
 }) => {
 
   const runtime = useContext(RuntimeContext);
@@ -102,6 +103,11 @@ export const MyCommandPalette = (props: {
     // },
   ];
 
+  const hWorkspace = useMemo(() => runtime
+    .getEntityHandle<WorkspaceEntity>(
+      'runtime.dist.app/v1alpha1', 'Workspace',
+      'session', props.workspaceName), [runtime]);
+
   return (
     <CommandPalette
         closeOnSelect={true}
@@ -115,7 +121,7 @@ export const MyCommandPalette = (props: {
         renderCommand={CommandPaletteItem}
         onSelect={(selected: Partial<PaletteCommand>) => {
           if (selected.intent) {
-            launchNewIntent(runtime, props.workspaceName, selected.intent);
+            launchNewIntent(hWorkspace, selected.intent);
           }
         }}
       />

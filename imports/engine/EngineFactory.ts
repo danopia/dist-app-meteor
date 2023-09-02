@@ -100,6 +100,7 @@ export function insertGuestWelcomeSession(engine: EntityEngine) {
     metadata: {
       name: launchCmd,
       namespace: 'session',
+      title: 'Welcome',
     },
     spec: {
       contentRef: '../Command/'+launchCmd,
