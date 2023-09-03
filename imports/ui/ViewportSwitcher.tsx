@@ -11,10 +11,10 @@ import { WorkspaceEntity } from '../entities/runtime';
 import { RuntimeContext } from './contexts';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { marketUrl } from '../settings';
-import { remoteConns } from '../engine/EntityStorage';
 import { FrameSwitcher } from './FrameSwitcher';
 
 import './ViewportSwitcher.css';
+import { ConnectionsPanel } from './powerbar/ConnectionsPanel';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -177,22 +177,6 @@ export const ViewportSwitcher = (props: {
     }
   }, [user]);
 
-  const connections = useTracker(() => {
-    const allConns = [{
-      label: Meteor.absoluteUrl(),
-      reconnect: () => Meteor.reconnect(),
-      status: Meteor.status(),
-    }];
-    for (const [url, conn] of remoteConns.entries()) {
-      allConns.push({
-        label: url,
-        reconnect: () => conn.reconnect(),
-        status: conn.status(),
-      });
-    }
-    return allConns;
-  }, []);
-
   // if (!user) {
   //   // TODO: render the 'login' profile w/o sidebar switcher
   //   // AccountsAnonymous.login()
@@ -315,13 +299,7 @@ export const ViewportSwitcher = (props: {
 
             <div style={{flex: 1}} />
 
-            {connections.map((conn, connIdx) => (
-              <li key={connIdx}>
-                <div title={conn.label}>srv{connIdx}</div>
-                <div style={{fontSize: '0.6em'}}>{conn.status.status}</div>
-                <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', width: '100%'}} type="button" disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
-              </li>
-            ))}
+            <ConnectionsPanel />
 
             {user ? (<>
               <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>

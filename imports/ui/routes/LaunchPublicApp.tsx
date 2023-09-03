@@ -1,10 +1,9 @@
 import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import { ActivityShell } from '../ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { remoteConns } from '/imports/engine/EntityStorage';
 import { AppInstallationEntity } from '/imports/entities/profile';
 import { WorkspaceEntity } from '/imports/entities/runtime';
 import { useBodyClass } from '/imports/lib/use-body-class';
@@ -14,7 +13,7 @@ import { FrameSwitcher } from '../FrameSwitcher';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
-import { EntityHandle } from '/imports/engine/EntityHandle';
+import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -151,22 +150,6 @@ export const LaunchPublicApp = (props: {
 
   const workspace = useTracker(() => hWorkspace.get(), [hWorkspace]);
 
-  const connections = useTracker(() => {
-    const allConns = [{
-      label: Meteor.absoluteUrl(),
-      reconnect: () => Meteor.reconnect(),
-      status: Meteor.status(),
-    }];
-    for (const [url, conn] of remoteConns.entries()) {
-      allConns.push({
-        label: url,
-        reconnect: () => conn.reconnect(),
-        status: conn.status(),
-      });
-    }
-    return allConns;
-  }, []);
-
   if (!workspace) {
     return (
       <div className="switcher-content" style={{
@@ -230,13 +213,7 @@ export const LaunchPublicApp = (props: {
 
             <div style={{flex: 1}} />
 
-            {connections.map((conn, connIdx) => (
-              <li key={connIdx}>
-                <div title={conn.label}>srv{connIdx}</div>
-                <div style={{fontSize: '0.6em'}}>{conn.status.status}</div>
-                <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', width: '100%'}} type="button" disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
-              </li>
-            ))}
+            <ConnectionsPanel />
 
             {user ? (<>
               <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>
