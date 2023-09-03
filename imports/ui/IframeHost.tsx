@@ -36,7 +36,11 @@ export const IframeHost = (props: {
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity, props.hWorkspace), [runtime, props.activityTask, props.activity, props.hWorkspace]);
 
-  const messageHost = useMemo(() => new MessageHost(), [contentWindow, implementation]);
+  const messageHost = useMemo(() => new MessageHost({
+    'distapp.frame.uid': props.task.metadata.uid,
+    'distapp.frame.name': props.task.metadata.name,
+    'resource.name': props.task.metadata.name,
+  }), [contentWindow, implementation]);
   useEffect(() => {
     if (contentWindow) {
       //@ts-expect-error TODO undocumented field

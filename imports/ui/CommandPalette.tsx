@@ -96,6 +96,15 @@ export const MyCommandPalette = (props: {
       },
       command,
     },
+    {
+      name: "Telemetry",
+      category: 'Action',
+      icon: {type: 'glyph', glyph: {text: '?', backgroundColor: 'rgba(127, 127, 127, .5)'}},
+      intent: {
+        receiverRef: `internal://telemetry`,
+      },
+      command,
+    },
     // {
     //   name: "Upload Session",
     //   category: 'Action',

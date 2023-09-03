@@ -1,4 +1,4 @@
-import { context, propagation, SpanKind } from "@opentelemetry/api";
+import { Attributes, context, propagation, SpanKind } from "@opentelemetry/api";
 import { ProtocolEntity } from "../entities/protocol";
 import { LogicTracer } from "../lib/tracing";
 
@@ -14,7 +14,9 @@ const trr = new LogicTracer({
 });
 
 export class MessageHost {
-  constructor() {
+  constructor(
+    public readonly telemetryAttributes?: Attributes,
+  ) {
     const { port1, port2 } = new MessageChannel();
     this.localPort = port1;
     this.remotePort = port2;
@@ -40,8 +42,9 @@ export class MessageHost {
       trr.syncSpan(`MessageHost rpc: ${rpc.kind}`, {
         kind: SpanKind.SERVER,
         attributes: {
-          'rpc.system': 'ddp',
+          'rpc.system': 'messagehost',
           'rpc.method': rpc.kind,
+          ...this.telemetryAttributes,
         },
       }, async () => {
         const id = rpc.kind == 'FetchRequest' ? rpc.id : false;

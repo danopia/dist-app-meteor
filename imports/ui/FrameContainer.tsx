@@ -15,6 +15,7 @@ import { WindowFrame } from "./widgets/WindowFrame";
 import { GridLoader } from "react-spinners";
 import { EntityHandle } from "../engine/EntityHandle";
 import { runTaskCommand } from "../runtime/workspace-actions";
+import { TelemetryWindow } from "./frames/TelemetryWindow";
 
 export const FrameContainer = (props: {
   zIndex?: number;
@@ -36,6 +37,7 @@ export const FrameContainer = (props: {
     const ref = frameEntity.spec.contentRef;
     if (ref == 'internal://launcher') return {kind: 'Launcher' as const};
     if (ref == 'internal://explorer') return {kind: 'Explorer' as const};
+    if (ref == 'internal://telemetry') return {kind: 'Telemetry' as const};
     const [_, kind, name] = ref.split('/');
     if (kind !== 'ActivityTask' && kind !== 'Command') throw new Error(`TODO: other contentRefs (${frameEntity.spec.contentRef})`);
     return props.hWorkspace.getNeighborHandle<ActivityTaskEntity|CommandEntity>('runtime.dist.app/v1alpha1', kind, name).get();
@@ -64,6 +66,16 @@ export const FrameContainer = (props: {
       );
       content = (
         <ExplorerWindow onLifecycle={setLifecycle} />
+      );
+      break;
+    }
+
+    case 'Telemetry': {
+      title = (
+        <div className="window-title">Telemetry</div>
+      );
+      content = (
+        <TelemetryWindow onLifecycle={setLifecycle} hWorkspace={props.hWorkspace} />
       );
       break;
     }
