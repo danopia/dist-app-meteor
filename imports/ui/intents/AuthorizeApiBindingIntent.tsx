@@ -196,7 +196,7 @@ export const AuthorizeApiBindingIntent = (props: {
                 options={[
                   {
                     id: 'browser',
-                    label: `Browser (${(navigator as any).userAgentData.brands[0].brand})`,
+                    label: `Browser (${(navigator as any).userAgentData.brands.map((x: any) => x.brand).join(', ')})`,
                     ...(entities.api.spec.crossOriginResourceSharing !== 'open' ? {
                       disabled: true,
                       message: 'URL disallows cross-origin requests',

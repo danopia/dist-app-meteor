@@ -19,7 +19,7 @@ export const RadioButtonList = (props: {
   return (
     <ul style={{padding: 0, margin: 0, listStyle: 'none'}}>
       {props.options.map(x => (
-        <li style={{padding: '0.1em 0'}}>
+        <li key={x.id} style={{padding: '0.1em 0'}}>
           <label className="button">
             <input key={x.id}
                 name={props.name} type="radio" required={props.required}
