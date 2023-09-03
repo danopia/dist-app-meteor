@@ -98,7 +98,7 @@ export class MessageHost {
 }
 
 // Listen for global messages in case an existing Window wants to re-establish comms
-window.addEventListener('message', evt => {
+function globalMessageHandler(evt: MessageEvent) {
   if (!evt.source) return;
   if (evt.data.protocol !== 'protocol.dist.app/v1alpha1') return;
 
@@ -109,4 +109,13 @@ window.addEventListener('message', evt => {
   } else {
     console.log('refusing rebind for missing WindowMap');
   }
-});
+};
+window.addEventListener('message', globalMessageHandler);
+
+// Try to unload the previous event handler if we see one
+// This is most relevant during the HMR development loop
+const myWin = window as {DistAppGlobalMessageHandler?: typeof globalMessageHandler};
+if (myWin.DistAppGlobalMessageHandler) {
+  window.removeEventListener('message', myWin.DistAppGlobalMessageHandler);
+}
+myWin.DistAppGlobalMessageHandler = globalMessageHandler;
