@@ -135,10 +135,6 @@ export const LaunchPublicApp = (props: {
         preferences: {},
       },
     }).then(async () => {
-
-      // TODO: intent screen doesn't recover if launched before entities are available
-      await new Promise(ok => setTimeout(ok, 1000));
-
       await launchNewIntent(hWorkspace, {
         receiverRef: `entity://login/profile.dist.app/v1alpha1/AppInstallation/primary`,
         action: 'app.dist.Main',

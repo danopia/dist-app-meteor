@@ -1,5 +1,5 @@
 import { context } from "@opentelemetry/api";
-import React, { ReactNode, useContext, useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import "urlpattern-polyfill";
 import { AddWebAccountIntent } from "../intents/AddWebAccountIntent";
 import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent";
@@ -16,6 +16,7 @@ import { RuntimeContext } from "/imports/ui/contexts";
 import { bringToTop, deleteFrame } from "/imports/runtime/workspace-actions";
 import { EntityHandle } from "/imports/engine/EntityHandle";
 import { AddPlatformAccountIntent } from "../intents/AddPlatformAccountIntent";
+import { ForAppInstallation } from "../intents/ForAppInstallation";
 
 type IntentWindowProps = {
   frame: FrameEntity;
@@ -56,8 +57,6 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   //   .flatMap(x => x
   //     .listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity'))) ?? [];
 
-  let children: ReactNode;
-
   if (props.command.spec.type != 'launch-intent') throw new Error(`TODO: other commands`);
   const { intent } = props.command.spec;
   // console.log('IntentWindow', intent, props.command);
@@ -96,7 +95,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
     );
   }
 
-  if (!children && typeof intent.dataRef == 'string') {
+  if (typeof intent.dataRef == 'string') {
     const match = new URLPattern({
       protocol: 'entity:',
       pathname: "//:namespace/:api/:version/:kind/:name",
@@ -252,7 +251,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
     );
   }
 
-  if (!children && typeof intent.receiverRef == 'string') {
+  if (typeof intent.receiverRef == 'string') {
     const hCommand = runtime.getEntityHandle<CommandEntity>(
       'runtime.dist.app/v1alpha1', 'Command',
       props.command.metadata.namespace ?? 'default',
@@ -310,7 +309,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTask(props.hWorkspace, runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
+          const taskId = createTaskForIntent(props.hWorkspace, runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
           // console.log('Created task', taskId);
 
           // TODO: this cleanup shall be done by deleteFrame
@@ -321,27 +320,16 @@ const IntentWindowInner = (props: IntentWindowProps) => {
         }
 
       } else if (api == 'profile.dist.app' && version == 'v1alpha1' && kind == 'AppInstallation') {
-        const installation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', namespace, name);
-        if (installation) {
-          const appNamespace = runtime.useRemoteNamespace(installation.spec.appUri);
-          const appActivities = runtime.listEntities<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace);
-          const activities = appActivities.filter(x => x.spec.intentFilters?.some(y => y.action == intent.action && y.category == intent.category));
-          if (activities.length > 1) return (<div>More than one activity matched</div>);
-          if (activities.length < 1) return (<div>Less than one activity matched</div>);
-          const [activity] = activities;
-
-          const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
-          if (!workspace) throw new Error(`no workspace`);
-
-          const taskId = createTask(props.hWorkspace, runtime, workspace.metadata.name, installation.metadata.namespace, installation.metadata.name, activity, props.command.metadata.name+'-new2');
-          // console.log('Created task', taskId);
-
-          // TODO: this cleanup shall be done by deleteFrame
-          runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-          deleteFrame(props.hWorkspace, props.frame.metadata.name);
-
-          return (<div className="activity-contents-wrap">Loading intent...</div>);
-        }
+        const hAppInstallation = runtime.getEntityHandle<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', namespace, name);
+        return (
+          <ForAppInstallation
+              hWorkspace={props.hWorkspace}
+              hAppInstallation={hAppInstallation}
+              command={props.command}
+              cmdFrame={props.frame}
+              intent={intent}
+            />
+        )
       }
     }
   }
@@ -357,8 +345,8 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 }
 
 
-
-function createTask(hWorkspace: EntityHandle<WorkspaceEntity>, runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
+/** @deprecated roll into proper centralized function */
+export function createTaskForIntent(hWorkspace: EntityHandle<WorkspaceEntity>, runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
   const taskId = taskName; // Random.id();
   const actInstId = taskName; // Random.id();
 
