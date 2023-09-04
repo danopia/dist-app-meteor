@@ -3,11 +3,9 @@ import { useTracker } from 'meteor/react-meteor-data';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { RuntimeContext } from './contexts';
-// import { ShellTopBar } from './ShellTopBar';
 import { FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { FrameContainer } from './FrameContainer';
 import { ErrorFallback } from '../lib/error-fallback';
-import { useBodyClass } from '../lib/use-body-class';
 import { MyCommandPalette } from './CommandPalette';
 
 export const ActivityShell = (props: {
@@ -36,8 +34,6 @@ export const ActivityShell = (props: {
     .filter(x => x.metadata.ownerReferences?.some(y => y.name == workspaceName))
   , [runtime, workspaceName]);
   // TODO: also list debug event entities and indicate them on their frames
-
-  // useBodyClass('shell-workspace-floating');
 
   if (!workspace) {
     return (
