@@ -309,7 +309,7 @@ iframe.activity-contents-wrap {
   display: grid;
   grid-template-areas: 'icon title' 'icon desc';
   grid-template-columns: min-content 1fr;
-  grid-template-rows: minmax(1.8em, min-content) 1fr;
+  grid-template-rows: minmax(1.4em, min-content) 1fr;
   gap: 0.25em 1em;
   justify-items: flex-start;
 }

@@ -47,7 +47,7 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
       neighbor.metadata.name);
   }
 
-  async mutate(mutationCb: (x: Tself) => void | Symbol) {
+  async mutate(mutationCb: (x: Tself) => void | symbol) {
     return await this.engine.mutateEntity<Tself>(
       this.coords.apiVersion, this.coords.apiKind,
       this.coords.namespace, this.coords.name,

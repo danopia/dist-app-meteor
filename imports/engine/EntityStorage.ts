@@ -139,6 +139,7 @@ export class MongoEntityStorage implements EntityStorage {
         namespace: undefined,
         creationTimestamp: new Date(),
         generation: 1,
+        uid: Math.random().toString(16).slice(2), // TODO: crypto.randomUUID(),
       },
       _id,
     });

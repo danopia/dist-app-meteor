@@ -95,7 +95,7 @@ export const WelcomeSplash = () => {
           <h1>Welcome to a dist.app system.</h1>
           <p>
             The dist.app platform offers an experimental way of launching web-based applications.
-            The principles of least-privilege, stateless programming, and single-purpose program units are leveraged together to reduce individual application complexity.
+            The principles of least-privilege, stateless programming, and single-purpose modules are combined to reduce individual application complexity.
           </p>
           <div className="public-app-section">
             <h2>Public Utilities</h2>

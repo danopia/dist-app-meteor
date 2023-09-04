@@ -2,7 +2,6 @@ import { check } from "meteor/check";
 import { Meteor } from "meteor/meteor";
 import { CatalogsCollection } from "/imports/db/catalogs";
 import { ArbitraryEntity, EntitiesCollection } from "/imports/db/entities";
-import { ProfilesCollection } from "/imports/db/profiles";
 import { MongoEntityStorage } from "/imports/engine/EntityStorage";
 import { Log } from "/imports/lib/logging";
 
@@ -30,19 +29,7 @@ export async function insertEntity(actingUserId: string | null, catalogId: strin
 
   const storage = new MongoEntityStorage({catalogId, collection: EntitiesCollection, namespace: catalogId });
   storage.insertEntity(entity);
-
-  // const _id = JSON.stringify([catalogId, entity.apiVersion, entity.kind, entity.metadata.name]);
-  // EntitiesCollection.insert({
-  //   ...entity,
-  //   _id,
-  //   catalogId,
-  //   metadata: {
-  //     ...entity.metadata,
-  //     generation: 1,
-  //   },
-  // });
   return true; // TODO: currently throws instead of 'false'
-  // throw new Meteor.Error('todo', `TODO`);
 }
 
 export async function updateEntity(actingUserId: string | null, catalogId: string, newEntity: ArbitraryEntity) {
@@ -63,20 +50,6 @@ export async function updateEntity(actingUserId: string | null, catalogId: strin
     namespace: catalogId,
   });
   return storage.updateEntity(newEntity);
-  // const _id = JSON.stringify([catalogId, newEntity.apiVersion, newEntity.kind, newEntity.metadata.name]);
-  // return EntitiesCollection.update({
-  //   _id,
-  //   catalogId,
-  //   'metadata.generation': newEntity.metadata.generation,
-  // }, {$set: {
-  //   ...newEntity,
-  //   _id,
-  //   catalogId,
-  //   metadata: {
-  //     ...newEntity.metadata,
-  //     generation: newEntity.metadata.generation! + 1,
-  //   },
-  // }}) > 0;
 }
 
 // TODO: this should probably accept generation too?
