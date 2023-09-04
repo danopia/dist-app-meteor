@@ -71,7 +71,7 @@ export const LauncherSection = (props: {
       <h3 style={{textTransform: 'uppercase', margin: '0.2em 1em 0', fontSize: '1em', color: '#999', fontWeight: 'normal'}}>{props.namespace}</h3>
       <div className="launcher-window">
         {icons.map(icon => (
-          <button key={icon.installation._id} onClick={() => launchApp(icon)}>
+          <button key={icon.installation._id} className="launcher-button" onClick={() => launchApp(icon)}>
             <LauncherIcon appUri={icon.installation.spec.appUri} />
           </button>
         ))}

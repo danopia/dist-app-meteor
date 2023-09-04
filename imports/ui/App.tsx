@@ -6,10 +6,13 @@ import { ActivityShell } from './ActivityShell';
 import { ErrorFallback } from '../lib/error-fallback';
 import { ViewportSwitcher } from './ViewportSwitcher';
 import { LaunchPublicApp } from './routes/LaunchPublicApp';
+import { WelcomeSplash } from './routes/WelcomeSplash';
 // import { ShellSelector } from './ShellSelector';
 
 const routes = {
-  '/': () => <ViewportSwitcher />,
+  '/': () => <WelcomeSplash />,
+
+  '/profile': () => <ViewportSwitcher />,
   '/profile/:profileId': (params: {
     profileId: string;
   }) => <ViewportSwitcher profileId={params.profileId} />,

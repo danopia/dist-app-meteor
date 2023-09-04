@@ -208,7 +208,11 @@ const SpanTree = (props: {
             borderStyle: 'solid',
             borderColor: 'gray',
         }}>
-          <div style={{gridColumn: 2, backgroundColor: 'red'}} />
+          <div style={{
+            gridColumn: 2,
+            backgroundColor: 'gray',
+            border: '1px solid blue',
+          }} />
         </div>
         {/* <div style={{height: '16px', left: Math.random()*100, width: '10px', backgroundColor: 'red' }} /> */}
       </td>

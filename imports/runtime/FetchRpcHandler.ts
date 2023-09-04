@@ -408,7 +408,7 @@ export class FetchRpcHandler {
     if (subPath == 'mount') {
       return this.handleMountBinding(rpc, binding, apiEntity, apiSpec, server.url);
     }
-    return makeStatusResponse(512, 'Deprecated - update to mount API');
+    return makeStatusResponse(513, 'Deprecated - update to mount API');
   }
 
   @tracer.InternalSpan

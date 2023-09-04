@@ -210,7 +210,7 @@ export const ViewportSwitcher = (props: {
   // }
 
   if (!profileId && profile._id) {
-    navigate(`/profile/${profile._id}`);
+    navigate(`/profile/${profile._id}`, { replace: true });
     return (
       <div>Redirecting to profile</div>
     );
@@ -231,7 +231,7 @@ export const ViewportSwitcher = (props: {
       </div>
     );
   } else if (workspaces.length >= 1) {
-    navigate(`/profile/${profile._id}/workspace/${workspaces[0].entity.metadata.name}`);
+    navigate(`/profile/${profile._id}/workspace/${workspaces[0].entity.metadata.name}`, { replace: true });
   }
 
   //     meteorCallAsync('/v1alpha1/get user profile').then(x => {
