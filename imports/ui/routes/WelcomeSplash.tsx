@@ -41,6 +41,8 @@ export const WelcomeSplash = () => {
     .listEntities<AppListingEntity>(
       'market.dist.app/v1alpha1', 'AppListing',
       publicIndex)
+    .filter(x => x
+      .metadata.tags?.includes('public-utility'))
   , [engine, publicIndex]);
 
   return (
