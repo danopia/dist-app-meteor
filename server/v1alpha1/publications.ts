@@ -17,6 +17,24 @@ Meteor.publish('/v1alpha1/profiles/list', () => {
   });
 });
 
+// not actually composite but I didn't know that at the time
+Meteor.publish('/v1alpha1/catalogs/by-id/composite', (catalogId) => {
+  check(catalogId, String);
+  // TODO: definitely some permissions checking!!!
+  const userId = Meteor.userId();
+  if (!userId) throw new Error(`TODO: access control`);
+  return [
+    CatalogsCollection.find({
+      _id: catalogId,
+    }),
+    EntitiesCollection.find({
+      catalogId: catalogId,
+    }, {
+      fields: { secret: 0 },
+    }),
+  ];
+});
+
 publishComposite('/v1alpha1/profiles/by-id/composite', (profileId) => ({
   find() {
     check(profileId, String);
