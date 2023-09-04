@@ -9,6 +9,7 @@ import { AppIcon } from '../widgets/AppIcon';
 import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
 import { Link } from 'raviger';
 import { LogoutPanel } from '../powerbar/LogoutPanel';
+import { networkIconSvg } from '/imports/svgs/network-icon';
 
 export const WelcomeSplash = () => {
 
@@ -38,18 +39,16 @@ export const WelcomeSplash = () => {
   return (
     <div className="switcher-root">
       <ul className="switcher-menu">
-        {/* <li className="switcher-icon" style={{justifyItems: 'center'}}>
-          <AppIcon className="appIcon" iconSpec={appListing?.spec.icon ?? {
-            type: 'glyph',
-            glyph: {
-              text: '⏳',
-              backgroundColor: 'rgba(127, 127, 127, .5)',
+        <li className="switcher-icon" style={{justifyItems: 'center', margin: '0.5em 0'}}>
+          <AppIcon className="appIcon" iconSpec={{
+            type: 'svg',
+            svg: {
+              textData: networkIconSvg,
+              backgroundColor: '#1155bb',
             },
-          }} sizeRatio={2} />
-          <button className="switcher-profile-photo" style={{
-              backgroundColor: 'gray',
-            }} />
-        </li> */}
+          }} sizeRatio={4} />
+          <h2 style={{fontWeight: 200, margin: '0.5em 0' }}>dist.app</h2>
+        </li>
         {/* <li style={{
             display: 'grid',
           }}>
@@ -120,11 +119,10 @@ export const WelcomeSplash = () => {
           </div>
 
           <div className="profile-section">
-            <h2>Authenticated Access</h2>
-            <p>Sign in to store your profile and workspaces on the server for future use.</p>
+            <h2>User Area</h2>
 
             <div className="launcher-window wide-items">
-              <Link className="launcher-button" href={`profile/`}>
+              <Link className="launcher-button" href={`profile`}>
                 <AppIcon className="appIcon" iconSpec={{
                     type: 'glyph',
                     glyph: {
@@ -132,8 +130,8 @@ export const WelcomeSplash = () => {
                       backgroundColor: 'rgba(127, 127, 127, .5)',
                     },
                   }} />
-                <span className="appTitle">Sign in</span>
-                <span className="appDesc">Access authenticated data.</span>
+                <span className="appTitle">My Workspace</span>
+                <span className="appDesc">Use cloud-based applications.</span>
               </Link>
             </div>
 
