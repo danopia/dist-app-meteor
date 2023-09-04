@@ -1,29 +1,19 @@
-import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 
-import { ActivityShell } from '../ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { remoteConns } from '/imports/engine/EntityStorage';
-import { AppInstallationEntity } from '/imports/entities/profile';
-import { WorkspaceEntity } from '/imports/entities/runtime';
 import { useBodyClass } from '/imports/lib/use-body-class';
 import { marketUrl } from '/imports/settings';
-import { RuntimeContext } from '../contexts';
-import { FrameSwitcher } from '../FrameSwitcher';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
-import { launchNewIntent } from '/imports/runtime/workspace-actions';
-import { EntityHandle } from '/imports/engine/EntityHandle';
 import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
 import { Link } from 'raviger';
-import { AuthorizeApiBindingIntent } from '../intents/AuthorizeApiBindingIntent';
+import { LogoutPanel } from '../powerbar/LogoutPanel';
 
 export const WelcomeSplash = () => {
 
   useBodyClass('fill-body');
 
-  const user = useTracker(() => Meteor.user(), []);
   // useSubscribe('/v1alpha1/profiles/list');
   // const profiles = useFind(() => ProfilesCollection.find(), []);
   // const profile = profiles?.find(x => x._id == profileId) ?? profiles?.[0];
@@ -80,10 +70,7 @@ export const WelcomeSplash = () => {
         <div style={{flex: 1}} />
 
         <ConnectionsPanel />
-
-        {user ? (<>
-          <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>
-        </>) : []}
+        <LogoutPanel />
 
       </ul>
       <div className="activity-shell-parent splash-parent" style={{

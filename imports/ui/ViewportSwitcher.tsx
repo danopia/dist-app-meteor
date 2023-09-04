@@ -15,6 +15,7 @@ import { FrameSwitcher } from './FrameSwitcher';
 
 import './ViewportSwitcher.css';
 import { ConnectionsPanel } from './powerbar/ConnectionsPanel';
+import { LogoutPanel } from './powerbar/LogoutPanel';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -301,9 +302,7 @@ export const ViewportSwitcher = (props: {
 
             <ConnectionsPanel />
 
-            {user ? (<>
-              <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>
-            </>) : []}
+            <LogoutPanel />
 
           </ul>
         ) : []}

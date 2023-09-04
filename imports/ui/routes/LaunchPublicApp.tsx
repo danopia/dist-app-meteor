@@ -14,6 +14,7 @@ import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
+import { LogoutPanel } from '../powerbar/LogoutPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -21,7 +22,6 @@ export const LaunchPublicApp = (props: {
 
   useBodyClass('fill-body');
 
-  const user = useTracker(() => Meteor.user(), []);
   // useSubscribe('/v1alpha1/profiles/list');
   // const profiles = useFind(() => ProfilesCollection.find(), []);
   // const profile = profiles?.find(x => x._id == profileId) ?? profiles?.[0];
@@ -215,9 +215,7 @@ export const LaunchPublicApp = (props: {
 
             <ConnectionsPanel />
 
-            {user ? (<>
-              <button style={{fontSize: '0.7em', padding: '0.5em 0', display: 'block', width: '100%'}} type="button" onClick={() => Meteor.logout()}>Sign out</button>
-            </>) : []}
+            <LogoutPanel />
 
           </ul>
         {content}
