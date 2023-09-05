@@ -7,10 +7,15 @@ import { ErrorFallback } from '../lib/error-fallback';
 import { ViewportSwitcher } from './ViewportSwitcher';
 import { LaunchPublicApp } from './routes/LaunchPublicApp';
 import { WelcomeSplash } from './routes/WelcomeSplash';
+import { ConfigurePage } from './routes/ConfigurePage';
 // import { ShellSelector } from './ShellSelector';
 
 const routes = {
   '/': () => <WelcomeSplash />,
+
+  // TODO: different config pages
+  '/configure': () => <ConfigurePage />,
+  '/configure/catalogs': () => <ConfigurePage />,
 
   '/profile': () => <ViewportSwitcher />,
   '/profile/:profileId': (params: {

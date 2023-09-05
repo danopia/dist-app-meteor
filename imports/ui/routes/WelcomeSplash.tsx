@@ -10,6 +10,7 @@ import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
 import { Link } from 'raviger';
 import { LogoutPanel } from '../powerbar/LogoutPanel';
 import { networkIconSvg } from '/imports/svgs/network-icon';
+import { Meteor } from 'meteor/meteor';
 
 export const WelcomeSplash = () => {
 
@@ -20,6 +21,7 @@ export const WelcomeSplash = () => {
   // const profile = profiles?.find(x => x._id == profileId) ?? profiles?.[0];
   // useSubscribe(profile && '/v1alpha1/profiles/by-id/composite', profile?._id);
 
+  const user = useTracker(() => Meteor.user(), []);
 
   // TODO: useMemo is the wrong tool for this
   const engine = useMemo(() => new EntityEngine(), []);
@@ -122,23 +124,45 @@ export const WelcomeSplash = () => {
             <h2>User Area</h2>
 
             <div className="launcher-window wide-items">
-              <Link className="launcher-button" href={`profile`}>
-                <AppIcon className="appIcon" iconSpec={{
-                    type: 'glyph',
-                    glyph: {
-                      text: '🔐',
-                      backgroundColor: 'rgba(127, 127, 127, .5)',
-                    },
-                  }} />
-                <span className="appTitle">My Workspace</span>
-                <span className="appDesc">Use cloud-based applications.</span>
-              </Link>
+              {user ? (<>
+                <Link className="launcher-button" href={`profile`}>
+                  <AppIcon className="appIcon" iconSpec={{
+                      type: 'glyph',
+                      glyph: {
+                        text: '🖥️',
+                        backgroundColor: 'rgba(127, 127, 127, .5)',
+                      },
+                    }} />
+                  <span className="appTitle">My Workspace</span>
+                  <span className="appDesc">Use cloud-based applications.</span>
+                </Link>
+                <Link className="launcher-button" href={`configure`}>
+                  <AppIcon className="appIcon" iconSpec={{
+                      type: 'glyph',
+                      glyph: {
+                        text: '🔧',
+                        backgroundColor: 'rgba(127, 127, 127, .5)',
+                      },
+                    }} />
+                  <span className="appTitle">Configure</span>
+                  <span className="appDesc">Set up your profile.</span>
+                </Link>
+              </>) : (
+                <button className="launcher-button" onClick={() => Meteor.loginWithGoogle()}>
+                  <AppIcon className="appIcon" iconSpec={{
+                      type: 'glyph',
+                      glyph: {
+                        text: '🔐',
+                        backgroundColor: 'rgba(127, 127, 127, .5)',
+                      },
+                    }} />
+                  <span className="appTitle">Log in</span>
+                  <span className="appDesc">Authenticate to this server.</span>
+                </button>
+              )}
             </div>
 
           </div>
-
-          {/* <h1>Hi!</h1> */}
-          {/* {JSON.stringify(appListings)} */}
         </div>
       </div>
     </div>
