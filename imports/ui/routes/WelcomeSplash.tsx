@@ -102,8 +102,8 @@ export const WelcomeSplash = () => {
             <h2>Public Utilities</h2>
             <p>Try out these freely-accessible applications in one click:</p>
 
-            <div className="launcher-window wide-items">
-              {appListings.map(listing => (
+            <div className="launcher-window wide-items" style={{padding: 0}}>
+              {appListings.length ? appListings.map(listing => (
                 <Link key={listing.metadata.name} className="launcher-button" href={`public-index/apps/${listing.metadata.name}/launch`}>
                   <AppIcon className="appIcon" iconSpec={listing.spec.icon ?? {
                       type: 'glyph',
@@ -115,15 +115,17 @@ export const WelcomeSplash = () => {
                   <span className="appTitle">{listing.metadata.title}</span>
                   <span className="appDesc">{listing.metadata.description}</span>
                 </Link>
-              ))}
+              )) : (
+                <progress style={{margin: '5em 1em'}} />
+              )}
             </div>
 
           </div>
 
-          <div className="profile-section">
+          <div className="profile-section" style={{marginTop: '1em'}}>
             <h2>User Area</h2>
 
-            <div className="launcher-window wide-items">
+            <div className="launcher-window wide-items" style={{padding: 0}}>
               {user ? (<>
                 <Link className="launcher-button" href={`profile`}>
                   <AppIcon className="appIcon" iconSpec={{
@@ -133,8 +135,8 @@ export const WelcomeSplash = () => {
                         backgroundColor: 'rgba(127, 127, 127, .5)',
                       },
                     }} />
-                  <span className="appTitle">My Workspace</span>
-                  <span className="appDesc">Use cloud-based applications.</span>
+                  <span className="appTitle">Cloud Workspace</span>
+                  <span className="appDesc">Use cloud-based applications</span>
                 </Link>
                 <Link className="launcher-button" href={`configure`}>
                   <AppIcon className="appIcon" iconSpec={{
@@ -145,7 +147,7 @@ export const WelcomeSplash = () => {
                       },
                     }} />
                   <span className="appTitle">Configure</span>
-                  <span className="appDesc">Set up your profile.</span>
+                  <span className="appDesc">Set up your profile</span>
                 </Link>
               </>) : (
                 <button className="launcher-button" onClick={() => Meteor.loginWithGoogle()}>
@@ -157,7 +159,7 @@ export const WelcomeSplash = () => {
                       },
                     }} />
                   <span className="appTitle">Log in</span>
-                  <span className="appDesc">Authenticate to this server.</span>
+                  <span className="appDesc">Authenticate to this server</span>
                 </button>
               )}
             </div>

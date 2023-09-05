@@ -2,13 +2,11 @@ import React from 'react';
 import { useRoutes } from 'raviger';
 import { ErrorBoundary } from 'react-error-boundary';
 
-import { ActivityShell } from './ActivityShell';
 import { ErrorFallback } from '../lib/error-fallback';
 import { ViewportSwitcher } from './ViewportSwitcher';
 import { LaunchPublicApp } from './routes/LaunchPublicApp';
 import { WelcomeSplash } from './routes/WelcomeSplash';
 import { ConfigurePage } from './routes/ConfigurePage';
-// import { ShellSelector } from './ShellSelector';
 
 const routes = {
   '/': () => <WelcomeSplash />,
@@ -29,15 +27,6 @@ const routes = {
   '/public-index/apps/:listingName/launch': (params: {
     listingName: string;
   }) => <LaunchPublicApp appListingName={params.listingName} />,
-
-  // '/desktop': () => <ShellSelector />,
-  '/desktop/guest': () => <ActivityShell guest={true} />,
-  // '/my/new-shell': () => <NewShell />,
-  '/desktop/saved-session/:savedSessionName': (params: {
-    // profileId?: string;
-    savedSessionName: string;
-    // workspaceName: string;
-  }) => <ActivityShell savedSessionName={params.savedSessionName} guest={false} />,
 };
 
 export const App = () => {

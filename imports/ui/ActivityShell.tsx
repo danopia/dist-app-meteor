@@ -66,9 +66,7 @@ export const ActivityShell = (props: {
         <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
         <div style={{flex: 1}}></div>
       </section>
-      {frameMode == 'windowing' ? (
-        <div className="shell-backdrop" />
-      ) : []}
+      <div className="shell-backdrop" />
       {props.savedSessionName == workspace.spec.savedSessionName ? (
         <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={floatingLayerKey}>
           {frames.map(task => (

@@ -312,6 +312,7 @@ iframe.activity-contents-wrap {
   grid-template-rows: minmax(1.4em, min-content) 1fr;
   gap: 0.25em 1em;
   justify-items: flex-start;
+  font-size: 1em; /* buttons change this */
 }
 .launcher-window.wide-items .appIcon {
   grid-area: icon;

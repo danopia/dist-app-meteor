@@ -90,17 +90,17 @@ export const LaunchPublicApp = (props: {
       'runtime.dist.app/v1alpha1', 'Workspace',
       'session', 'primary'), [engine]);
 
-  // For debugging purposes, also open an Explorer:
-  const explorerSetup = useRef<typeof hWorkspace | null>(null);
-  useEffect(() => {
-    if (explorerSetup.current == hWorkspace) return;
-    explorerSetup.current = hWorkspace;
-    launchNewIntent(hWorkspace, {
-      receiverRef: `internal://explorer`,
-      action: 'app.dist.Main',
-      category: 'app.dist.Launcher',
-    }, 'default-explorer');
-  }, [hWorkspace, explorerSetup]);
+  // // For debugging purposes, also open an Explorer:
+  // const explorerSetup = useRef<typeof hWorkspace | null>(null);
+  // useEffect(() => {
+  //   if (explorerSetup.current == hWorkspace) return;
+  //   explorerSetup.current = hWorkspace;
+  //   launchNewIntent(hWorkspace, {
+  //     receiverRef: `internal://explorer`,
+  //     action: 'app.dist.Main',
+  //     category: 'app.dist.Launcher',
+  //   }, 'default-explorer');
+  // }, [hWorkspace, explorerSetup]);
 
   const appListing = useTracker(() => engine
     .getEntity<AppListingEntity>(
