@@ -6,9 +6,9 @@ import { useBodyClass } from '/imports/lib/use-body-class';
 import { marketUrl } from '/imports/settings';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
-import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
+import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { Link } from 'raviger';
-import { LogoutPanel } from '../powerbar/LogoutPanel';
+import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { networkIconSvg } from '/imports/svgs/network-icon';
 import { Meteor } from 'meteor/meteor';
 

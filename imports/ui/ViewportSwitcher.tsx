@@ -14,8 +14,8 @@ import { marketUrl } from '../settings';
 import { FrameSwitcher } from './FrameSwitcher';
 
 import './ViewportSwitcher.css';
-import { ConnectionsPanel } from './powerbar/ConnectionsPanel';
-import { LogoutPanel } from './powerbar/LogoutPanel';
+import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
+import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;

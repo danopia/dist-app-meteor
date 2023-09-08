@@ -13,8 +13,8 @@ import { FrameSwitcher } from '../FrameSwitcher';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
-import { ConnectionsPanel } from '../powerbar/ConnectionsPanel';
-import { LogoutPanel } from '../powerbar/LogoutPanel';
+import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
+import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
