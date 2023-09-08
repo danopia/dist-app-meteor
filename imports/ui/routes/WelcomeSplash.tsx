@@ -74,9 +74,7 @@ export const WelcomeSplash = () => {
         <LogoutPanel />
 
       </ul>
-      <div className="activity-shell-parent splash-parent" style={{
-          gridColumn: '2',
-          // display: 'block',
+      <div className="switcher-content activity-shell-parent splash-parent" style={{
           backgroundColor: 'gray',
         }}>
 

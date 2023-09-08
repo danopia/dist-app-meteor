@@ -77,13 +77,12 @@ const ConfigureCatalogs = () => {
   const catalogs = useTracker(() => CatalogsCollection.find().fetch(), []);
 
   return (
-    <div className="splash-modal" style={{
-      gridColumn: '2',
+    <div className="switcher-content splash-modal" style={{
       padding: '2em 5%',
       overflowY: 'auto',
     }}>
 
-<h1>Configure Catalogs</h1>
+      <h1>Configure Catalogs</h1>
       <p>
         Catalogs are isolated buckets which store your Entities.
         Your Profile is composed of multiple Catalogs layered on top of each other.

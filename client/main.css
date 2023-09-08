@@ -120,7 +120,7 @@ iframe.activity-contents-wrap {
   grid-template-areas: "powerbar" "activity";
   grid-template-rows: 2em 1fr;
   grid-template-columns: 1fr;
-  border-left: 1px solid gray;
+  /* border-left: 1px solid gray; */
 }
 .shell-grid-layer .shell-window:not(.topmost) {
   display: none;

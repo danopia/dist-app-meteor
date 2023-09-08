@@ -183,9 +183,7 @@ export const ViewportSwitcher = (props: {
   //   // AccountsAnonymous.login()
   //   return (
   //     <RuntimeContext.Provider value={engine}>
-  //       <div className="activity-shell-parent" style={{
-  //           gridColumn: '2',
-  //         }}>
+  //       <div className="switcher-content activity-shell-parent">
   //         <ActivityShell guest={true} workspaceName={"login"} />
   //       </div>
   //     </RuntimeContext.Provider>
@@ -195,9 +193,7 @@ export const ViewportSwitcher = (props: {
     // TODO: render the 'login' profile w/o sidebar switcher
     // AccountsAnonymous.login()
     return (
-      <div className="switcher-content" style={{
-          gridColumn: '2',
-        }}>
+      <div className="switcher-content">
         <div>no profile</div>
       </div>
     );
@@ -218,16 +214,12 @@ export const ViewportSwitcher = (props: {
   }
 
   let content = (
-    <div className="switcher-content" style={{
-        gridColumn: '2',
-      }}>No content!</div>
+    <div className="switcher-content">No content!</div>
   );
 
   if (workspaceName) {
     content = (
-      <div className="activity-shell-parent" style={{
-          gridColumn: '2',
-        }}>
+      <div className="switcher-content activity-shell-parent">
         <ActivityShell guest={true} workspaceName={workspaceName} />
       </div>
     );

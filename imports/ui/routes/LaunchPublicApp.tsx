@@ -148,9 +148,7 @@ export const LaunchPublicApp = (props: {
 
   if (!workspace) {
     return (
-      <div className="switcher-content" style={{
-          gridColumn: '2',
-        }}>
+      <div className="switcher-content">
         <div>no workspace...</div>
       </div>
     );
@@ -158,18 +156,14 @@ export const LaunchPublicApp = (props: {
 
   if (false) {
     return (
-      <div className="switcher-content" style={{
-          gridColumn: '2',
-        }}>
+      <div className="switcher-content">
         <div>launching app...</div>
       </div>
     );
   }
 
   const content = (
-    <div className="activity-shell-parent" style={{
-        gridColumn: '2',
-      }}>
+    <div className="switcher-content activity-shell-parent">
       <ActivityShell guest={true} workspaceName='primary' />
     </div>
   );

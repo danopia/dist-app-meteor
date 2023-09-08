@@ -26,15 +26,15 @@ export const ConnectionsPanel = () => {
   return (<>
     {connections.map((conn, connIdx) => (
       <li key={connIdx}>
-        <div style={{fontSize: '0.7em'}} title={conn.label}>{new URL(conn.label).host}</div>
+        <div style={{fontSize: '0.7em'}} title={conn.label}>{new URL(conn.label).host.split('.')[0]}</div>
         <div style={{fontSize: '0.6em', margin: '1px 0 3px'}}>
           {conn.status.connected ? (
             <div style={{width: '8px', aspectRatio: '1', borderRadius: '50%', backgroundColor: 'green', display: 'inline-block', verticalAlign: 'middle', marginRight: '0.3em'}} />
           ) : []}
           {conn.status.status}</div>
           <div style={{display: 'flex', gap: '0.2em'}}>
-            <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', flex: 1}} type="button" disabled={conn.status.connected} onClick={conn.reconnect}>reconnect</button>
-            <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', aspectRatio: '1'}} type="button" disabled={conn.status.status == 'offline'} onClick={conn.disconnect}>×</button>
+            <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', aspectRatio: '1'}} type="button" title="Reconnect now" disabled={conn.status.connected} onClick={conn.reconnect}>↻</button>
+            <button style={{fontSize: '0.6em', padding: '0.2em 0', display: 'block', aspectRatio: '1'}} type="button" title="Go offline" disabled={conn.status.status == 'offline'} onClick={conn.disconnect}>×</button>
           </div>
       </li>
     ))}

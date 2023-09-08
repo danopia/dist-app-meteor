@@ -10,9 +10,10 @@ export const LogoutPanel = () => {
       <button type="button"
           style={{
             fontSize: '0.7em',
-            padding: '0.5em 0',
-            display: 'block',
-            width: '100%',
+            padding: '0.5em 0.5em',
+            // blockSize: '100%',
+            // display: 'block',
+            // width: '100%',
           }}
           onClick={() => Meteor.logout()}
         >
