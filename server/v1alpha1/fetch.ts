@@ -15,6 +15,7 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
         method: req.spec.method,
         headers: new Headers(req.spec.headers ?? []),
         body: req.spec.body,
+        redirect: 'manual',
       });
       Log.info(`remote server gave HTTP ${resp.status} to ${req.spec.method} ${req.spec.url}`);
       return {
@@ -58,6 +59,7 @@ export async function fetchRequestEntity(req: FetchRequestEntity): Promise<Fetch
         method: spec.input.method,
         headers: new Headers(spec.input.headers ?? []),
         body: spec.input.body,
+        redirect: 'manual',
       });
       Log.info(`remote server gave HTTP ${resp.status} to ${spec.input.method} ${spec.input.url}`);
       return {
