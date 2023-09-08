@@ -1,32 +1,25 @@
-import { Meteor } from 'meteor/meteor';
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useEffect, useMemo, useRef } from 'react';
 
-import { ActivityShell } from '../ActivityShell';
+import { ActivityShell } from '/imports/ui/ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
 import { AppInstallationEntity } from '/imports/entities/profile';
 import { WorkspaceEntity } from '/imports/entities/runtime';
 import { useBodyClass } from '/imports/lib/use-body-class';
 import { marketUrl } from '/imports/settings';
-import { RuntimeContext } from '../contexts';
-import { FrameSwitcher } from '../FrameSwitcher';
+import { RuntimeContext } from '/imports/ui/contexts';
+import { FramesPanel } from '/imports/ui/tray/FramesPanel';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
-import { AppIcon } from '../widgets/AppIcon';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
+import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
 }) => {
 
   useBodyClass('fill-body');
-
-  // useSubscribe('/v1alpha1/profiles/list');
-  // const profiles = useFind(() => ProfilesCollection.find(), []);
-  // const profile = profiles?.find(x => x._id == profileId) ?? profiles?.[0];
-  // useSubscribe(profile && '/v1alpha1/profiles/by-id/composite', profile?._id);
-
 
   // TODO: useMemo is the wrong tool for this
   const engine = useMemo(() => {
@@ -171,43 +164,15 @@ export const LaunchPublicApp = (props: {
   return (
     <RuntimeContext.Provider value={engine}>
       <div className="switcher-root">
-          <ul className="switcher-menu">
-            <li className="switcher-icon" style={{justifyItems: 'center'}}>
-              <AppIcon className="appIcon" iconSpec={appListing?.spec.icon ?? {
-                type: 'glyph',
-                glyph: {
-                  text: '⏳',
-                  backgroundColor: 'rgba(127, 127, 127, .5)',
-                },
-              }} sizeRatio={2} />
-              {/* <button className="switcher-profile-photo" style={{
-                  backgroundColor: 'gray',
-                }} /> */}
-            </li>
-            {/* <li style={{
-                display: 'grid',
-              }}>
-              <select style={{
-                  width: '100%',
-                }}>
-                {profiles?.map(x => (
-                  <option key={x._id}>
-                    {x.description ?? `${x._id.slice(0,4)}...`}
-                  </option>
-                )) ?? []}
-              </select>
-            </li> */}
-              <FrameSwitcher
-                  hWorkspace={hWorkspace}
-                />
 
-            <div style={{flex: 1}} />
+        <ul className="switcher-menu">
+          <BrandingPanel iconSpec={appListing?.spec.icon} />
+          <FramesPanel hWorkspace={hWorkspace} />
+          <div style={{flex: 1}} />
+          <ConnectionsPanel />
+          <LogoutPanel />
+        </ul>
 
-            <ConnectionsPanel />
-
-            <LogoutPanel />
-
-          </ul>
         {content}
       </div>
     </RuntimeContext.Provider>

@@ -1,21 +1,22 @@
 import { Meteor } from 'meteor/meteor';
 import React, { useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
-
-import { useBodyClass } from '../lib/use-body-class';
-import { ProfilesCollection } from '../db/profiles';
 import { useNavigate } from 'raviger';
-import { ActivityShell } from './ActivityShell';
-import { EntityEngine } from '../engine/EntityEngine';
-import { WorkspaceEntity } from '../entities/runtime';
-import { RuntimeContext } from './contexts';
-import { launchNewIntent } from '/imports/runtime/workspace-actions';
-import { marketUrl } from '../settings';
-import { FrameSwitcher } from './FrameSwitcher';
 
-import './ViewportSwitcher.css';
+import { useBodyClass } from '/imports/lib/use-body-class';
+import { ProfilesCollection } from '/imports/db/profiles';
+import { ActivityShell } from '/imports/ui/ActivityShell';
+import { EntityEngine } from '/imports/engine/EntityEngine';
+import { WorkspaceEntity } from '/imports/entities/runtime';
+import { RuntimeContext } from '/imports/ui/contexts';
+import { launchNewIntent } from '/imports/runtime/workspace-actions';
+import { marketUrl } from '/imports/settings';
+import { FramesPanel } from '/imports/ui/tray/FramesPanel';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
+
+import './ViewportSwitcher.css';
+import { BrandingPanel } from './tray/BrandingPanel';
 
 export const ViewportSwitcher = (props: {
   profileId?: string;
@@ -235,11 +236,9 @@ export const ViewportSwitcher = (props: {
       <div className="switcher-root">
         {showSwitcher ? (
           <ul className="switcher-menu">
-            <li className="switcher-icon" style={{justifyItems: 'center'}}>
-              <button className="switcher-profile-photo" style={{
-                  backgroundColor: 'gray',
-                }} />
-            </li>
+
+            <BrandingPanel textIcon='🖥️' />
+
             <li style={{
                 display: 'grid',
               }}>
@@ -263,7 +262,7 @@ export const ViewportSwitcher = (props: {
                     navigate(`/profile/${profile._id}/workspace/${x.entity.metadata.name}`);
                   }}>{x.entity.metadata.title ?? 'Shell'}</button>
               </li>
-              <FrameSwitcher key={x.entity.metadata.name+"-contents"}
+              <FramesPanel key={x.entity.metadata.name+"-contents"}
                   hWorkspace={x.hWorkspace}
                   profileId={profile._id}
                 />

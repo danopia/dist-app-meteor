@@ -2,12 +2,12 @@ import React, { useContext } from "react";
 import { useTracker } from "meteor/react-meteor-data";
 import { useNavigate } from "raviger";
 
-import { FrameEntity, WorkspaceEntity } from "../entities/runtime";
-import { RuntimeContext } from "./contexts";
-import { EntityHandle } from "../engine/EntityHandle";
-import { runTaskCommand } from "../runtime/workspace-actions";
+import { FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
+import { RuntimeContext } from "/imports/ui/contexts";
+import { EntityHandle } from "/imports/engine/EntityHandle";
+import { runTaskCommand } from "/imports/runtime/workspace-actions";
 
-export const FrameSwitcher = (props: {
+export const FramesPanel = (props: {
   hWorkspace: EntityHandle<WorkspaceEntity>;
   profileId?: string;
 }) => {
@@ -16,15 +16,14 @@ export const FrameSwitcher = (props: {
 
   const runtime = useContext(RuntimeContext);
 
-  // TODO: please let this techdebt die
-  // const shell = runtime.loadEntity('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.hWorkspace.coords.name);
-
   const frames = useTracker(() => runtime
     .listEntities<FrameEntity>(
       'runtime.dist.app/v1alpha1', 'Frame',
       'session',
     )
-    .filter(x => x.metadata.ownerReferences?.some(y => y.name == props.hWorkspace.coords.name))
+    .filter(x => x
+      .metadata.ownerReferences?.some(y => y
+        .name == props.hWorkspace.coords.name))
   , [runtime, props.hWorkspace]);
 
   return (<>

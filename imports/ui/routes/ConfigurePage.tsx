@@ -1,17 +1,13 @@
-import { useFind, useSubscribe, useTracker } from 'meteor/react-meteor-data';
-import React, { useMemo } from 'react';
+import { useSubscribe, useTracker } from 'meteor/react-meteor-data';
+import React from 'react';
+import { useNavigate } from 'raviger';
 
-import { EntityEngine } from '/imports/engine/EntityEngine';
 import { useBodyClass } from '/imports/lib/use-body-class';
-import { marketUrl } from '/imports/settings';
-import { AppListingEntity } from '/imports/runtime/system-apis/market';
-import { AppIcon } from '../widgets/AppIcon';
-import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
-import { Link, useNavigate } from 'raviger';
-import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
-import { networkIconSvg } from '/imports/svgs/network-icon';
 import { ProfilesCollection } from '/imports/db/profiles';
 import { CatalogsCollection } from '/imports/db/catalogs';
+import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
+import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
+import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 
 export const ConfigurePage = () => {
 
@@ -23,34 +19,11 @@ export const ConfigurePage = () => {
 
   const navigate = useNavigate();
 
-  // TODO: useMemo is the wrong tool for this
-  // const engine = useMemo(() => new EntityEngine(), []);
-
-  // const publicIndex = useMemo(() => engine
-  //   .useRemoteNamespace(marketUrl)
-  // , [engine, marketUrl]);
-
-  // const appListings = useTracker(() => engine
-  //   .listEntities<AppListingEntity>(
-  //     'market.dist.app/v1alpha1', 'AppListing',
-  //     publicIndex)
-  //   .filter(x => x
-  //     .metadata.tags?.includes('public-utility'))
-  // , [engine, publicIndex]);
-
   return (
     <div className="switcher-root">
       <ul className="switcher-menu">
-        <li className="switcher-icon" style={{justifyItems: 'center', margin: '0.5em 0'}}>
-          <AppIcon className="appIcon" iconSpec={{
-              type: 'glyph',
-              glyph: {
-                text: '🔧',
-                backgroundColor: 'rgba(127, 127, 127, .5)',
-              },
-          }} sizeRatio={4} />
-          <h2 style={{fontWeight: 200, margin: '0.5em 0' }}>Configure</h2>
-        </li>
+
+        <BrandingPanel brandText="Configure" textIcon='🔧' />
 
         <div className="one-tab">
           <button className="main" type="button" onClick={() => {
