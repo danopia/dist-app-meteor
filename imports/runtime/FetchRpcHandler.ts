@@ -15,6 +15,7 @@ import { LogicTracer } from "../lib/tracing";
 import { serveTelemetryApi } from "./system-apis/telemetry";
 import { EntityHandle } from "../engine/EntityHandle";
 import { runTaskCommandForResult } from "./workspace-actions";
+import { serveCatalogApi } from "./system-apis/catalog";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -30,6 +31,7 @@ type FetchHandlerFunc = (rpc: {
 }) => Promise<FetchResponseEntity['spec']>;
 
 const KnownSystemApis = new Map<string, FetchHandlerFunc>();
+KnownSystemApis.set('catalog.v1alpha1.dist.app', serveCatalogApi);
 KnownSystemApis.set('market.v1alpha1.dist.app', serveMarketApi);
 KnownSystemApis.set('session.v1alpha1.dist.app', serveSessionApi);
 KnownSystemApis.set('telemetry.v1alpha1.dist.app', serveTelemetryApi);

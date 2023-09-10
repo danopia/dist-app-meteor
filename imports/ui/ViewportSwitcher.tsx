@@ -127,11 +127,11 @@ export const ViewportSwitcher = (props: {
           layers: [{
             mode: 'ReadWrite',
             accept: [{
-              apiGroup: 'runtime.dist.app',
-            }, {
-              apiGroup: 'profile.dist.app',
-            }, {
-              apiGroup: 'manifest.dist.app',
+            //   apiGroup: 'runtime.dist.app',
+            // }, {
+            //   apiGroup: 'profile.dist.app',
+            // }, {
+            //   apiGroup: 'manifest.dist.app',
             }],
             storage: {
               type: 'profile',
