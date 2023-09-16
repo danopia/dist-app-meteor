@@ -4,6 +4,11 @@ export const settings: {
 
   adminUserIds?: Array<string>;
 
+  pwa?: {
+    shortName?: string;
+    fullName?: string;
+  };
+
   public: {
     marketUrl?: string;
   };

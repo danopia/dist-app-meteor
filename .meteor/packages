@@ -23,4 +23,6 @@ fetch@0.1.3
 reywood:publish-composite
 zodern:types
 
+webapp
+
 danopia:opentelemetry
