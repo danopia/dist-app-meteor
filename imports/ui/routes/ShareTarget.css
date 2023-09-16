@@ -1,0 +1,40 @@
+.share-target-wrap {
+  width: 100vw;
+  height: 100svh;
+  overflow-y: hidden;
+  background-color: #ccc;
+  box-sizing: border-box;
+
+  padding: 1em;
+}
+.share-target-box > * {
+  margin: 0;
+}
+.share-target-box {
+  display: flex;
+  flex-flow: column nowrap;
+  margin: 0 auto;
+  max-width: 30em;
+  gap: 0.5em 1em;
+  font-size: 1.2em;
+  background-color: #fff;
+  padding: 1em;
+}
+.share-target-box table {
+  padding: 0.5em 0;
+}
+.share-target-box th {
+  min-width: 4em;
+}
+.share-target-box code {
+  overflow-wrap: anywhere;
+  background-color: #eee;
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  margin: 0.25em 0;
+  border-radius: 5px;
+}
+.share-target-wrap button {
+  padding: 0.5em 1em;
+  font-size: inherit;
+}
