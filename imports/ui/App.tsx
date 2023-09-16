@@ -7,6 +7,7 @@ import { ViewportSwitcher } from './ViewportSwitcher';
 import { LaunchPublicApp } from './routes/LaunchPublicApp';
 import { WelcomeSplash } from './routes/WelcomeSplash';
 import { ConfigurePage } from './routes/ConfigurePage';
+import { ShareTarget } from './routes/ShareTarget';
 
 const routes = {
   '/': () => <WelcomeSplash />,
@@ -27,6 +28,8 @@ const routes = {
   '/public-index/apps/:listingName/launch': (params: {
     listingName: string;
   }) => <LaunchPublicApp appListingName={params.listingName} />,
+
+  '/share-target': () => <ShareTarget />,
 };
 
 export const App = () => {

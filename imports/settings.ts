@@ -7,6 +7,9 @@ export const settings: {
   pwa?: {
     shortName?: string;
     fullName?: string;
+    shareTarget?: {
+      enabled?: boolean;
+    };
   };
 
   public: {

@@ -7,6 +7,7 @@ WebApp.connectHandlers.use('/manifest.webmanifest', (_req, res, _next) => {
 
     "short_name": settings.pwa?.shortName ?? "dist.app",
     "name": settings.pwa?.fullName ?? "dist.app shell (v1alpha1)",
+
     "start_url": "/",
     "display": "standalone",
 
@@ -23,6 +24,16 @@ WebApp.connectHandlers.use('/manifest.webmanifest', (_req, res, _next) => {
       },
     ],
 
-  }));
+    "share_target": settings.pwa?.shareTarget?.enabled ? {
+      "method": "GET",
+      "action": "/share-target",
+      "params": {
+        "title": "title",
+        "text": "text",
+        "url": "url",
+      },
+    } : undefined,
+
+  }, null, 2));
   res.end();
 });
