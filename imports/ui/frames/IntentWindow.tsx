@@ -17,6 +17,7 @@ import { bringToTop, deleteFrame } from "/imports/runtime/workspace-actions";
 import { EntityHandle } from "/imports/engine/EntityHandle";
 import { AddPlatformAccountIntent } from "../intents/AddPlatformAccountIntent";
 import { ForAppInstallation } from "../intents/ForAppInstallation";
+import { SendAction } from "../intents/SendAction";
 
 type IntentWindowProps = {
   frame: FrameEntity;
@@ -60,6 +61,14 @@ const IntentWindowInner = (props: IntentWindowProps) => {
   if (props.command.spec.type != 'launch-intent') throw new Error(`TODO: other commands`);
   const { intent } = props.command.spec;
   // console.log('IntentWindow', intent, props.command);
+
+  if (intent.action == 'app.dist.Send') {
+    return (
+      <SendAction
+          command={props.command}
+        />
+    );
+  }
 
   if (intent.action == 'app.dist.View' && intent.category == 'app.dist.Browsable' && intent.data && new URLPattern({protocol: 'https:'}).test(intent.data)) {
     return (

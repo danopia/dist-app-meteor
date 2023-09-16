@@ -99,7 +99,12 @@ export const ShareTarget = () => {
           Save to profile
         </button>
         {workspaces?.length ? workspaces.map(x => (
-          <SendToWorkspace hWorkspace={x.hWorkspace} workspace={x.entity} data={shareData} />
+          <SendToWorkspace
+              key={x.entity.metadata.uid}
+              hWorkspace={x.hWorkspace}
+              workspace={x.entity}
+              data={shareData}
+            />
         )) : (
           <progress />
         )}
