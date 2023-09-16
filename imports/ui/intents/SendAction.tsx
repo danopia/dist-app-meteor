@@ -18,7 +18,7 @@ export const SendAction = (props: {
       padding: '1em',
     }}>
       <div style={{
-        backgroundColor: '#eee',
+        backgroundColor: 'rgba(127, 127, 127, .2)',
         display: 'flex',
         flexDirection: 'column',
         gap: '0.25em',
@@ -44,6 +44,9 @@ export const SendAction = (props: {
         {intent.extras?.text ? (
           <p style={{
             margin: 0,
+            textOverflow: 'ellipsis',
+            textWrap: 'nowrap',
+            overflowX: 'hidden',
             fontSize: intent.extras.text.length < 20 ? '1.3em' : '1em',
           }}>{intent.extras.text}</p>
         ) : []}
@@ -59,7 +62,7 @@ export const SendAction = (props: {
                 type: 'glyph',
                 glyph: {
                   text: '📋',
-                  backgroundColor: 'rgba(127, 127, 127, .5)',
+                  backgroundColor: 'rgba(127, 127, 250, .5)',
                 },
               }} />
             <span className="appTitle">Copy Text</span>
@@ -73,7 +76,7 @@ export const SendAction = (props: {
                 type: 'glyph',
                 glyph: {
                   text: '🔗',
-                  backgroundColor: 'rgba(127, 127, 127, .5)',
+                  backgroundColor: 'rgba(200, 157, 107, .5)',
                 },
               }} />
             <span className="appTitle">Open URL</span>

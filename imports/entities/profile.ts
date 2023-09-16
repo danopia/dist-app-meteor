@@ -61,7 +61,7 @@ export interface ApiCredentialEntity {
 // }
 
 export interface SavedSessionEntity {
-  id?: string;
+  _id?: string;
   apiVersion: "profile.dist.app/v1alpha1";
   kind: "SavedSession";
   metadata: EntityMetadata;
@@ -71,9 +71,23 @@ export interface SavedSessionEntity {
   };
 }
 
+export interface ChildCatalogEntity {
+  _id?: string;
+  apiVersion: 'profile.dist.app/v1alpha1';
+  kind: 'ChildCatalog';
+  spec: {
+    primaryApiVersion?: string;
+    // readAccess: 'Private' | 'Unlisted' | 'Public';
+  };
+  status?: {
+    catalogId: string;
+  };
+};
+
 export type RuntimeEntity = (
   | AppInstallationEntity
   | ApiCredentialEntity
   // | TaskEntity
   | SavedSessionEntity
+  | ChildCatalogEntity
 );
