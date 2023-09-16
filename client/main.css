@@ -1,5 +1,7 @@
 body {
   font-family: sans-serif;
+  padding: 0;
+  margin: 0;
 }
 
 body.shell-workspace-floating {
@@ -13,10 +15,6 @@ body.shell-workspace-floating #react-target, .activity-shell-parent {
   grid-template-rows: 2em 1fr;
   grid-template-columns: min-content 1fr;
   /* gap: 1em; */
-}
-body.fill-body {
-  padding: 0;
-  margin: 0;
 }
 
 .activity-contents-wrap {

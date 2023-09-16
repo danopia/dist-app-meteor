@@ -2,7 +2,6 @@ import { useSubscribe, useTracker } from 'meteor/react-meteor-data';
 import React from 'react';
 import { useNavigate } from 'raviger';
 
-import { useBodyClass } from '/imports/lib/use-body-class';
 import { ProfilesCollection } from '/imports/db/profiles';
 import { CatalogsCollection } from '/imports/db/catalogs';
 import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
@@ -10,8 +9,6 @@ import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 
 export const ConfigurePage = () => {
-
-  useBodyClass('fill-body');
 
   useSubscribe('/v1alpha1/profiles/list');
   const profile = useTracker(() => ProfilesCollection.findOne({}, {sort: {_id: 1}}), []);

@@ -5,7 +5,6 @@ import { ActivityShell } from '/imports/ui/ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
 import { AppInstallationEntity } from '/imports/entities/profile';
 import { WorkspaceEntity } from '/imports/entities/runtime';
-import { useBodyClass } from '/imports/lib/use-body-class';
 import { marketUrl } from '/imports/settings';
 import { RuntimeContext } from '/imports/ui/contexts';
 import { FramesPanel } from '/imports/ui/tray/FramesPanel';
@@ -18,8 +17,6 @@ import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 export const LaunchPublicApp = (props: {
   appListingName: string;
 }) => {
-
-  useBodyClass('fill-body');
 
   // TODO: useMemo is the wrong tool for this
   const engine = useMemo(() => {

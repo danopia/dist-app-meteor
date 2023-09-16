@@ -2,13 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQueryParams } from 'raviger';
 import { Meteor } from 'meteor/meteor';
 import { useSubscribe, useTracker } from 'meteor/react-meteor-data';
+
+import { launchNewIntent } from '/imports/runtime/workspace-actions';
+import { EntityHandle } from '/imports/engine/EntityHandle';
 import { EntityEngine } from '/imports/engine/EntityEngine';
 import { WorkspaceEntity } from '/imports/entities/runtime';
 
 import './ShareTarget.css';
-import { launchNewIntent } from '/imports/runtime/workspace-actions';
-import { EntityHandle } from '/imports/engine/EntityHandle';
-import { useBodyClass } from '/imports/lib/use-body-class';
 
 type ShareData = {
   title?: string;
@@ -24,8 +24,6 @@ export const ShareTarget = () => {
   const shareData = (params.text?.match(/^https?:\/\/[^ \r\n]+$/) && !params.url)
     ? { title: params.title, url: params.text }
     : { ...params };
-
-  useBodyClass('fill-body');
 
   const user = useTracker(() => Meteor.user(), []);
   const [profileId, setProfileId] = useState<string|null>(null);

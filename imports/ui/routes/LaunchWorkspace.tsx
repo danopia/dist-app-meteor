@@ -3,7 +3,6 @@ import React, { useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 import { useNavigate } from 'raviger';
 
-import { useBodyClass } from '/imports/lib/use-body-class';
 import { ProfilesCollection } from '/imports/db/profiles';
 import { ActivityShell } from '/imports/ui/ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
@@ -28,7 +27,6 @@ export const LaunchWorkspace = (props: {
   } = props;
   let showSwitcher = true;
 
-  useBodyClass('fill-body');
   useSubscribe('/v1alpha1/profiles/list');
 
   const navigate = useNavigate();

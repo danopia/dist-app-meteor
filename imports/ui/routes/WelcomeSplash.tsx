@@ -1,21 +1,18 @@
 import { useTracker } from 'meteor/react-meteor-data';
 import React, { useMemo } from 'react';
+import { Link } from 'raviger';
+import { Meteor } from 'meteor/meteor';
 
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { useBodyClass } from '/imports/lib/use-body-class';
 import { marketUrl } from '/imports/settings';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
 import { AppIcon } from '../widgets/AppIcon';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
-import { Link } from 'raviger';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { networkIconSvg } from '/imports/svgs/network-icon';
-import { Meteor } from 'meteor/meteor';
 import { BrandingPanel } from '../tray/BrandingPanel';
 
 export const WelcomeSplash = () => {
-
-  useBodyClass('fill-body');
 
   return (
     <div className="switcher-root">
