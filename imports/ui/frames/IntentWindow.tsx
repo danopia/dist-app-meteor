@@ -170,7 +170,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
         return (<div className="activity-contents-wrap" style={{display: 'flex', flexDirection: 'column', gap: '1em', margin: '1em', alignItems: 'center'}}>
           You are about to install:
-          <AppIcon className="appIcon" sizeRatio={3} iconSpec={appListing.spec.icon ?? null}  />
+          <AppIcon sizeRatio={3} iconSpec={appListing.spec.icon ?? null}  />
           <h2 style={{margin: 0}}>{appListing.metadata.title}</h2>
           <p style={{margin: 0}}>from:</p>
           <h4 style={{margin: 0}}>https://{marketUrl.split('/')[2]}</h4>

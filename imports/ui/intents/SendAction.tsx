@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { CommandEntity } from '/imports/entities/runtime';
-import { AppIcon } from '../widgets/AppIcon';
+import { SimpleGlyphIcon } from '../widgets/SimpleGlyphIcon';
 
 export const SendAction = (props: {
   // runtime: EntityEngine;
@@ -58,13 +58,7 @@ export const SendAction = (props: {
           <button className="launcher-button" onClick={() =>
               navigator.clipboard.writeText(intent.extras.text)
             }>
-            <AppIcon className="appIcon" iconSpec={{
-                type: 'glyph',
-                glyph: {
-                  text: '📋',
-                  backgroundColor: 'rgba(127, 127, 250, .5)',
-                },
-              }} />
+            <SimpleGlyphIcon text='📋' backgroundColor='rgba(127, 127, 250, .5)' />
             <span className="appTitle">Copy Text</span>
             <span className="appDesc">Put the text on your computer's clipboard.</span>
           </button>
@@ -72,13 +66,7 @@ export const SendAction = (props: {
 
         {intent.extras.url ? (
           <a href={intent.extras.url} target="_blank" className="launcher-button">
-            <AppIcon className="appIcon" iconSpec={{
-                type: 'glyph',
-                glyph: {
-                  text: '🔗',
-                  backgroundColor: 'rgba(200, 157, 107, .5)',
-                },
-              }} />
+            <SimpleGlyphIcon text='🔗' backgroundColor='rgba(200, 157, 107, .5)' />
             <span className="appTitle">Open URL</span>
             <span className="appDesc">Open the link in a new browser tab.</span>
           </a>
@@ -86,13 +74,7 @@ export const SendAction = (props: {
 
         {/* {intent.extras.url ? (
           <a href={intent.extras.url} target="_blank" className="launcher-button">
-            <AppIcon className="appIcon" iconSpec={{
-                type: 'glyph',
-                glyph: {
-                  text: '📑',
-                  backgroundColor: 'rgba(127, 127, 127, .5)',
-                },
-              }} />
+            <SimpleGlyphIcon text='📑' backgroundColor='rgba(127, 127, 127, .5)' />
             <span className="appTitle">Bookmark</span>
             <span className="appDesc">Store the link in your profile for future reference.</span>
           </a>

@@ -127,7 +127,7 @@ export const FrameContainer = (props: {
       } else {
         title = (
           <div className="window-title">
-            <AppIcon className="appIcon" iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
+            <AppIcon iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
             <span className="app-name">{activity.metadata.title}</span>
           </div>
         )

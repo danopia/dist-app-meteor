@@ -6,11 +6,11 @@ import { Meteor } from 'meteor/meteor';
 import { EntityEngine } from '/imports/engine/EntityEngine';
 import { marketUrl } from '/imports/settings';
 import { AppListingEntity } from '/imports/runtime/system-apis/market';
-import { AppIcon } from '../widgets/AppIcon';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { networkIconSvg } from '/imports/svgs/network-icon';
 import { BrandingPanel } from '../tray/BrandingPanel';
+import { SimpleGlyphIcon } from '../widgets/SimpleGlyphIcon';
 
 export const WelcomeSplash = () => {
 
@@ -106,13 +106,7 @@ export const WelcomeSplashCard = () => {
         <div className="launcher-window wide-items" style={{padding: 0}}>
           {appListings.length ? appListings.map(listing => (
             <Link key={listing.metadata.name} className="launcher-button" href={`public-index/apps/${listing.metadata.name}/launch`}>
-              <AppIcon className="appIcon" iconSpec={listing.spec.icon ?? {
-                  type: 'glyph',
-                  glyph: {
-                    text: '⏳',
-                    backgroundColor: 'rgba(127, 127, 127, .5)',
-                  },
-                }} />
+              <SimpleGlyphIcon text='⏳' backgroundColor='rgba(127, 127, 127, .5)' />
               <span className="appTitle">{listing.metadata.title}</span>
               <span className="appDesc">{listing.metadata.description}</span>
             </Link>
@@ -129,36 +123,18 @@ export const WelcomeSplashCard = () => {
         <div className="launcher-window wide-items" style={{padding: 0}}>
           {user ? (<>
             <Link className="launcher-button" href={`profile`}>
-              <AppIcon className="appIcon" iconSpec={{
-                  type: 'glyph',
-                  glyph: {
-                    text: '🖥️',
-                    backgroundColor: 'rgba(127, 127, 127, .5)',
-                  },
-                }} />
+              <SimpleGlyphIcon text='🖥️' backgroundColor='rgba(127, 127, 127, .5)' />
               <span className="appTitle">Cloud Workspace</span>
               <span className="appDesc">Use cloud-based applications</span>
             </Link>
             <Link className="launcher-button" href={`configure`}>
-              <AppIcon className="appIcon" iconSpec={{
-                  type: 'glyph',
-                  glyph: {
-                    text: '🔧',
-                    backgroundColor: 'rgba(127, 127, 127, .5)',
-                  },
-                }} />
+              <SimpleGlyphIcon text='🔧' backgroundColor='rgba(127, 127, 127, .5)' />
               <span className="appTitle">Configure</span>
               <span className="appDesc">Set up your profile</span>
             </Link>
           </>) : (
             <button className="launcher-button" onClick={() => Meteor.loginWithGoogle()}>
-              <AppIcon className="appIcon" iconSpec={{
-                  type: 'glyph',
-                  glyph: {
-                    text: '🔐',
-                    backgroundColor: 'rgba(127, 127, 127, .5)',
-                  },
-                }} />
+              <SimpleGlyphIcon text='🔐' backgroundColor='rgba(127, 127, 127, .5)' />
               <span className="appTitle">Log in</span>
               <span className="appDesc">Authenticate to this server</span>
             </button>

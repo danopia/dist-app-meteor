@@ -5,7 +5,7 @@ import { IconSpec } from "/imports/entities/manifest";
 
 
 // <li className="switcher-icon" style={{justifyItems: 'center', margin: '0.5em 0'}}>
-// <AppIcon className="appIcon" iconSpec={{
+// <AppIcon iconSpec={{
 //     type: 'glyph',
 //     glyph: {
 //       text: '🔧',
@@ -17,7 +17,7 @@ import { IconSpec } from "/imports/entities/manifest";
 
 
 // <li className="switcher-icon" style={{justifyItems: 'center'}}>
-// <AppIcon className="appIcon" iconSpec={appListing?.spec.icon ?? {
+// <AppIcon iconSpec={appListing?.spec.icon ?? {
 //   type: 'glyph',
 //   glyph: {
 //     text: '⏳',
@@ -31,7 +31,7 @@ import { IconSpec } from "/imports/entities/manifest";
 
 
 // <li className="switcher-icon" style={{justifyItems: 'center', margin: '0.5em 0'}}>
-// <AppIcon className="appIcon" iconSpec={{
+// <AppIcon iconSpec={{
 //   type: 'svg',
 //   svg: {
 //     textData: networkIconSvg,
@@ -55,7 +55,7 @@ export const BrandingPanel = (props: {
 }) => {
   return (
     <li className="switcher-icon" style={{justifyItems: 'center', margin: '0.5em 0'}}>
-      <AppIcon className="appIcon" iconSpec={props.iconSpec ?? {
+      <AppIcon iconSpec={props.iconSpec ?? {
           type: 'glyph',
           glyph: {
             text: props.textIcon ?? '',

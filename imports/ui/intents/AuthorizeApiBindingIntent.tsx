@@ -156,7 +156,7 @@ export const AuthorizeApiBindingIntent = (props: {
             <th>Application:</th>
             <td>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5em' }}>
-                <AppIcon className="appIcon" iconSpec={entities.app.spec.icon ?? null}  />
+                <AppIcon iconSpec={entities.app.spec.icon ?? null}  />
                 <h4 style={{margin: 0}}>{entities.app.metadata.title}</h4>
               </div>
             </td>

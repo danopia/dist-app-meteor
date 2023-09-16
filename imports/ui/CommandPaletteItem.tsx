@@ -13,7 +13,7 @@ export function CommandPaletteItem(item: PaletteCommand & { highlight?: Array<st
         </span>
       ) : []}
       {item.icon ? (
-        <AppIcon className="appIcon" iconSpec={item.icon} />
+        <AppIcon iconSpec={item.icon} />
       ) : []}
       <SuggestionHighlighter text={item.name} highlightHtml={item.highlight?.[1]} />
     </div>

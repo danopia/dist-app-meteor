@@ -1,8 +1,10 @@
 import { useTracker } from "meteor/react-meteor-data";
 import React, { useContext } from "react";
-import { ApplicationEntity, ActivityEntity } from "../entities/manifest";
+
+import { ApplicationEntity, ActivityEntity } from "/imports/entities/manifest";
 import { RuntimeContext } from "./contexts";
 import { AppIcon } from "./widgets/AppIcon";
+import { SimpleGlyphIcon } from "./widgets/SimpleGlyphIcon";
 
 export const LauncherIcon = (props: {
   appUri: string;
@@ -24,13 +26,13 @@ export const LauncherIcon = (props: {
   );
 
   if (!activity) return (<>
-    <AppIcon className="appIcon" iconSpec={{type: 'glyph', glyph: {text: '?', backgroundColor: 'rgba(127, 127, 127, .5)'}}} />
+    <SimpleGlyphIcon text='?' backgroundColor='rgba(127, 127, 127, .5)' />
     <span>Broken application</span>
   </>);
 
   return (
     <>
-      <AppIcon className="appIcon" iconSpec={activity.spec.icon ?? app.spec.icon ?? null} />
+      <AppIcon iconSpec={activity.spec.icon ?? app.spec.icon ?? null} />
       <span>{activity.metadata.title}</span>
     </>
   );
