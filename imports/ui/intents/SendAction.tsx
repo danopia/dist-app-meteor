@@ -13,6 +13,12 @@ export const SendAction = (props: {
   if (props.command.spec.type !== 'launch-intent') throw new Error(`not a launch-intent command`);
   const intent = props.command.spec.intent;
 
+  const extras = intent.extras as {
+    title?: string;
+    text?: string;
+    url?: string;
+  };
+
   return (
     <nav className="activity-contents-wrap" style={{
       padding: '1em',
@@ -25,38 +31,38 @@ export const SendAction = (props: {
         borderRadius: '5px',
         padding: '0.5em',
       }}>
-        {intent.extras?.title ? (
-          <h3 title={intent.extras.title} style={{
+        {extras?.title ? (
+          <h3 title={extras.title} style={{
             margin: 0,
             textOverflow: 'ellipsis',
             textWrap: 'nowrap',
             overflowX: 'hidden',
-          }}>{intent.extras.title}</h3>
+          }}>{extras.title}</h3>
         ) : []}
-        {intent.extras?.url ? (
-          <span title={intent.extras.url} style={{
+        {extras?.url ? (
+          <span title={extras.url} style={{
             textOverflow: 'ellipsis',
             textWrap: 'nowrap',
             overflowX: 'hidden',
             color: '#666',
-          }}>{intent.extras.url}</span>
+          }}>{extras.url}</span>
         ) : []}
-        {intent.extras?.text ? (
+        {extras?.text ? (
           <p style={{
             margin: 0,
             textOverflow: 'ellipsis',
             textWrap: 'nowrap',
             overflowX: 'hidden',
-            fontSize: intent.extras.text.length < 20 ? '1.3em' : '1em',
-          }}>{intent.extras.text}</p>
+            fontSize: extras.text.length < 20 ? '1.3em' : '1em',
+          }}>{extras.text}</p>
         ) : []}
       </div>
 
       <div className="launcher-window wide-items" style={{padding: '1em 0 0 0'}}>
 
-        {intent.extras.text ? (
+        {extras.text ? (
           <button className="launcher-button" onClick={() =>
-              navigator.clipboard.writeText(intent.extras.text)
+              navigator.clipboard.writeText(extras.text)
             }>
             <SimpleGlyphIcon text='📋' backgroundColor='rgba(127, 127, 250, .5)' />
             <span className="appTitle">Copy Text</span>
@@ -64,16 +70,16 @@ export const SendAction = (props: {
           </button>
         ) : []}
 
-        {intent.extras.url ? (
-          <a href={intent.extras.url} target="_blank" className="launcher-button">
+        {extras.url ? (
+          <a href={extras.url} target="_blank" className="launcher-button">
             <SimpleGlyphIcon text='🔗' backgroundColor='rgba(200, 157, 107, .5)' />
             <span className="appTitle">Open URL</span>
             <span className="appDesc">Open the link in a new browser tab.</span>
           </a>
         ) : []}
 
-        {/* {intent.extras.url ? (
-          <a href={intent.extras.url} target="_blank" className="launcher-button">
+        {/* {extras.url ? (
+          <a href={extras.url} target="_blank" className="launcher-button">
             <SimpleGlyphIcon text='📑' backgroundColor='rgba(127, 127, 127, .5)' />
             <span className="appTitle">Bookmark</span>
             <span className="appDesc">Store the link in your profile for future reference.</span>
