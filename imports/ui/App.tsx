@@ -3,7 +3,7 @@ import { useRoutes } from 'raviger';
 import { ErrorBoundary } from 'react-error-boundary';
 
 import { ErrorFallback } from '../lib/error-fallback';
-import { ViewportSwitcher } from './ViewportSwitcher';
+import { LaunchWorkspace } from './routes/LaunchWorkspace';
 import { LaunchPublicApp } from './routes/LaunchPublicApp';
 import { WelcomeSplash } from './routes/WelcomeSplash';
 import { ConfigurePage } from './routes/ConfigurePage';
@@ -16,14 +16,14 @@ const routes = {
   '/configure': () => <ConfigurePage />,
   '/configure/catalogs': () => <ConfigurePage />,
 
-  '/profile': () => <ViewportSwitcher />,
+  '/profile': () => <LaunchWorkspace />,
   '/profile/:profileId': (params: {
     profileId: string;
-  }) => <ViewportSwitcher profileId={params.profileId} />,
+  }) => <LaunchWorkspace profileId={params.profileId} />,
   '/profile/:profileId/workspace/:workspaceName': (params: {
     profileId: string;
     workspaceName: string;
-  }) => <ViewportSwitcher profileId={params.profileId} workspaceName={params.workspaceName} />,
+  }) => <LaunchWorkspace profileId={params.profileId} workspaceName={params.workspaceName} />,
 
   '/public-index/apps/:listingName/launch': (params: {
     listingName: string;

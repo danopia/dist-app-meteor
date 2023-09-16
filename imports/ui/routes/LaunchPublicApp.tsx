@@ -138,7 +138,6 @@ export const LaunchPublicApp = (props: {
   }, [appSetup, engine, appListing]);
 
   const workspace = useTracker(() => hWorkspace.get(), [hWorkspace]);
-
   if (!workspace) {
     return (
       <div className="switcher-content">
@@ -146,20 +145,6 @@ export const LaunchPublicApp = (props: {
       </div>
     );
   }
-
-  if (false) {
-    return (
-      <div className="switcher-content">
-        <div>launching app...</div>
-      </div>
-    );
-  }
-
-  const content = (
-    <div className="switcher-content activity-shell-parent">
-      <ActivityShell guest={true} workspaceName='primary' />
-    </div>
-  );
 
   return (
     <RuntimeContext.Provider value={engine}>
@@ -173,7 +158,10 @@ export const LaunchPublicApp = (props: {
           <LogoutPanel />
         </ul>
 
-        {content}
+        <div className="switcher-content activity-shell-parent">
+          <ActivityShell guest={true} workspaceName='primary' />
+        </div>
+
       </div>
     </RuntimeContext.Provider>
   );

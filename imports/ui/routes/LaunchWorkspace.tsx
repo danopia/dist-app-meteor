@@ -14,11 +14,11 @@ import { marketUrl } from '/imports/settings';
 import { FramesPanel } from '/imports/ui/tray/FramesPanel';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
+import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 
-import './ViewportSwitcher.css';
-import { BrandingPanel } from './tray/BrandingPanel';
+import '../ViewportSwitcher.css';
 
-export const ViewportSwitcher = (props: {
+export const LaunchWorkspace = (props: {
   profileId?: string;
   workspaceName?: string;
 }) => {
