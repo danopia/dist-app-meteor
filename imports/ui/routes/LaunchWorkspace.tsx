@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import React, { useEffect, useMemo } from 'react';
+import React, { Fragment, useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 import { useNavigate } from 'raviger';
 
@@ -250,21 +250,23 @@ export const LaunchWorkspace = (props: {
                 )) ?? []}
               </select>
             </li>
-            {workspaces.map(x => (<>
-              <li key={x.entity.metadata.name} className="switcher-icon">
-                <button style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }} onClick={() => {
-                    navigate(`/profile/${profile._id}/workspace/${x.entity.metadata.name}`);
-                  }}>{x.entity.metadata.title ?? 'Shell'}</button>
-              </li>
-              <FramesPanel key={x.entity.metadata.name+"-contents"}
-                  hWorkspace={x.hWorkspace}
-                  profileId={profile._id}
-                />
-            </>))}
+            {workspaces.map(x => (
+              <Fragment key={x.entity.metadata.name}>
+                <li className="switcher-icon">
+                  <button style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }} onClick={() => {
+                      navigate(`/profile/${profile._id}/workspace/${x.entity.metadata.name}`);
+                    }}>{x.entity.metadata.title ?? 'Shell'}</button>
+                </li>
+                <FramesPanel
+                    hWorkspace={x.hWorkspace}
+                    profileId={profile._id}
+                  />
+              </Fragment>
+            ))}
             <li className="switcher-icon">
               <button style={{
                   display: 'flex',
