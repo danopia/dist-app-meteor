@@ -213,6 +213,50 @@ export interface WebAccountTypeEntity {
 //   ;
 // }
 
+export interface CatalogBindingEntity {
+  _id?: string;
+  apiVersion: "manifest.dist.app/v1alpha1";
+  kind: "CatalogBinding";
+  metadata: EntityMetadata;
+  spec: {
+    targetNamespace: string;
+    isRequired: boolean;
+    catalogType:
+      | {
+        type: "SpecificApi";
+        specificApi: {
+          group: string;
+          version: string;
+        };
+      }
+      | {
+        type: "ProfileRoot";
+      }
+  };
+}
+
+export interface EntityDefinitionEntity {
+  _id?: string;
+  apiVersion: "manifest.dist.app/v1alpha1";
+  kind: "EntityDefinition";
+  metadata: EntityMetadata;
+  spec: {
+    group: string;
+    names: {
+      plural: string;
+      singular: string;
+      kind: string;
+      shortNames?: Array<string>;
+    };
+    schema: {
+      openAPIV3Schema?: {
+        type: 'object';
+        properties: {}; // TODO: OpenAPI Schema types
+      };
+    };
+  };
+}
+
 export type ManifestEntity = (
   | ApplicationEntity
   | ActivityEntity
@@ -220,6 +264,8 @@ export type ManifestEntity = (
   | ApiBindingEntity
   | WebAccountTypeEntity
   // | EndpointEntity
+  | CatalogBindingEntity
+  | EntityDefinitionEntity
   // | ServiceEntity
   // | DatabaseEntity
 );

@@ -58,7 +58,10 @@ export const SendAction = (props: {
         ) : []}
       </div>
 
-      <div className="launcher-window wide-items" style={{padding: '1em 0 0 0'}}>
+      <div className="launcher-window wide-items" style={{
+          padding: '1em 0 0 0',
+          maxWidth: '40em',
+        }}>
 
         {extras.text ? (
           <button className="launcher-button" onClick={() =>
