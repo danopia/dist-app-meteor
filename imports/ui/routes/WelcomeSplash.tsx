@@ -11,6 +11,7 @@ import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { networkIconSvg } from '/imports/svgs/network-icon';
 import { BrandingPanel } from '../tray/BrandingPanel';
 import { SimpleGlyphIcon } from '../widgets/SimpleGlyphIcon';
+import { AppIcon } from '../widgets/AppIcon';
 
 export const WelcomeSplash = () => {
 
@@ -106,7 +107,11 @@ export const WelcomeSplashCard = () => {
         <div className="launcher-window wide-items" style={{padding: 0}}>
           {appListings.length ? appListings.map(listing => (
             <Link key={listing.metadata.name} className="launcher-button" href={`public-index/apps/${listing.metadata.name}/launch`}>
-              <SimpleGlyphIcon text='⏳' backgroundColor='rgba(127, 127, 127, .5)' />
+              {listing.spec.icon ? (
+                <AppIcon iconSpec={listing.spec.icon} />
+              ) : (
+                <SimpleGlyphIcon text='⏳' backgroundColor='rgba(127, 127, 127, .5)' />
+              )}
               <span className="appTitle">{listing.metadata.title}</span>
               <span className="appDesc">{listing.metadata.description}</span>
             </Link>
