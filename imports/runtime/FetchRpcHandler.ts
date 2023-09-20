@@ -10,7 +10,7 @@ import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from 
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
 import { serveSessionApi } from "./system-apis/session";
-import { makeErrorResponse, makeStatusResponse, makeTextResponse } from "./fetch-responses";
+import { makeErrorResponse, makeStatusResponse, makeTextResponse, wrapFetchResponse } from "./fetch-responses";
 import { LogicTracer } from "../lib/tracing";
 import { serveTelemetryApi } from "./system-apis/telemetry";
 import { EntityHandle } from "../engine/EntityHandle";
@@ -64,6 +64,13 @@ export class FetchRpcHandler {
   async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
     if (rpc.spec.bodyStream != null) throw new Error(`TODO: streaming request body`);
 
+    if (rpc.spec.url.startsWith('entity://')) {
+      return await this
+        .handleCatalog(rpc)
+        .then(wrapFetchResponse)
+        .catch(makeErrorResponse);
+    }
+
     // TODO: task-state can be a system API
     if (rpc.spec.url.startsWith('/task/state/')) {
       return await this.handleTaskState(rpc);
@@ -84,6 +91,107 @@ export class FetchRpcHandler {
     }
 
     return await this.handlePocTodo(rpc);
+  }
+
+  @tracer.InternalSpan
+  async handleCatalog(rpc: FetchRequestEntity): Promise<FetchResponseEntity['spec']> {
+    console.log('TODO', rpc);
+    // const match = new URLPattern({pathname: '/my-namespace/apis/:apiGroup/:apiVersion/:kind/:name'}).exec(new URL('/'+rpc.path, 'http://null'));
+    // if (match && rpc.request.method == 'POST' && rpc.request.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/apply-patch+json') {
+
+    {
+      const match = new URLPattern({pathname: '//:namespace/:apiGroup/:apiVersion/:resourcePlural/list'}).exec(rpc.spec.url);
+      if (match && rpc.spec.method == 'GET') {
+        const {namespace, apiGroup, apiVersion, resourcePlural} = match.pathname.groups;
+        const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
+        const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        return {
+          status: 200,
+          headers: [['content-type', 'application/json']],
+          body: JSON.stringify({items: resources}),
+        };
+      }
+    }
+
+    {
+      const match = new URLPattern({pathname: '//:namespace/:apiGroup/:apiVersion/:resourcePlural/by-name/:name'}).exec(rpc.spec.url);
+      if (match && rpc.spec.method == 'PATCH' && rpc.spec.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/apply-patch+json') {
+        const {namespace, apiGroup, apiVersion, resourcePlural, name} = match.pathname.groups;
+        const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
+        const entityJson = JSON.parse(`${rpc.spec.body}`);
+        console.log({apiGroup, apiVersion, kind, name,entityJson})
+        const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
+        if (hEntity.get()) {
+          await hEntity.mutate(entity => {
+            console.log('TODO: i have', {entity}, 'and want to apply', entityJson);
+            // TODO: this is terrible!
+            entity.spec = entityJson.spec;
+          });
+        } else {
+          await hEntity.insertNeighbor({
+            ...entityJson,
+            apiVersion: `${apiGroup}/${apiVersion}`,
+            kind: kind!,
+            metadata: {
+              ...entityJson.metadata,
+              name: name!,
+            }
+          });
+        }
+        // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        return {
+          status: 204,
+        };
+      }
+      if (match && rpc.spec.method == 'PUT'/* && rpc.spec.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/json'*/) {
+        const {namespace, apiGroup, apiVersion, resourcePlural, name} = match.pathname.groups;
+        const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
+        const entityJson = JSON.parse(`${rpc.spec.body}`);
+        console.log({apiGroup, apiVersion, kind, name,entityJson})
+        const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
+        if (hEntity.get()) {
+          return {
+            status: 409,
+            body: 'Resource already exists. TODO: what happens when you PUT over something?',
+          };
+        } else {
+          await hEntity.insertNeighbor({
+            ...entityJson,
+            apiVersion: `${apiGroup}/${apiVersion}`,
+            kind: kind!,
+            metadata: {
+              ...entityJson.metadata,
+              name: name!,
+            }
+          });
+        }
+        // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        return {
+          status: 204,
+        };
+      }
+    }
+
+    // {
+    //   const match = new URLPattern({pathname: '/my-namespace/create-entity'}).exec(new URL('/'+rpc.path, 'http://null'));
+    //   if (match && rpc.spec.method == 'POST') {
+    //     const {apiGroup, apiVersion, resourcePlural} = match.pathname.groups;
+    //     const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
+    //     const entityJson = rpc.spec.body;
+    //     console.log({entityJson})
+    //     throw new Error(`TODO: insert`);
+    //     // const resources = this.runtime.insertEntity({
+
+    //     // }`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+    //     // return {
+    //     //   status: 200,
+    //     //   headers: [['content-type', 'application/json']],
+    //     //   body: JSON.stringify({items: resources}),
+    //     // };
+    //   }
+    // }
+
+    return makeTextResponse(404, `TODO: this catalog api isn't real`).spec;
   }
 
   // async handleInner(req: Request): Promise<Response> {
@@ -130,7 +238,7 @@ export class FetchRpcHandler {
       request: rpc.spec,
       path: subPath,
       context: this,
-    })).then<Omit<FetchResponseEntity, 'origId'>>(x => ({kind: 'FetchResponse', spec: x}))
+    })).then(wrapFetchResponse)
       .catch(makeErrorResponse);
   }
 

@@ -14,3 +14,10 @@ export function makeTextResponse(status: number, body: string): Omit<FetchRespon
     },
   };
 }
+
+export function wrapFetchResponse(x: FetchResponseEntity['spec']) {
+  return {
+    kind: 'FetchResponse',
+    spec: x,
+  } satisfies Omit<FetchResponseEntity, 'origId'>;
+}
