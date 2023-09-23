@@ -179,11 +179,30 @@ class DistApp {
         body: request.body ?? undefined,
       },
     });
-    if (respPayload.spec.bodyStream != null) throw new Error(`TODO: stream`);
-    return new Response(respPayload.spec.body || null, {
-      status: respPayload.spec.status,
-      headers: new Headers(respPayload.spec.headers ?? []),
-    });
+    if (respPayload instanceof ReadableStream) {
+      const respReader = respPayload.getReader();
+      const resp = await respReader.read();
+      respReader.releaseLock();
+      if (!resp.value || resp.value.kind !== 'FetchResponse') {
+        throw new Error(`BUG: weird fetch stream`);
+      }
+      return new Response(respPayload.pipeThrough(new TransformStream<FetchResponseEntity|FetchBodyChunkEntity,string|Uint8Array>({
+        transform(chunk, ctlr) {
+          if (chunk.kind !== 'FetchBodyChunk') throw new Error(`BUG: weird fetch body chunk`);
+          ctlr.enqueue(chunk.spec.chunk);
+        },
+      })), {
+        status: resp.value.spec.status,
+        headers: new Headers(resp.value.spec.headers ?? []),
+      });
+
+    } else {
+      if (respPayload.spec.bodyStream != null) throw new Error(`TODO: stream`);
+      return new Response(respPayload.spec.body || null, {
+        status: respPayload.spec.status,
+        headers: new Headers(respPayload.spec.headers ?? []),
+      });
+    }
   }
   useVueState(key: string, initial: unknown) {
     console.log("TODO: useVueState", key, initial);

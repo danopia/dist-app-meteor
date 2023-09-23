@@ -5,7 +5,7 @@ import "urlpattern-polyfill";
 
 import { EntityEngine } from "../engine/EntityEngine";
 import { ActivityEntity, ApiBindingEntity, ApiEntity } from "../entities/manifest";
-import { FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
+import { FetchBodyChunkEntity, FetchRequestEntity, FetchResponseEntity } from "../entities/protocol";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "../entities/runtime";
 import { meteorCallAsync } from "../lib/meteor-call";
 import { serveMarketApi } from "./system-apis/market";
@@ -16,6 +16,7 @@ import { serveTelemetryApi } from "./system-apis/telemetry";
 import { EntityHandle } from "../engine/EntityHandle";
 import { runTaskCommandForResult } from "./workspace-actions";
 import { serveCatalogApi } from "./system-apis/catalog";
+import { EJSON } from "meteor/ejson";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -36,6 +37,8 @@ KnownSystemApis.set('market.v1alpha1.dist.app', serveMarketApi);
 KnownSystemApis.set('session.v1alpha1.dist.app', serveSessionApi);
 KnownSystemApis.set('telemetry.v1alpha1.dist.app', serveTelemetryApi);
 
+type MaybeStreamingResp = Omit<FetchResponseEntity, 'origId'> & {bodyChunks?: ReadableStream<FetchBodyChunkEntity['spec']>};
+
 export class FetchRpcHandler {
   constructor(
     public readonly runtime: EntityEngine,
@@ -44,7 +47,7 @@ export class FetchRpcHandler {
     public readonly hWorkspace: EntityHandle<WorkspaceEntity>,
   ) {}
 
-  async handle(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
+  async handle(rpc: FetchRequestEntity): Promise<MaybeStreamingResp> {
     return await tracer.asyncSpan(`fetch-rpc ${rpc.spec.method}`, {
       kind: SpanKind.SERVER,
       attributes: {
@@ -61,13 +64,12 @@ export class FetchRpcHandler {
     });
   }
 
-  async handleInner(rpc: FetchRequestEntity): Promise<Omit<FetchResponseEntity, 'origId'>> {
+  async handleInner(rpc: FetchRequestEntity): Promise<MaybeStreamingResp> {
     if (rpc.spec.bodyStream != null) throw new Error(`TODO: streaming request body`);
 
     if (rpc.spec.url.startsWith('entity://')) {
       return await this
         .handleCatalog(rpc)
-        .then(wrapFetchResponse)
         .catch(makeErrorResponse);
     }
 
@@ -94,10 +96,15 @@ export class FetchRpcHandler {
   }
 
   @tracer.InternalSpan
-  async handleCatalog(rpc: FetchRequestEntity): Promise<FetchResponseEntity['spec']> {
-    console.log('TODO', rpc);
+  async handleCatalog(rpc: FetchRequestEntity): Promise<MaybeStreamingResp> {
+    // console.log('TODO', rpc);
     // const match = new URLPattern({pathname: '/my-namespace/apis/:apiGroup/:apiVersion/:kind/:name'}).exec(new URL('/'+rpc.path, 'http://null'));
     // if (match && rpc.request.method == 'POST' && rpc.request.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/apply-patch+json') {
+
+    // TODO: the app should have its own namespace
+    // TODO: the api should be routed by kind, depending on how the kind is defined
+    // (e.g. some kinds are not simple entities, and might be more like devices)
+    // these below routes can be moved to specifically the dynamic / in-kernel kinds
 
     {
       const match = new URLPattern({pathname: '//:namespace/:apiGroup/:apiVersion/:resourcePlural/list'}).exec(rpc.spec.url);
@@ -105,10 +112,43 @@ export class FetchRpcHandler {
         const {namespace, apiGroup, apiVersion, resourcePlural} = match.pathname.groups;
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
         const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
-        return {
+        return wrapFetchResponse({
           status: 200,
           headers: [['content-type', 'application/json']],
-          body: JSON.stringify({items: resources}),
+          body: EJSON.stringify({items: resources}),
+        });
+      }
+    }
+
+    {
+      const match = new URLPattern({pathname: '//:namespace/:apiGroup/:apiVersion/:resourcePlural/stream'}).exec(rpc.spec.url);
+      if (match && rpc.spec.method == 'GET') {
+        const {namespace, apiGroup, apiVersion, resourcePlural} = match.pathname.groups;
+        const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
+        // TODO: actually cancel these streams eventually
+        const signal = new AbortController().signal;
+        const stream = await this.runtime.streamEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace, signal);
+        return {
+          kind: 'FetchResponse',
+          spec: {
+            status: 200,
+            headers: [['content-type', 'application/jsonl+entity-stream-events']],
+            bodyStream: true,
+          },
+          bodyChunks: stream.pipeThrough(new TransformStream({
+            transform(evt, ctlr) {
+              ctlr.enqueue({
+                chunk: EJSON.stringify(evt)+'\n',
+                isFinal: false,
+              });
+            },
+            flush(ctlr) {
+              ctlr.enqueue({
+                chunk: '',
+                isFinal: true,
+              });
+            },
+          })),
         };
       }
     }
@@ -118,13 +158,14 @@ export class FetchRpcHandler {
       if (match && rpc.spec.method == 'PATCH' && rpc.spec.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/apply-patch+json') {
         const {namespace, apiGroup, apiVersion, resourcePlural, name} = match.pathname.groups;
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
-        const entityJson = JSON.parse(`${rpc.spec.body}`);
+        const entityJson = EJSON.parse(`${rpc.spec.body}`);
         console.log({apiGroup, apiVersion, kind, name,entityJson})
         const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
         if (hEntity.get()) {
           await hEntity.mutate(entity => {
             console.log('TODO: i have', {entity}, 'and want to apply', entityJson);
             // TODO: this is terrible!
+            //@ts-expect-error: also bad!
             entity.spec = entityJson.spec;
           });
         } else {
@@ -139,21 +180,21 @@ export class FetchRpcHandler {
           });
         }
         // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
-        return {
+        return wrapFetchResponse({
           status: 204,
-        };
+        });
       }
       if (match && rpc.spec.method == 'PUT'/* && rpc.spec.headers?.find(x => x[0] == 'content-type')?.[1] == 'application/json'*/) {
         const {namespace, apiGroup, apiVersion, resourcePlural, name} = match.pathname.groups;
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
-        const entityJson = JSON.parse(`${rpc.spec.body}`);
+        const entityJson = EJSON.parse(`${rpc.spec.body}`);
         console.log({apiGroup, apiVersion, kind, name,entityJson})
         const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
         if (hEntity.get()) {
-          return {
+          return wrapFetchResponse({
             status: 409,
             body: 'Resource already exists. TODO: what happens when you PUT over something?',
-          };
+          });
         } else {
           await hEntity.insertNeighbor({
             ...entityJson,
@@ -166,9 +207,9 @@ export class FetchRpcHandler {
           });
         }
         // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
-        return {
+        return wrapFetchResponse({
           status: 204,
-        };
+        });
       }
     }
 
@@ -191,7 +232,7 @@ export class FetchRpcHandler {
     //   }
     // }
 
-    return makeTextResponse(404, `TODO: this catalog api isn't real`).spec;
+    return makeTextResponse(404, `TODO: this catalog api isn't real`);
   }
 
   // async handleInner(req: Request): Promise<Response> {

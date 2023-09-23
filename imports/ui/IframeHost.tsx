@@ -73,7 +73,25 @@ export const IframeHost = (props: {
     });
     messageHost.addRpcListener<protocol.FetchRequestEntity>('FetchRequest', async ({rpc, respondWith}) => {
       try {
-        respondWith(await fetchHandler.handle(rpc));
+        // TODO: cancellation if we shut down
+        const {bodyChunks, ...resp} = await fetchHandler.handle(rpc);
+        if (bodyChunks) {
+          // TODO: do something with this promise
+          respondWith(bodyChunks
+            .pipeThrough(new TransformStream<protocol.FetchBodyChunkEntity['spec'], protocol.FetchBodyChunkEntity | protocol.FetchResponseEntity>({
+              start(ctlr) {
+                ctlr.enqueue(resp);
+              },
+              transform(packet, ctlr) {
+                ctlr.enqueue({
+                  kind: 'FetchBodyChunk',
+                  spec: packet,
+                });
+              },
+            })));
+        } else {
+          respondWith(resp);
+        }
       } catch (err) {
         respondWith<protocol.FetchErrorEntity>({
           kind: 'FetchError',
