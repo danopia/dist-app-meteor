@@ -1,6 +1,6 @@
 import { Mongo } from "meteor/mongo";
 import { Entity } from "/imports/entities";
-import { ArbitraryEntity } from "../entities/core";
+import { ArbitraryEntity, StreamEvent } from "../entities/core";
 import { ProfilesCollection } from "../db/profiles";
 import { EntitiesCollection, EntityDoc } from "../db/entities";
 import { meteorCallAsyncWithSpan } from "../lib/meteor-call";
@@ -14,6 +14,7 @@ export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
   listAllEntities(): ArbitraryEntity[];
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[];
+  streamEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], signal: AbortSignal): Promise<ReadableStream<StreamEvent<T>>>;
   // watchEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]);
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null;
   updateEntity<T extends ArbitraryEntity>(newEntity: T, span?: Span): void | Promise<void>;
@@ -28,6 +29,29 @@ export class StaticEntityStorage implements EntityStorage {
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[] {
     return (this.src as ArbitraryEntity[]).filter(x =>
       x.apiVersion == apiVersion && x.kind == kind) as T[];
+  }
+  streamEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], signal: AbortSignal): Promise<ReadableStream<StreamEvent<T>>> {
+    const list = [...this.listEntities(apiVersion, kind)];
+    return Promise.resolve(new ReadableStream<StreamEvent<T>>({
+      start(ctlr) {
+        signal.addEventListener('abort', () => {
+          ctlr.close();
+        });
+      },
+      pull(ctlr) {
+        const next = list.shift();
+        if (next) {
+          ctlr.enqueue({
+            kind: 'Creation',
+            snapshot: next,
+          });
+        } else {
+          ctlr.enqueue({
+            kind: 'InSync',
+          });
+        }
+      },
+    }));
   }
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null {
     return (this.src as ArbitraryEntity[]).find(x =>
@@ -54,6 +78,9 @@ export class MongoProfileStorage implements EntityStorage {
   }
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]): T[] {
     return this.getStorage(apiVersion, false)?.listEntities(apiVersion, kind) ?? [];
+  }
+  streamEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], signal: AbortSignal) {
+    return this.getStorage(apiVersion, false)!.streamEntities(apiVersion, kind, signal);
   }
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string): T | null {
     return this.getStorage(apiVersion, false)?.getEntity(apiVersion, kind, name) ?? null;
@@ -157,15 +184,6 @@ export class MongoEntityStorage implements EntityStorage {
   }
 
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
-    // console.log({
-    //   filter: {
-    //     apiVersion: apiVersion,
-    //     kind: kind,
-    //     catalogId: this.props.catalogId,
-    //     'metadata.namespace': this.props.namespace,
-    //   },
-    //   all: this.props.collection.find().fetch(),
-    // })
     return (this.props.collection.find({
       catalogId: this.props.catalogId,
       apiVersion: apiVersion,
@@ -174,6 +192,48 @@ export class MongoEntityStorage implements EntityStorage {
     }) as Mongo.Cursor<T & { catalogId: string; _id: string }>).fetch()
       .map(x => ({ ...x, metadata: { ...x.metadata, namespace: this.props.namespace } }));
   }
+
+  async streamEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], signal: AbortSignal) {
+    const cursor = this.props.collection.find({
+      catalogId: this.props.catalogId,
+      apiVersion: apiVersion,
+      kind: kind,
+    });
+    signal.throwIfAborted();
+    const pipe = new TransformStream<StreamEvent<T>, StreamEvent<T>>();
+    const writer = pipe.writable.getWriter();
+    // TODO: is it ok that we're going to be doing async writing into the stream from sync callbacks?
+    const handle = cursor.observe({
+      added: (doc: T & { catalogId: string; _id: string }) => {
+        writer.write({
+          kind: 'Creation',
+          snapshot: { ...doc, metadata: { ...doc.metadata, namespace: this.props.namespace } },
+        })
+      },
+      changed: (doc: T & { catalogId: string; _id: string }) => {
+        writer.write({
+          kind: 'Mutation',
+          snapshot: { ...doc, metadata: { ...doc.metadata, namespace: this.props.namespace } },
+        })
+      },
+      removed: (doc: T & { catalogId: string; _id: string }) => {
+        writer.write({
+          kind: 'Deletion',
+          snapshot: { ...doc, metadata: { ...doc.metadata, namespace: this.props.namespace } },
+        })
+      },
+    });
+    // TODO: are we actually in-sync at this point?
+    writer.write({
+      kind: 'InSync',
+    });
+    // TODO: send bookmarks at some interval (5m or so)
+    signal.addEventListener('abort', () => {
+      handle.stop();
+      writer.close();
+    });
+    return pipe.readable;
+  };
 
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
     const entity = this.props.collection.findOne({
@@ -286,6 +346,9 @@ export class MeteorEntityStorage implements EntityStorage {
   }
   listEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"]) {
     return this.readStorage.listEntities(apiVersion, kind);
+  }
+  streamEntities<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], signal: AbortSignal) {
+    return this.readStorage.streamEntities(apiVersion, kind, signal);
   }
   getEntity<T extends ArbitraryEntity>(apiVersion: T["apiVersion"], kind: T["kind"], name: string) {
     return this.readStorage.getEntity(apiVersion, kind, name);

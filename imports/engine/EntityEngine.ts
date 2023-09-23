@@ -1,5 +1,5 @@
 import { Meteor } from "meteor/meteor";
-import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
+import { ArbitraryEntity, NamespaceEntity, StreamEvent } from "../entities/core";
 import { Log } from "../lib/logging";
 import { ReactiveMap } from "../lib/reactive-map";
 import { LogicTracer } from "../lib/tracing";
@@ -152,6 +152,29 @@ export class EntityEngine {
       return layer.impl.listEntities<T>(apiVersion, kind).map(entity => {
         return {...entity, metadata: {...entity.metadata, namespace: namespace ?? 'default'}};
       });
+    });
+  }
+
+  streamEntities<T extends ArbitraryEntity>(
+    apiVersion: T["apiVersion"],
+    kind: T["kind"],
+    namespace: string | undefined,
+    signal: AbortSignal,
+  ): Promise<ReadableStream<StreamEvent<T>>> {
+    return tracer.syncSpan('engine streamEntities', {
+      attributes: {
+        'distapp.entity.api_version': apiVersion,
+        'distapp.entity.kind': kind,
+        'distapp.entity.namespace': namespace,
+      },
+    }, () => {
+      const layer = this.selectNamespaceLayer({
+        apiVersion: apiVersion,
+        kind: kind,
+        namespace: namespace,
+        op: 'Read',
+      });
+      return layer.impl.streamEntities<T>(apiVersion, kind, signal);
     });
   }
 

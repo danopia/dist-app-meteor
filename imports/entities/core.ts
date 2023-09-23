@@ -69,3 +69,25 @@ export interface ArbitraryEntity {
   kind: string;
   metadata: EntityMetadata;
 }
+
+export type StreamEvent<T extends ArbitraryEntity> =
+  | {
+    kind:
+      | 'InSync'
+      | 'OutOfSync'
+      | 'Bookmark'
+    ;
+  }
+  | {
+    kind:
+      | 'Creation'
+      | 'Mutation'
+      | 'Deletion'
+    ;
+    snapshot: T;
+  }
+  | {
+    kind: 'Error';
+    message: string;
+  }
+;
