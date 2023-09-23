@@ -4,7 +4,7 @@ import { LogicTracer } from "../lib/tracing";
 
 export type RpcListener<T extends ProtocolEntity> = (event: {
   rpc: T;
-  respondWith<T extends ProtocolEntity>(data: Omit<T, 'origId'>): void;
+  respondWith<T extends ProtocolEntity>(data: T | ReadableStream<T>): void;
 }) => void | Promise<void>;
 
 const WindowMap = new WeakMap<MessageEventSource, MessageHost>();
@@ -53,7 +53,13 @@ export class MessageHost {
           if (listener[0] == rpc.kind) {
             await listener[1]({
               rpc: event.data,
-              respondWith: this.respondTo.bind(this, id),
+              respondWith: (data) => {
+                if (data instanceof ReadableStream) {
+                  this.streamTo(id, data);
+                } else {
+                  this.respondTo(id, data);
+                }
+              },
             });
             // hits++;
           }
@@ -62,12 +68,45 @@ export class MessageHost {
       }));
   }
 
-  respondTo(msgId: number | false, data: Omit<ProtocolEntity, 'origId'>) {
+  respondTo(msgId: number | false, data: ProtocolEntity) {
     if (typeof msgId !== 'number') throw new Error(`Cannot respond to unnumbered RPC`);
     this.localPort.postMessage({
       ...data,
       origId: msgId,
     });
+  }
+
+  streamTo(msgId: number | false, data: ReadableStream<ProtocolEntity>) {
+    if (typeof msgId !== 'number') throw new Error(`Cannot stream to unnumbered RPC`);
+    // TODO: do something with this promise
+    return data.pipeTo(new WritableStream({
+      start: () => {
+        this.respondTo(msgId, {
+          kind: 'StreamStart',
+          spec: {},
+        });
+      },
+      write: (packet) => {
+        this.respondTo(msgId, packet);
+      },
+      abort: (reason) => {
+        this.respondTo(msgId, {
+          kind: 'StreamEnd',
+          status: {
+            success: false,
+            errorMessage: `${reason}`,
+          },
+        });
+      },
+      close: () => {
+        this.respondTo(msgId, {
+          kind: 'StreamEnd',
+          status: {
+            success: true,
+          },
+        });
+      },
+    }));
   }
 
   addRpcListener<T extends ProtocolEntity>(rpcId: T["kind"], listener: RpcListener<T>) {

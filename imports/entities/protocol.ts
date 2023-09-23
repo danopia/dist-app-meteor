@@ -59,7 +59,7 @@ export interface FetchResponseEntity {
   apiVersion?: "protocol.dist.app/v1alpha1";
   kind: "FetchResponse";
   metadata?: EntityMetadata;
-  origId: number;
+  origId?: number;
   spec: {
     status: number;
     headers?: Array<[string, string]>;
@@ -78,7 +78,7 @@ export interface FetchBodyChunkEntity {
   apiVersion?: "protocol.dist.app/v1alpha1";
   kind: "FetchBodyChunk";
   metadata?: EntityMetadata;
-  origId: number;
+  origId?: number;
   spec: {
     chunk: string | Uint8Array;
     isFinal: boolean;
@@ -88,9 +88,32 @@ export interface FetchErrorEntity {
   apiVersion?: "protocol.dist.app/v1alpha1";
   kind: "FetchError";
   metadata?: EntityMetadata;
-  origId: number;
+  origId?: number;
   spec: {
     message: string;
+  };
+}
+
+export interface StreamStartEntity {
+  apiVersion?: "protocol.dist.app/v1alpha1";
+  kind: "StreamStart";
+  metadata?: EntityMetadata;
+  origId?: number;
+  spec: {
+    itemsKind?: {
+      apiVersion: string;
+      kind: string;
+    };
+  };
+}
+export interface StreamEndEntity {
+  apiVersion?: "protocol.dist.app/v1alpha1";
+  kind: "StreamEnd";
+  metadata?: EntityMetadata;
+  origId?: number;
+  status: {
+    success: boolean;
+    errorMessage?: string;
   };
 }
 
@@ -102,4 +125,6 @@ export type ProtocolEntity = (
   | FetchResponseEntity
   | FetchBodyChunkEntity
   | FetchErrorEntity
+  | StreamStartEntity
+  | StreamEndEntity
 );

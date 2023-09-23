@@ -1,4 +1,4 @@
-import type { WriteDebugEventEntity, FetchResponseEntity, LaunchIntentEntity, LifecycleEntity, ProtocolEntity } from "../entities/protocol.js";
+import type { FetchResponseEntity, LaunchIntentEntity, LifecycleEntity, ProtocolEntity, FetchBodyChunkEntity } from "../entities/protocol.js";
 
 const originalFetch = globalThis.fetch;
 const fetchProtocols = new Map<string, typeof fetch>();
@@ -13,7 +13,8 @@ const SessionId = crypto.randomUUID();
 
 class DistApp {
   private nextPromise = 0;
-  private readonly promises = new Map<number, [(data: ProtocolEntity) => void, (error: Error) => void]>();
+  private readonly promises = new Map<number, [(data: ProtocolEntity | ReadableStream<ProtocolEntity>) => void, (error: Error) => void]>();
+  private readonly streamWriters = new Map<number, WritableStreamDefaultWriter<ProtocolEntity>>();
   constructor(
     private readonly port: MessagePort,
   ) {
@@ -49,6 +50,37 @@ class DistApp {
   }
   handleMessage(evt: MessageEvent) {
     const entity = evt.data as ProtocolEntity;
+
+    if (!('origId' in entity) || typeof entity.origId !== 'number') {
+      console.warn('DistApp got message without origId', entity);
+      return;
+    }
+
+    const writer = this.streamWriters.get(entity.origId);
+    if (writer) {
+      if (entity.kind == 'StreamEnd') {
+        if (entity.status.success) {
+          writer.close();
+        } else {
+          writer.abort(new Error(`StreamEnd: ${entity.status.errorMessage ?? 'No message given.'}`));
+        }
+        this.streamWriters.delete(entity.origId);
+      } else {
+        writer.write(entity);
+      }
+      return;
+    }
+    if (entity.kind == 'StreamStart') {
+      const pair = this.promises.get(entity.origId);
+      if (pair) {
+        const stream = new TransformStream<ProtocolEntity,ProtocolEntity>();
+        this.promises.delete(entity.origId);
+        this.streamWriters.set(entity.origId, stream.writable.getWriter());
+        pair[0](stream.readable);
+        return;
+      }
+    }
+
     if (entity.kind == 'FetchResponse') {
       const pair = this.promises.get(entity.origId);
       if (pair) {
@@ -65,6 +97,7 @@ class DistApp {
         return;
       }
     }
+
     console.warn('TODO: DistApp received:', evt.data);
   }
   async handleError(err: Error) {
@@ -176,7 +209,7 @@ class DistApp {
   // openResultStream<Tresp extends ProtocolEntity>(expectKinds: Array<string>) {}
   sendRpcForResult<Tresp extends ProtocolEntity>(data: ProtocolEntity & {id: number}) {
     const promiseNum = this.nextPromise++;
-    return new Promise<Tresp>((ok, fail) => {
+    return new Promise<Tresp | ReadableStream<Tresp>>((ok, fail) => {
       this.sendRpc({ ...data, id: promiseNum });
       this.promises.set(promiseNum, [
         value => ok(value as Tresp),
