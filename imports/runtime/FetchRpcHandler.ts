@@ -78,6 +78,14 @@ export class FetchRpcHandler {
       return await this.handleTaskState(rpc);
     }
 
+    if (rpc.spec.url == '/task/intent' && rpc.spec.method == 'GET') {
+      return wrapFetchResponse({
+        status: 200,
+        body: EJSON.stringify(this.activityTask.spec.intent ?? {}),
+        headers: [['content-type', 'application/json']],
+      });
+    }
+
     if (rpc.spec.url.startsWith('/ApiBinding/')) {
       // TODO: maybe these need to be bound
       return await this.handleBinding(rpc);

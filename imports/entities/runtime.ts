@@ -89,6 +89,7 @@ export interface ActivityTaskEntity {
     installationNamespace: string;
     installationName: string;
     activityName: string;
+    intent?: (CommandEntity['spec'] & {type: 'launch-intent'})['intent'];
   };
   state: {
     appData?: Record<string, string>;

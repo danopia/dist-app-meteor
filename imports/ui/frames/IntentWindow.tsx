@@ -318,7 +318,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
           const workspace = runtime.getEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', 'session', props.workspaceName);
           if (!workspace) throw new Error(`no workspace`);
 
-          const taskId = createTaskForIntent(props.hWorkspace, runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2');
+          const taskId = createTaskForIntent(props.hWorkspace, runtime, workspace.metadata.name, appInstallation.metadata.namespace, appInstallation.metadata.name, activity, props.command.metadata.name+'-new2', intent);
           // console.log('Created task', taskId);
 
           // TODO: this cleanup shall be done by deleteFrame
@@ -355,7 +355,7 @@ const IntentWindowInner = (props: IntentWindowProps) => {
 
 
 /** @deprecated roll into proper centralized function */
-export function createTaskForIntent(hWorkspace: EntityHandle<WorkspaceEntity>, runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string) {
+export function createTaskForIntent(hWorkspace: EntityHandle<WorkspaceEntity>, runtime: EntityEngine, workspaceName: string, installationNamespace: string | undefined, installationName: string, firstActivity: ActivityEntity, taskName: string, intentSpec?: {}) {
   const taskId = taskName; // Random.id();
   const actInstId = taskName; // Random.id();
 
@@ -380,6 +380,7 @@ export function createTaskForIntent(hWorkspace: EntityHandle<WorkspaceEntity>, r
       installationNamespace: installationNamespace ?? 'default',
       installationName,
       activityName: firstActivity.metadata.name,
+      intent: intentSpec,
     },
     state: {
       appData: {},
