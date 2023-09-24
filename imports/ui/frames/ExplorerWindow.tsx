@@ -87,7 +87,6 @@ export const ExplorerTreeNamespace = (props: {
   const [isOpen, setIsOpen] = useState(!props.name.startsWith('app:'));
 
   return (
-
     <li className="entry-item" style={{ marginBottom: '1em' }}>
       <div className="folder-name" onClick={() => setIsOpen(!isOpen)}>
         <span className="name">{props.name}</span>
@@ -97,22 +96,43 @@ export const ExplorerTreeNamespace = (props: {
         <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
           {entitiesByKind.map(x => (
 
-            <li key={`${x.apiVersion}/${x.kind}`} className="entry-item" style={{ marginTop: '0.5em' }}>
+            <ExplorerTreeKind key={`${x.apiVersion}/${x.kind}`}
+                apiVersion={x.apiVersion}
+                kind={x.kind}
+                entities={x.entities}
+                setCurrentEntity={props.setCurrentEntity}
+              />
+
+          ))}
+        </ul>
+      ) : []}
+    </li>
+  );
+};
+
+export const ExplorerTreeKind = (props: {
+  apiVersion: string;
+  kind: string;
+  entities: Array<unknown>;
+  setCurrentEntity: Dispatch<SetStateAction<ArbitraryEntity | null>>;
+}) => {
+
+  const [isOpen, setIsOpen] = useState(props.entities.length < 5);
+
+  return (
+    <li className="entry-item" style={{ marginTop: '0.5em' }}>
+      <div className="folder-name" onClick={() => setIsOpen(!isOpen)}>
+        <span className="name">{props.kind} ({props.apiVersion.split('.')[0]})</span>
+      </div>
+
+      {isOpen ? (
+        <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
+          {props.entities.map(entity => (
+            <li key={entity.metadata.name} className="entry-item actionable" style={{ marginTop: '0.3em' }} onClick={() => props.setCurrentEntity(entity)}>
               <div className="folder-name">
-                <span className="name">{x.kind} ({x.apiVersion.split('.')[0]})</span>
+                <span className="name">{entity.metadata.name}</span>
               </div>
-
-              <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
-                {x.entities.map(entity => (
-                  <li key={entity.metadata.name} className="entry-item actionable" style={{ marginTop: '0.3em' }} onClick={() => props.setCurrentEntity(entity)}>
-                    <div className="folder-name">
-                      <span className="name">{entity.metadata.name}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
             </li>
-
           ))}
         </ul>
       ) : []}
