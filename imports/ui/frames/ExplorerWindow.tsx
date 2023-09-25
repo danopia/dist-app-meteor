@@ -26,7 +26,7 @@ export const ExplorerWindow = (props: {
     if (isEditing) setIsEditing(false);
     if (!liveEntity) return liveEntity;
     const {_id, catalogId, ...rest} = {...liveEntity} as Record<string,unknown>;
-    return stringify(rest);
+    return stringify(rest, { lineWidth: 0 });
   }, [liveEntity]);
 
   useEffect(() => {
