@@ -19,7 +19,7 @@
     "common-tags": "^1",
     "happy-eyeballs": "^0.0",
     "meteor-node-stubs": "^1",
-    "urlpattern-polyfill": "^5",
+    "urlpattern-polyfill": "^8",
     "yaml": "^2"
   },
   "devDependencies": {
