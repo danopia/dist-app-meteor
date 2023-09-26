@@ -8,3 +8,9 @@ updates:
       groups:
         dev-deps:
           dependency-type: development
+
+      ignore:
+      # Packages requiring NodeJS 18+
+      - dependency-name: 'urlpattern-polyfill'
+        versions:
+        - '>= 9'
