@@ -226,6 +226,8 @@ export const LaunchWorkspace = (props: {
     navigate(`/profile/${profile._id}/workspace/${workspaces[0].entity.metadata.name}`, { replace: true });
   }
 
+  const workspace = workspaces.find(x => x.entity.metadata.name == workspaceName);
+
   //     meteorCallAsync('/v1alpha1/get user profile').then(x => {
 
   return (
@@ -237,36 +239,31 @@ export const LaunchWorkspace = (props: {
 
             <BrandingPanel textIcon='🖥️' />
 
-            <li style={{
-                display: 'grid',
-              }}>
-              <select style={{
-                  width: '100%',
-                }}>
-                {profiles?.map(x => (
-                  <option key={x._id}>
-                    {x.description ?? `${x._id.slice(0,4)}...`}
+            <select onChange={evt => {
+              if (!evt.target.value) return;
+              navigate(evt.target.value);
+            }}>
+              <optgroup label={profile.description}>
+                {workspaces.map(x => (
+                  <option
+                      key={x.entity.metadata.name}
+                      value={`/profile/${profile._id}/workspace/${x.entity.metadata.name}`}
+                      selected={x.entity.metadata.name == workspaceName}
+                    >
+                    {x.entity.metadata.title ?? x.entity.metadata.name}
                   </option>
-                )) ?? []}
-              </select>
-            </li>
-            {workspaces.map(x => (
-              <Fragment key={x.entity.metadata.name}>
-                <li className="switcher-icon">
-                  <button style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }} onClick={() => {
-                      navigate(`/profile/${profile._id}/workspace/${x.entity.metadata.name}`);
-                    }}>{x.entity.metadata.title ?? 'Shell'}</button>
-                </li>
-                <FramesPanel
-                    hWorkspace={x.hWorkspace}
-                    profileId={profile._id}
-                  />
-              </Fragment>
-            ))}
+                ))}
+              </optgroup>
+              {profiles.filter(x => x !== profile).map(otherProfile => (
+                <option
+                    key={otherProfile._id}
+                    value={`/profile/${otherProfile._id}`}
+                  >
+                  {otherProfile.description}
+                </option>
+              ))}
+            </select>
+
             <li className="switcher-icon">
               <button style={{
                   display: 'flex',
@@ -288,6 +285,13 @@ export const LaunchWorkspace = (props: {
                   navigate(`/profile/${profile._id}/workspace/${workspaceName}`);
                 }}>+</button>
             </li>
+
+            {workspace ? (
+              <FramesPanel
+                  hWorkspace={workspace.hWorkspace}
+                  profileId={profile._id}
+                />
+            ) : []}
 
             <div style={{flex: 1}} />
 
