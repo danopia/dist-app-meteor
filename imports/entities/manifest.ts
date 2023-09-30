@@ -248,12 +248,20 @@ export interface EntityDefinitionEntity {
       kind: string;
       shortNames?: Array<string>;
     };
-    schema: {
-      openAPIV3Schema?: {
-        type: 'object';
-        properties: {}; // TODO: OpenAPI Schema types
+    versions: Array<{
+      name: string;
+      served: boolean;
+      storage: boolean;
+      subresources?: {
+        status?: boolean;
       };
-    };
+      schema?: {
+        openAPIV3Schema?: {
+          type: 'object';
+          properties: {}; // TODO: OpenAPI Schema types
+        };
+      };
+    }>,
   };
 }
 
