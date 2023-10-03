@@ -18,6 +18,11 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
       return new StaticEntityStorage(staticCat);
     case 'profile':
       return new MongoProfileStorage(layerSpec.storage.profileId, namespaceName);
+    case 'primary-ddp':
+      return new MeteorEntityStorage({
+        catalogId: layerSpec.storage.catalogId,
+        namespace: namespaceName,
+      });
     case 'foreign-ddp':
       return new MeteorEntityStorage({
         remoteUrl: layerSpec.storage.remoteUrl,

@@ -5,11 +5,13 @@ import { AppIcon } from "/imports/ui/widgets/AppIcon";
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { EntityHandle } from "/imports/engine/EntityHandle";
 import { ApiBindingEntity, ApplicationEntity, CatalogBindingEntity } from "/imports/entities/manifest";
-import { AppInstallationEntity } from "/imports/entities/profile";
+import { AppInstallationEntity, EntityCatalogEntity } from "/imports/entities/profile";
 import { CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
 import { deleteFrame } from "/imports/runtime/workspace-actions";
 import { marketUrl } from "/imports/settings";
+
+type AppBindingSpec = Exclude<AppInstallationEntity['spec']['catalogBindings'], undefined>[number]['binding'];
 
 export function InstallAppFromListing(props: {
   runtime: EntityEngine;
@@ -35,7 +37,6 @@ export function InstallAppFromListing(props: {
     };
   }, [marketUrl, appListing]);
 
-  type AppBindingSpec = Exclude<AppInstallationEntity['spec']['catalogBindings'], undefined>[number]['binding'];
   const [bindingSources, setBindingSources] = useState<Record<string, AppBindingSpec>>(() => Object
     .fromEntries(entities.catBindings?.map<[string,AppBindingSpec]>(request => {
       if (request.spec.catalogType.type == 'SpecificApi') {
@@ -45,7 +46,6 @@ export function InstallAppFromListing(props: {
       }
       throw new Error(`unimpl`);
     }) ?? []));
-  console.log('bindingSources:', JSON.stringify(bindingSources, null, 2))
 
   const doInstall = useCallback(async () => {
     if (!appListing) throw new Error(`BUG: never`);
@@ -80,6 +80,7 @@ export function InstallAppFromListing(props: {
     appListing,
     props.targetNamespace,
     entities.appDataUrl,
+    bindingSources,
   ]);
 
   // Wait for the data to show up
@@ -106,21 +107,17 @@ export function InstallAppFromListing(props: {
     <p style={{margin: 0}}>This application will have access to:</p>
     <h4 style={{margin: 0}}>TODO</h4>
     {entities.catBindings.map(binding => (
-      <p key={binding.metadata.uid} style={{margin: 0}}>
-        {binding.metadata.name}{":  "}
-        <select onChange={evt => {
-          if (evt.target.value == 'in-memory') {
+      <CatalogBindingPicker key={binding.metadata.uid}
+          binding={binding}
+          hWorkspace={props.hWorkspace}
+          appDataUrl={entities.appDataUrl}
+          bindingSource={bindingSources[binding.metadata.name]}
+          setBindingSource={x =>
             setBindingSources({
               ...bindingSources,
-              [binding.metadata.name]: {
-                type: 'InMemory',
-              },
-            });
-          }
-        }}>
-          <option value="in-memory">In Memory</option>
-        </select>
-      </p>
+              [binding.metadata.name]: x,
+            })}
+        />
     ))}
     {entities.apiBindings.map(binding => (
       <p key={binding.metadata.uid} style={{margin: 0}}>
@@ -130,4 +127,87 @@ export function InstallAppFromListing(props: {
     ))}
     <button onClick={doInstall}>Install development version</button>
   </div>);
+}
+
+const CatalogBindingPicker = (props: {
+  binding: CatalogBindingEntity;
+  hWorkspace: EntityHandle<WorkspaceEntity>;
+  appDataUrl: string;
+  bindingSource?: AppBindingSpec;
+  setBindingSource: (spec: AppBindingSpec) => void;
+}) => {
+
+  const catType = props.binding.spec.catalogType;
+  if (catType.type !== 'SpecificApi') throw new Error('TODO: other types');
+
+  const entityCatalogs = useTracker(() => props.hWorkspace
+    .listNeighbors<EntityCatalogEntity>(
+      'profile.dist.app/v1alpha1', 'EntityCatalog'), [props.hWorkspace]);
+
+  const matchingCatalogs = entityCatalogs.filter(x => {
+    if (x.entity.spec.apiGroup !== catType.specificApi.group) return;
+    // TODO: more checks probably
+    return true;
+  });
+
+  const createNewCatalog = useCallback(async () => {
+    await props.hWorkspace.insertNeighbor<EntityCatalogEntity>({
+      apiVersion: 'profile.dist.app/v1alpha1',
+      kind: 'EntityCatalog',
+      metadata: {
+        name: props.binding.metadata.name,
+        ownerReferences: [{
+          apiVersion: 'profile.dist.app/v1alpha1',
+          kind: 'AppInstallation',
+          name: 'primary',
+        }],
+      },
+      spec: {
+        apiGroup: catType.specificApi.group,
+        appUri: props.appDataUrl, // TODO: referencing APIs from other bundles?
+      },
+    });
+    props.setBindingSource({
+      type: 'ProfileCatalog',
+      name: props.binding.metadata.name,
+    });
+  }, [props.hWorkspace, props.setBindingSource, props.binding, catType]);
+
+  return (
+    <p style={{margin: 0}}>
+      {props.binding.metadata.name}{":  "}
+      <select
+          required
+          onChange={evt => {
+            if (evt.target.value == 'in-memory') {
+              props.setBindingSource({
+                type: 'InMemory',
+              });
+            }
+            if (evt.target.value == 'create-new') {
+              createNewCatalog();
+            }
+            if (evt.target.value.startsWith('profile-catalog/')) {
+              props.setBindingSource({
+                type: 'ProfileCatalog',
+                name: evt.target.value.slice(evt.target.value.indexOf('/')+1),
+              })
+            }
+          }}>
+        <option value="in-memory" selected={props.bindingSource?.type == 'InMemory'}>In Memory (volatile)</option>
+        <optgroup label="Profile Storage">
+          {matchingCatalogs.map(cat => (
+            <option
+                key={`profile-catalog/${cat.entity.metadata.uid}`}
+                value={`profile-catalog/${cat.entity.metadata.name}`}
+                selected={props.bindingSource?.type == 'ProfileCatalog' && props.bindingSource.name == cat.entity.metadata.name}
+              >
+              {cat.entity.metadata.title ?? cat.entity.metadata.name}
+            </option>
+          ))}
+          <option value="create-new">Create new...</option> {/* can we block submitting this? */}
+        </optgroup>
+      </select>
+    </p>
+  )
 }

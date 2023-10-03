@@ -34,7 +34,7 @@ export async function startHttpClientOperator(opts: {
         replaceable: true,
       }],
     },
-  })
+  }).catch(err => console.log('in-page already exists?', JSON.stringify(err)));
 
   opts.engine.streamEntities(
     'http-client.dist.app/v1alpha1', 'HttpExchange',

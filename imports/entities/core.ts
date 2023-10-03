@@ -49,6 +49,9 @@ export interface NamespaceEntity {
         type: 'profile';
         profileId: string;
       } | {
+        type: 'primary-ddp';
+        catalogId: string;
+      } | {
         type: 'foreign-ddp';
         remoteUrl: string;
         catalogId: string;
