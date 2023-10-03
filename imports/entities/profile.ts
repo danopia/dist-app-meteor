@@ -12,6 +12,17 @@ export interface AppInstallationEntity {
       action: string;
     }>;
     preferences: Record<string, unknown>;
+    catalogBindings?: Array<{
+      name: string;
+      binding:
+        | {
+          type: 'InMemory';
+        }
+        | {
+          type: 'ProfileCatalog';
+          name: string;
+        };
+    }>;
   };
 }
 

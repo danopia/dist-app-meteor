@@ -114,21 +114,6 @@ export const LaunchPublicApp = (props: {
 
     (async () => {
       // TODO: use app.dist.InstallApp to install the application, once it can finish unattended.
-      await engine.insertEntity<AppInstallationEntity>({
-        apiVersion: 'profile.dist.app/v1alpha1',
-        kind: 'AppInstallation',
-        metadata: {
-          name: 'primary',
-          namespace: 'login',
-        },
-        spec: {
-          appUri: appDataUrl,
-          launcherIcons: [{
-            action: 'app.dist.Main',
-          }],
-          preferences: {},
-        },
-      });
 
       // Wait for the application's source to be loaded
       const appLayer = engine.selectNamespaceLayer({
@@ -151,27 +136,33 @@ export const LaunchPublicApp = (props: {
       const catalogBindings = engine.listEntities<CatalogBindingEntity>(
         'manifest.dist.app/v1alpha1', 'CatalogBinding',
         appNamespace);
-      for (const catalogBinding of catalogBindings) {
-        if (catalogBinding.spec.catalogType.type !== 'SpecificApi') continue;
 
-        await engine.insertEntity<EntityCatalogEntity>({
-          apiVersion: 'profile.dist.app/v1alpha1',
-          kind: 'EntityCatalog',
-          metadata: {
-            name: catalogBinding.metadata.name,
-            namespace: 'login',
-            ownerReferences: [{
-              apiVersion: 'profile.dist.app/v1alpha1',
-              kind: 'AppInstallation',
-              name: 'primary',
-            }],
-          },
-          spec: {
-            apiGroup: catalogBinding.spec.catalogType.specificApi.group,
-            appUri: appDataUrl, // TODO: referencing APIs from other bundles?
-          },
-        });
-      }
+      await engine.insertEntity<AppInstallationEntity>({
+        apiVersion: 'profile.dist.app/v1alpha1',
+        kind: 'AppInstallation',
+        metadata: {
+          name: 'primary',
+          namespace: 'login',
+        },
+        spec: {
+          appUri: appDataUrl,
+          launcherIcons: [{
+            action: 'app.dist.Main',
+          }],
+          preferences: {},
+          catalogBindings: catalogBindings?.map(request => {
+            if (request.spec.catalogType.type == 'SpecificApi') {
+              return {
+                name: request.metadata.name,
+                binding: {
+                  type: 'InMemory',
+                },
+              };
+            }
+            throw new Error(`unimpl`);
+          }) ?? [],
+        },
+      });
 
       await launchNewIntent(hWorkspace, {
         receiverRef: `entity://login/profile.dist.app/v1alpha1/AppInstallation/primary`,

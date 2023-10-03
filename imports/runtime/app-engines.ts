@@ -1,3 +1,4 @@
+import { Meteor } from "meteor/meteor";
 import { EntityHandle } from "../engine/EntityHandle";
 import { ReactiveMap } from "../lib/reactive-map";
 import { startHttpClientOperator } from "./system-controllers/http-client";
@@ -10,57 +11,78 @@ export const allAppEngines = new ReactiveMap<string,EntityEngine>();
 
 const appEngineCache = new AsyncKeyedCache({
   keyFunc: (x: EntityHandle<AppInstallationEntity>) => `${x.coords.namespace}/${x.coords.name}`,
-  loadFunc: async (x, key) => {
+  loadFunc: async (hAppInstallation, key) => {
 
-    const appInstallation = x.get();
+    const appInstallation = hAppInstallation.get();
     if (!appInstallation) throw new Error(`no appinstallation found`);
 
     const engine = new EntityEngine();
     const appNamespace = engine.useRemoteNamespace(appInstallation.spec.appUri);
 
-    const catalogBindings = engine.listEntities<CatalogBindingEntity>(
-      'manifest.dist.app/v1alpha1', 'CatalogBinding',
-      appNamespace);
-    for (const catalogBinding of catalogBindings) {
-      
-      if (catalogBinding.spec.catalogType.type !== 'SpecificApi') continue;
-      const catType = catalogBinding.spec.catalogType;
+    for (const { name, binding } of appInstallation.spec.catalogBindings ?? []) {
 
-      const entityCatalogs = x.listNeighbors<EntityCatalogEntity>(
-        'profile.dist.app/v1alpha1', 'EntityCatalog');
+      const catalogBinding = engine.getEntity<CatalogBindingEntity>(
+        'manifest.dist.app/v1alpha1', 'CatalogBinding',
+        appNamespace, name);
+      if (!catalogBinding) throw new Meteor.Error('todo',
+        `no catalogBinding found for ${name}`);
+      if (catalogBinding.spec.catalogType.type !== 'SpecificApi') throw new Meteor.Error('todo',
+        `Other catalogTypes`);
 
-      // console.log('Found', {catalogBinding, entityCatalogs});
+      switch (binding.type) {
+        case 'InMemory': {
 
-      const matchingCatalog = entityCatalogs.find(x => {
-        if (x.entity.spec.apiGroup !== catType.specificApi.group) return;
-        // TODO: more access control checks
-        return true;
-      })
+          engine.addNamespace({
+            name: catalogBinding.spec.targetNamespace,
+            spec: {
+              layers: [{
+                mode: 'ReadWrite',
+                accept: [{
+                  apiGroup: catalogBinding.spec.catalogType.specificApi.group,
+                }],
+                storage: {
+                  type: 'local-inmemory',
+                },
+              }],
+            },
+          });
 
-      if (!matchingCatalog) {
-        console.error(`WARN: no catalog matched.`, {catalogBinding, entityCatalogs});
-        continue;
+        } break;
+
+        case 'ProfileCatalog': {
+          const entityCatalog = hAppInstallation.getNeighborHandle<EntityCatalogEntity>(
+            'profile.dist.app/v1alpha1', 'EntityCatalog',
+            binding.name).get();
+          if (!entityCatalog) throw new Meteor.Error('todo',
+            `no EntityCatalog found for ${binding.name}`);
+
+          if (!entityCatalog.status?.catalogId) throw new Meteor.Error('todo',
+            `The EntityCatalog ${entityCatalog.metadata.name} is not ready yet.`);
+
+          engine.addNamespace({
+            name: catalogBinding.spec.targetNamespace,
+            spec: {
+              layers: [{
+                mode: 'ReadWrite',
+                accept: [{
+                  apiGroup: catalogBinding.spec.catalogType.specificApi.group,
+                }],
+                storage: {
+                  type: 'primary-ddp',
+                  catalogId: entityCatalog.status.catalogId,
+                },
+              }],
+            },
+          });
+
+        } break;
+
+        default: throw new Meteor.Error(`bug`,
+          `Unexpected entity type`);
       }
 
-      // if (matchingCatalog?.entity.status?.catalogId)
-
-      engine.addNamespace({
-        name: catalogBinding.spec.targetNamespace,
-        spec: {
-          layers: [{
-            mode: 'ReadWrite',
-            accept: [{
-              apiGroup: matchingCatalog?.entity.spec.apiGroup,
-            }],
-            storage: {
-              // TODO: other types
-              type: 'local-inmemory',
-            },
-          }],
-        },
-      });
-
-      if (matchingCatalog?.entity.spec.apiGroup == 'http-client.dist.app') {
+      // TODO: something better about this
+      if (catalogBinding.spec.catalogType.specificApi.group == 'http-client.dist.app') {
         await startHttpClientOperator({
           engine: engine,
           namespace: catalogBinding.spec.targetNamespace,
@@ -68,18 +90,6 @@ const appEngineCache = new AsyncKeyedCache({
         });
       }
 
-      // await engine.insertEntity<EntityCatalogEntity>({
-      //   apiVersion: 'profile.dist.app/v1alpha1',
-      //   kind: 'EntityCatalog',
-      //   metadata: {
-      //     name: catalogBinding.metadata.name,
-      //     namespace: 'login',
-      //   },
-      //   spec: {
-      //     apiGroup: catalogBinding.spec.catalogType.specificApi.group,
-      //     appUri: appDataUrl, // TODO: referencing APIs from other bundles?
-      //   },
-      // });
     }
 
     allAppEngines.set(key, engine);
