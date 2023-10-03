@@ -65,6 +65,7 @@ const ConfigureCatalogs = () => {
             <th>Catalog ID</th>
             <th>Access Rules</th>
             <th>API Filters</th>
+            <th>Storage</th>
           </tr>
         </thead>
         <tbody>
@@ -73,6 +74,7 @@ const ConfigureCatalogs = () => {
               <td>{catalog._id}</td>
               <td>{JSON.stringify(catalog.accessRules)}</td>
               <td>{JSON.stringify(catalog.apiFilters)}</td>
+              <td>{catalog.usage ? Math.round(catalog.usage.bytes / 1024) : '-'}Ki</td>
             </tr>
           ))}
         </tbody>

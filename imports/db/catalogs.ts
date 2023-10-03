@@ -17,5 +17,10 @@ export interface CatalogDoc {
     apiVersion?: string;
     kind?: string;
   }>;
+
+  usage?: {
+    entities: number;
+    bytes: number;
+  };
 }
 export const CatalogsCollection = new Mongo.Collection<CatalogDoc>('Catalogs');

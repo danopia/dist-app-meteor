@@ -11,6 +11,8 @@ import { handleCapCall } from "./handle-submissions";
 import './publications';
 import { trace } from "@opentelemetry/api";
 
+import './catalog-operator';
+
 Meteor.methods({
 
   async '/v1alpha1/Entity/submit'(entity: unknown) {
