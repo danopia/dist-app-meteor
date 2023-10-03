@@ -1,4 +1,4 @@
-import { EntityMetadata } from "./core";
+import { EntityMetadata } from "./core.ts";
 
 /*
  * I intended these entities to be useful when

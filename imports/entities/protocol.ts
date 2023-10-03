@@ -1,4 +1,4 @@
-import { EntityMetadata } from "./core";
+import { EntityMetadata } from "./core.ts";
 
 export interface LifecycleEntity {
   apiVersion?: "protocol.dist.app/v1alpha1";
