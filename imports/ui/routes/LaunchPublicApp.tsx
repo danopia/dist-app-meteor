@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { ActivityShell } from '/imports/ui/ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { AppInstallationEntity } from '/imports/entities/profile';
+import { AppInstallationEntity, EntityCatalogEntity } from '/imports/entities/profile';
 import { WorkspaceEntity } from '/imports/entities/runtime';
 import { marketUrl } from '/imports/settings';
 import { RuntimeContext } from '/imports/ui/contexts';
@@ -13,6 +13,8 @@ import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
+import { CatalogBindingEntity } from '/imports/entities/manifest';
+import { MeteorEntityStorage } from '/imports/engine/EntityStorage';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -108,29 +110,75 @@ export const LaunchPublicApp = (props: {
 
     const appDataUrl = `ddp-catalog://${marketUrl.split('/')[2]}/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
     // appUri: `bundled:${encodeURIComponent('app:welcome')}`,
+    const appNamespace = engine.useRemoteNamespace(appDataUrl);
 
-    // TODO: use app.dist.InstallApp to install the application, once it can finish unattended.
-    engine.insertEntity<AppInstallationEntity>({
-      apiVersion: 'profile.dist.app/v1alpha1',
-      kind: 'AppInstallation',
-      metadata: {
-        name: 'primary',
-        namespace: 'login',
-      },
-      spec: {
-        appUri: appDataUrl,
-        launcherIcons: [{
-          action: 'app.dist.Main',
-        }],
-        preferences: {},
-      },
-    }).then(async () => {
+    (async () => {
+      // TODO: use app.dist.InstallApp to install the application, once it can finish unattended.
+      await engine.insertEntity<AppInstallationEntity>({
+        apiVersion: 'profile.dist.app/v1alpha1',
+        kind: 'AppInstallation',
+        metadata: {
+          name: 'primary',
+          namespace: 'login',
+        },
+        spec: {
+          appUri: appDataUrl,
+          launcherIcons: [{
+            action: 'app.dist.Main',
+          }],
+          preferences: {},
+        },
+      });
+
+      // Wait for the application's source to be loaded
+      const appLayer = engine.selectNamespaceLayer({
+        apiVersion: 'manifest.dist.app/v1alpha1',
+        kind: 'Application',
+        namespace: appNamespace,
+        op: 'Read',
+      });
+      if (!appLayer) throw new Error(`no appLayer`);
+      if (appLayer.impl instanceof MeteorEntityStorage) {
+        if (appLayer.impl.subscription) {
+          console.log('waiting for sub');
+          while (!appLayer.impl.subscription.ready()) {
+            await new Promise(ok => setTimeout(ok, 250));
+          }
+          console.log('waited for sub');
+        }
+      }
+
+      const catalogBindings = engine.listEntities<CatalogBindingEntity>(
+        'manifest.dist.app/v1alpha1', 'CatalogBinding',
+        appNamespace);
+      for (const catalogBinding of catalogBindings) {
+        if (catalogBinding.spec.catalogType.type !== 'SpecificApi') continue;
+
+        await engine.insertEntity<EntityCatalogEntity>({
+          apiVersion: 'profile.dist.app/v1alpha1',
+          kind: 'EntityCatalog',
+          metadata: {
+            name: catalogBinding.metadata.name,
+            namespace: 'login',
+            ownerReferences: [{
+              apiVersion: 'profile.dist.app/v1alpha1',
+              kind: 'AppInstallation',
+              name: 'primary',
+            }],
+          },
+          spec: {
+            apiGroup: catalogBinding.spec.catalogType.specificApi.group,
+            appUri: appDataUrl, // TODO: referencing APIs from other bundles?
+          },
+        });
+      }
+
       await launchNewIntent(hWorkspace, {
         receiverRef: `entity://login/profile.dist.app/v1alpha1/AppInstallation/primary`,
         action: 'app.dist.Main',
         category: 'app.dist.Launcher',
       }, 'default-app');
-    });
+    })();
 
   }, [appSetup, engine, appListing]);
 

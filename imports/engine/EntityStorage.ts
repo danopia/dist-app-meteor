@@ -325,7 +325,7 @@ export class MeteorEntityStorage implements EntityStorage {
       }
 
       Tracker.nonreactive(() => {
-        remoteConn?.subscribe('/v1alpha1/catalogs/by-id/composite', props.catalogId);
+        this.subscription = remoteConn?.subscribe('/v1alpha1/catalogs/by-id/composite', props.catalogId);
       });
 
       this.remoteConn = remoteConn;
@@ -340,6 +340,7 @@ export class MeteorEntityStorage implements EntityStorage {
   }
   private readonly readStorage: MongoEntityStorage;
   private readonly remoteConn?: DDP.DDPStatic;
+  public subscription?: Meteor.SubscriptionHandle;
 
   listAllEntities(): ArbitraryEntity[] {
     return this.readStorage.listAllEntities();

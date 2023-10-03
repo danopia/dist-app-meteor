@@ -25,6 +25,21 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
       this.coords.namespace, name);
   }
 
+  listNeighbors<Tother extends ArbitraryEntity>(
+    apiVersion: Tother["apiVersion"],
+    apiKind: Tother["kind"],
+  ): Array<{
+    entity: Tother;
+    handle: EntityHandle<Tother>;
+  }> {
+    return this.engine.listEntities<Tother>(
+      apiVersion, apiKind,
+      this.coords.namespace).map(entity => ({
+        entity,
+        handle: this.getNeighborHandle<Tother>(apiVersion, apiKind, entity.metadata.name),
+      }));
+  }
+
   get() {
     return this.engine.getEntity<Tself>(
       this.coords.apiVersion, this.coords.apiKind,

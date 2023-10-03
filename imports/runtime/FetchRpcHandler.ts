@@ -17,6 +17,8 @@ import { EntityHandle } from "../engine/EntityHandle";
 import { runTaskCommandForResult } from "./workspace-actions";
 import { serveCatalogApi } from "./system-apis/catalog";
 import { EJSON } from "meteor/ejson";
+import { AppInstallationEntity } from "../entities/profile";
+import { getAppInstallationEngine } from "./app-engines";
 
 // TODO: This whole file is basically a list of TODOs as I try different things.
 
@@ -114,12 +116,17 @@ export class FetchRpcHandler {
     // (e.g. some kinds are not simple entities, and might be more like devices)
     // these below routes can be moved to specifically the dynamic / in-kernel kinds
 
+    const hAppInstallation = this.runtime.getEntityHandle<AppInstallationEntity>(
+      'profile.dist.app/v1alpha1', 'AppInstallation',
+      this.activityTask.spec.installationNamespace, this.activityTask.spec.installationName);
+    const engine = await getAppInstallationEngine(hAppInstallation);
+
     {
       const match = new URLPattern({pathname: '//:namespace/:apiGroup/:apiVersion/:resourcePlural/list'}).exec(rpc.spec.url);
       if (match && rpc.spec.method == 'GET') {
         const {namespace, apiGroup, apiVersion, resourcePlural} = match.pathname.groups;
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
-        const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        const resources = engine.listEntities(`${apiGroup}/${apiVersion}`, kind!, namespace);
         return wrapFetchResponse({
           status: 200,
           headers: [['content-type', 'application/json']],
@@ -135,7 +142,7 @@ export class FetchRpcHandler {
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
         // TODO: actually cancel these streams eventually
         const signal = new AbortController().signal;
-        const stream = await this.runtime.streamEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace, signal);
+        const stream = await engine.streamEntities(`${apiGroup}/${apiVersion}`, kind!, namespace, signal);
         return {
           kind: 'FetchResponse',
           spec: {
@@ -168,7 +175,7 @@ export class FetchRpcHandler {
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
         const entityJson = EJSON.parse(`${rpc.spec.body}`);
         console.log({apiGroup, apiVersion, kind, name,entityJson})
-        const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
+        const hEntity = engine.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, namespace!, name!);
         if (hEntity.get()) {
           await hEntity.mutate(entity => {
             console.log('TODO: i have', {entity}, 'and want to apply', entityJson);
@@ -187,7 +194,7 @@ export class FetchRpcHandler {
             }
           });
         }
-        // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        // const resources = engine.listEntities(`${apiGroup}/${apiVersion}`, kind!, namespace);
         return wrapFetchResponse({
           status: 204,
         });
@@ -197,7 +204,7 @@ export class FetchRpcHandler {
         const kind = `${resourcePlural?.[0]?.toUpperCase()}${resourcePlural?.slice(1,-1).replaceAll(/-[a-z]/g, str => str[1].toUpperCase())}`;
         const entityJson = EJSON.parse(`${rpc.spec.body}`);
         console.log({apiGroup, apiVersion, kind, name,entityJson})
-        const hEntity = this.runtime.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace!, name!);
+        const hEntity = engine.getEntityHandle(`${apiGroup}/${apiVersion}`, kind!, namespace!, name!);
         if (hEntity.get()) {
           return wrapFetchResponse({
             status: 409,
@@ -214,7 +221,7 @@ export class FetchRpcHandler {
             }
           });
         }
-        // const resources = this.runtime.listEntities(`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+        // const resources = engine.listEntities(`${apiGroup}/${apiVersion}`, kind!, namespace);
         return wrapFetchResponse({
           status: 204,
         });
@@ -229,9 +236,9 @@ export class FetchRpcHandler {
     //     const entityJson = rpc.spec.body;
     //     console.log({entityJson})
     //     throw new Error(`TODO: insert`);
-    //     // const resources = this.runtime.insertEntity({
+    //     // const resources = engine.insertEntity({
 
-    //     // }`${apiGroup}/${apiVersion}`, kind!, this.activityTask.metadata.namespace);
+    //     // }`${apiGroup}/${apiVersion}`, kind!, namespace);
     //     // return {
     //     //   status: 200,
     //     //   headers: [['content-type', 'application/json']],

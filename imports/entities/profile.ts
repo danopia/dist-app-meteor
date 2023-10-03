@@ -71,12 +71,14 @@ export interface SavedSessionEntity {
   };
 }
 
-export interface ChildCatalogEntity {
+export interface EntityCatalogEntity {
   _id?: string;
-  apiVersion: 'profile.dist.app/v1alpha1';
-  kind: 'ChildCatalog';
+  apiVersion: "profile.dist.app/v1alpha1";
+  kind: "EntityCatalog";
+  metadata: EntityMetadata;
   spec: {
-    primaryApiVersion?: string;
+    appUri: string;
+    apiGroup: string;
     // readAccess: 'Private' | 'Unlisted' | 'Public';
   };
   status?: {
@@ -89,5 +91,5 @@ export type RuntimeEntity = (
   | ApiCredentialEntity
   // | TaskEntity
   | SavedSessionEntity
-  | ChildCatalogEntity
+  | EntityCatalogEntity
 );
