@@ -17,6 +17,23 @@ export async function startHttpClientOperator(opts: {
       contextType: 'BrowserPage',
       capabilities: {}, // No extra privileges
     },
+    status: {
+      defaultHeaders: [{
+        name: 'user-agent',
+        value: navigator.userAgent,
+      }, {
+        name: 'origin',
+        value: location.origin,
+      }, {
+        name: 'sec-ch-ua-platform',
+        //@ts-expect-error not typed
+        value: navigator.userAgentData?.platform,
+      }, {
+        name: 'accept',
+        value: '*/*',
+        replaceable: true,
+      }],
+    },
   })
 
   opts.engine.streamEntities(
