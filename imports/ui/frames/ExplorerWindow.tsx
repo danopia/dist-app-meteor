@@ -5,11 +5,13 @@ import { parse, stringify } from 'yaml'
 import { RuntimeContext } from "/imports/ui/contexts";
 import { LayeredNamespace } from "/imports/engine/next-gen";
 import { ArbitraryEntity } from "/imports/entities/core";
+import { allAppEngines } from "/imports/runtime/app-engines";
 
 export const ExplorerWindow = (props: {
   onLifecycle: (lifecycle: "loading" | "connecting" | "ready" | "finished") => void,
 }) => {
-  const runtime = useContext(RuntimeContext);
+  const rootRuntime = useContext(RuntimeContext);
+  const [runtime, setRuntime] = useState(rootRuntime);
 
   const allNamespaces = useTracker(() => Object.entries(runtime.namespaces.all()).sort());
   const [currentEntity, setCurrentEntity] = useState<ArbitraryEntity | null>(null);
@@ -35,7 +37,21 @@ export const ExplorerWindow = (props: {
 
   return (
     <div className="activity-contents-wrap" style={{ display: 'grid', gridTemplateColumns: 'minmax(33%, 10em) auto', gridTemplateRows: 'max-content 1fr' }}>
-      <ul style={{ gridRow: '1 / 3', gridColumn: '1', padding: '0.5em 5%', overflowY: 'auto', listStyle: 'none', margin: 0 }}>
+      <select style={{ gridRow: '1', gridColumn: '1' }} onChange={evt => {
+        if (evt.target.value == 'system-root') {
+          setRuntime(rootRuntime);
+        } else if (evt.target.value.startsWith('app:')) {
+          const appRuntime = allAppEngines.get(evt.target.value.slice(4));
+          if (!appRuntime) throw new Error(`no appRuntime matched key ${evt.target.value}`);
+          setRuntime(appRuntime);
+        }
+      }}>
+        <option value="system-root">System Root</option>
+        {Array.from(allAppEngines.keys()).map(key => (
+          <option key={key} value={`app:${key}`}>AppInstallation: {key}</option>
+        ))}
+      </select>
+      <ul style={{ gridRow: '2 / 3', gridColumn: '1', padding: '0.5em 5%', overflowY: 'auto', listStyle: 'none', margin: 0 }}>
         {allNamespaces.map(([namespace, impl]) => (
           <ExplorerTreeNamespace key={namespace} name={namespace} namespace={impl} setCurrentEntity={setCurrentEntity} />
         ))}
