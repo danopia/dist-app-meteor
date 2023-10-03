@@ -1,23 +1,22 @@
 import { context } from "@opentelemetry/api";
 import React, { useContext, useEffect } from "react";
 import "urlpattern-polyfill";
+
 import { AddWebAccountIntent } from "../intents/AddWebAccountIntent";
 import { AuthorizeApiBindingIntent } from "../intents/AuthorizeApiBindingIntent";
-import { AppIcon } from "../widgets/AppIcon";
-
 import { EntityEngine } from "/imports/engine/EntityEngine";
-import { ActivityEntity, ApplicationEntity } from "/imports/entities/manifest";
+import { ActivityEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity } from "/imports/entities/profile";
 import { ActivityTaskEntity, CommandEntity, FrameEntity, WorkspaceEntity } from "/imports/entities/runtime";
 import { extractTraceAnnotations, LogicTracer } from "/imports/lib/tracing";
 import { AppListingEntity } from "/imports/runtime/system-apis/market";
-import { marketUrl } from "/imports/settings";
 import { RuntimeContext } from "/imports/ui/contexts";
 import { bringToTop, deleteFrame } from "/imports/runtime/workspace-actions";
 import { EntityHandle } from "/imports/engine/EntityHandle";
 import { AddPlatformAccountIntent } from "../intents/AddPlatformAccountIntent";
 import { ForAppInstallation } from "../intents/ForAppInstallation";
 import { SendAction } from "../intents/SendAction";
+import { InstallAppFromListing } from "../intents/InstallAppFromListing";
 
 type IntentWindowProps = {
   frame: FrameEntity;
@@ -151,57 +150,24 @@ const IntentWindowInner = (props: IntentWindowProps) => {
       }
 
       if (intent.action == 'app.dist.InstallApp' && kind == 'AppListing') {
-        // @ts-expect-error extras is not typed yet
+
+        const hAppListing = runtime.getEntityHandle<AppListingEntity>(
+          'market.dist.app/v1alpha1', 'AppListing',
+          namespace, name);
+
+          // @ts-expect-error extras is not typed yet
         const targetNamespace = intent.extras?.['target-profile'] ?? 'profile:guest';
-        console.log('Want to install', name, 'into', targetNamespace);
 
-        const appListing = runtime.getEntity<AppListingEntity>('market.dist.app/v1alpha1', 'AppListing', namespace, name);
-        if (!appListing) {
-          throw new Error(`no AppListing yet, try again`);
-          return (<div className="activity-contents-wrap">No AppListing yet...</div>);
-        }
-        // console.log({appListing})
-
-        const appDataUrl = `ddp-catalog://${marketUrl.split('/')[2]}/${encodeURIComponent(appListing.spec.developmentDistUrl!.split(':')[1])}`;
-        const appNs = runtime.useRemoteNamespace(appDataUrl);
-
-        const [app] = runtime.listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application', appNs);
-        console.log({app})
-
-        return (<div className="activity-contents-wrap" style={{display: 'flex', flexDirection: 'column', gap: '1em', margin: '1em', alignItems: 'center'}}>
-          You are about to install:
-          <AppIcon sizeRatio={3} iconSpec={appListing.spec.icon ?? null}  />
-          <h2 style={{margin: 0}}>{appListing.metadata.title}</h2>
-          <p style={{margin: 0}}>from:</p>
-          <h4 style={{margin: 0}}>https://{marketUrl.split('/')[2]}</h4>
-          <p style={{margin: 0}}>This application will have access to:</p>
-          <h4 style={{margin: 0}}>TODO</h4>
-          <button onClick={() => {
-            runtime.insertEntity<AppInstallationEntity>({
-              apiVersion: 'profile.dist.app/v1alpha1',
-              kind: 'AppInstallation',
-              metadata: {
-                name: `app-${appListing.metadata.name}`,
-                namespace: targetNamespace,
-              },
-              spec: {
-                appUri: appDataUrl,
-                // isInLauncher: true,
-                launcherIcons: [{
-                  action: 'app.dist.Main',
-                }],
-                preferences: {},
-              },
-            });
-
-            // TODO: this cleanup shall be done by deleteFrame
-            runtime.deleteEntity<CommandEntity>('runtime.dist.app/v1alpha1', 'Command', 'session', props.command.metadata.name);
-            deleteFrame(props.hWorkspace, props.frame.metadata.name);
-
-          }}>Install development version</button>
-        </div>);
-
-        return (<div className="activity-contents-wrap">Loading intent...</div>);
+        return (
+          <InstallAppFromListing
+              runtime={runtime}
+              targetNamespace={targetNamespace}
+              hWorkspace={props.hWorkspace}
+              hAppListing={hAppListing}
+              command={props.command}
+              cmdFrame={props.frame}
+           />
+        );
       }
 
     }
