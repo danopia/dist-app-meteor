@@ -17,7 +17,7 @@ const appEngineCache = new AsyncKeyedCache({
     if (!appInstallation) throw new Error(`no appinstallation found`);
 
     const engine = new EntityEngine();
-    const appNamespace = engine.useRemoteNamespace(appInstallation.spec.appUri);
+    const appNamespace = engine.useRemoteNamespace(appInstallation.spec.appUri, 'src');
 
     for (const { name, binding } of appInstallation.spec.catalogBindings ?? []) {
 

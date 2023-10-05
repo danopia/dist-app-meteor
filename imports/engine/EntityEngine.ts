@@ -322,7 +322,7 @@ export class EntityEngine {
 
 
 
-  useRemoteNamespace(appUri: string) {
+  useRemoteNamespace(appUri: string, forceNs?: string) {
     // const [loadedNs, setLoadedNs] = useState<string|false>(false);
 
     const appUrl = new URL(appUri);
@@ -330,7 +330,7 @@ export class EntityEngine {
     //   appUri: ddp-catalog://dist-v1alpha1.deno.dev/f6534a8a
     if (appUrl.protocol == 'ddp-catalog:') {
       const {catalogId, server} = parseDdpUrl(appUrl)
-      const appNs = `ddp:${catalogId}`;
+      const appNs = forceNs ?? `ddp:${catalogId}`;
 
       if (this.namespaces.has(appNs)) return appNs;
 
