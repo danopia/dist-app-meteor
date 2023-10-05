@@ -88,12 +88,20 @@ export interface EntityCatalogEntity {
   kind: "EntityCatalog";
   metadata: EntityMetadata;
   spec: {
-    appUri: string;
-    apiGroup: string;
-    // readAccess: 'Private' | 'Unlisted' | 'Public';
+    /** An unambiguous identifer/locator for the schemas used for this catalog */
+    appUri?: string;
+    /** A crude filter for the valid contents of the catalog */
+    apiGroup?: string;
+    /** Defaults to 'Private' */
+    readAccess?: 'Private' | 'Unlisted' | 'Public';
   };
   status?: {
-    catalogId: string;
+    observedGeneration?: number;
+    catalogId?: string;
+    storageUsed?: {
+      entityCount: number;
+      byteSize: number;
+    };
   };
 };
 

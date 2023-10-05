@@ -32,6 +32,17 @@ async function updateUsages() {
         usage: value,
       },
     });
+    // Also record onto the EntityCatalog
+    await EntitiesCollection.updateAsync({
+      'kind': 'EntityCatalog',
+      'apiVersion': 'profile.dist.app/v1alpha1',
+      'status.catalogId': key,
+    }, {
+      $set: {
+        'status.storageUsed': value,
+      },
+    }, { multi: false });
+
   }
   await CatalogsCollection.updateAsync({
     _id: { $nin: [...byCatalogId.keys()] },
