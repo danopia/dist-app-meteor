@@ -1,6 +1,7 @@
 // @ts-expect-error untyped export
 import { tracer } from 'meteor/danopia:opentelemetry';
 import type { ReadableSpan, WebTracerProvider } from '@opentelemetry/sdk-trace-web'
+import type { IExportTraceServiceRequest } from '@opentelemetry/otlp-transformer'
 const otelTracer = tracer as WebTracerProvider;
 
 export interface StoredSpan {
@@ -106,6 +107,63 @@ class TraceCollector implements SpanExporter {
     });
   }
   async shutdown(): Promise<void> {}
+
+  acceptTraceExport(exportData: IExportTraceServiceRequest) {
+    for (const resource of exportData.resourceSpans ?? []) {
+      for (const scope of resource.scopeSpans ?? []) {
+        for (const span of scope.spans ?? []) {
+          this.spans.insert({
+            _id: `${span.traceId}-${span.spanId}`,
+            traceId: span.traceId,
+            spanId: span.spanId,
+            parentId: span.parentSpanId,
+
+            traceState: span.traceState ?? undefined,
+            operationName: span.name,
+            kind: span.kind,
+            timestampMicroseconds: span.startTimeUnixNano * 1000,
+            durationMicroseconds: (span.endTimeUnixNano - span.startTimeUnixNano) * 1000,
+            attributes: span.attributes.map(x => [x.key, x.value]),
+            status: span.status,
+            events: span.events.map(x => ({
+              name: x.name,
+              timeMicroseconds: x.timeUnixNano * 1000,
+              attributes: x.attributes.map(x => [x.key, x.value]),
+            })),
+            // links: span.links,
+          });
+          this.traces.upsert({
+            _id: span.traceId,
+          }, {
+            $min: {
+              startMicroseconds: span.startTimeUnixNano * 1000,
+            },
+            $max: {
+              endMicroseconds: span.endTimeUnixNano * 1000,
+            },
+            $inc: {
+              spanCount: 1,
+            },
+            $addToSet: {
+              // Only add resourceName if it's given
+              resourceNames: {
+                $each: resource.resource?.attributes.filter(x => x.key == 'resource.name').map(x => `${x.value}`) ?? [],
+              },
+              operationNames: span.name,
+            },
+            ...!span.parentSpanId ? {
+              $set: {
+                rootSpan: {
+                  spanId: span.spanId,
+                  operationName: span.name,
+                },
+              },
+            } : {},
+          });
+        }
+      }
+    }
+  }
 }
 
 import { SimpleSpanProcessor, SpanExporter } from '@opentelemetry/sdk-trace-web';
@@ -114,8 +172,8 @@ import { ExportResult, ExportResultCode, hrTimeToMicroseconds } from '@opentelem
 import { Mongo } from 'meteor/mongo';
 import { Meteor } from 'meteor/meteor';
 
-const collector = new TraceCollector(SpanCollection, TraceCollection);
-otelTracer.addSpanProcessor(new SimpleSpanProcessor(collector));
+export const traceCollector = new TraceCollector(SpanCollection, TraceCollection);
+otelTracer.addSpanProcessor(new SimpleSpanProcessor(traceCollector));
 
 function deleteIrrelevantTraces() {
   const olderThan = (Date.now() - (60 * 1000)) * 1000;
