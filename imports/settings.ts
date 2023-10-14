@@ -4,6 +4,11 @@ export const settings: {
 
   adminUserIds?: Array<string>;
 
+  daemonProfiles?: Array<{
+    profileId: string;
+    apiGroups: Array<string>;
+  }>;
+
   pwa?: {
     shortName?: string;
     fullName?: string;

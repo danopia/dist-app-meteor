@@ -2,6 +2,7 @@ import { Mongo } from "meteor/mongo";
 import { ArbitraryEntity, NamespaceEntity } from "../entities/core";
 import { MeteorEntityStorage, MongoEntityStorage, MongoProfileStorage, StaticEntityStorage } from "./EntityStorage";
 import { StaticCatalogs } from "./StaticCatalogs";
+import { EntitiesCollection } from "../db/entities";
 // import { MongoEntityStorage } from "./next-gen-layer";
 
 function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["layers"][number]) {
@@ -11,6 +12,12 @@ function buildLayer(namespaceName: string, layerSpec: NamespaceEntity["spec"]["l
         collection: new Mongo.Collection<ArbitraryEntity & { catalogId: string; _id: string }>(null),
         namespace: namespaceName,
         catalogId: 'x',
+      });
+    case 'local-catalog':
+      return new MongoEntityStorage({
+        collection: EntitiesCollection,
+        namespace: namespaceName,
+        catalogId: layerSpec.storage.catalogId,
       });
     case 'bundled':
       const staticCat = StaticCatalogs.get(layerSpec.storage.bundleId ?? '');

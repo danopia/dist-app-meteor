@@ -43,6 +43,9 @@ export interface NamespaceEntity {
       storage: {
         type: 'local-inmemory';
       } | {
+        type: 'local-catalog';
+        catalogId: string;
+      } | {
         type: 'bundled';
         bundleId: string;
       } | {

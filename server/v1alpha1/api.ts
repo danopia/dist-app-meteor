@@ -12,6 +12,7 @@ import './publications';
 import { trace } from "@opentelemetry/api";
 
 import './catalog-operator';
+import './profile-operator';
 
 Meteor.methods({
 
