@@ -33,7 +33,15 @@ Meteor.methods({
     this.unblock();
     check(catalogId, String);
     check(entity, Object);
-    return await insertEntity(this.userId, catalogId, entity as ArbitraryEntity);
+    try {
+      return await insertEntity(this.userId, catalogId, entity as ArbitraryEntity);
+    } catch (err) {
+      if ((err as Error).message.includes('E11000 duplicate key error')) {
+        throw new Meteor.Error(`entity-already-exists`, `Entity already exists.`);
+      } else {
+        throw err;
+      }
+    }
   },
 
   async '/v1alpha1/Entity/update'(catalogId: unknown, newEntity: unknown) {
