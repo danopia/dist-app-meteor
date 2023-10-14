@@ -6,6 +6,7 @@ import { EntityEngine } from "/imports/engine/EntityEngine";
 import { CatalogBindingEntity } from "/imports/entities/manifest";
 import { AppInstallationEntity, EntityCatalogEntity } from "/imports/entities/profile";
 import { AsyncKeyedCache } from "/imports/runtime/async-cache";
+import { startManifestRuntimeOperator } from "./system-controllers/manifest-runtime";
 
 export const allAppEngines = new ReactiveMap<string,EntityEngine>();
 
@@ -91,6 +92,27 @@ const appEngineCache = new AsyncKeyedCache({
       }
 
     }
+
+    // entity://dynamic/manifest-runtime.dist.app/v1alpha1/rest-connections/by-name/google-dns
+    engine.addNamespace({
+      name: 'dynamic',
+      spec: {
+        layers: [{
+          mode: 'ReadWrite',
+          accept: [{
+            apiGroup: 'manifest-runtime.dist.app',
+          }],
+          storage: {
+            type: 'local-inmemory',
+          },
+        }],
+      },
+    });
+    await startManifestRuntimeOperator({
+      engine: engine,
+      namespace: 'dynamic',
+      signal: new AbortController().signal,
+    });
 
     allAppEngines.set(key, engine);
     return engine;
