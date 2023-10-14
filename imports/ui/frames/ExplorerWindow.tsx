@@ -145,8 +145,13 @@ export const ExplorerTreeKind = (props: {
         <ul className="sub-tree" style={{ listStyle: 'none', paddingLeft: '0.6em', marginLeft: '0.8em', borderLeft: '1px dashed #999', borderRadius: '0 0 0 10px' }}>
           {props.entities.map(entity => (
             <li key={entity.metadata.name} className="entry-item actionable" style={{ marginTop: '0.3em' }} onClick={() => props.setCurrentEntity(entity)}>
-              <div className="folder-name">
-                <span className="name">{entity.metadata.name}</span>
+              <div className="folder-name" style={{overflowX: 'hidden', whiteSpace: 'nowrap'}}>
+                {entity.metadata.title ? (<>
+                  <span className="name">{entity.metadata.title}</span>{" "}
+                  <span style={{marginLeft: '1em', color: '#999'}}>{entity.metadata.name}</span>
+                </>) : (
+                  <span className="name">{entity.metadata.name}</span>
+                )}
               </div>
             </li>
           ))}
