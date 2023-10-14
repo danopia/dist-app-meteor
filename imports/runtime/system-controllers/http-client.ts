@@ -1,3 +1,4 @@
+import { Meteor } from "meteor/meteor";
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { Headers, fetch } from "meteor/fetch";
 
@@ -10,35 +11,75 @@ export async function startHttpClientOperator(opts: {
   signal: AbortSignal,
 }) {
 
-  await opts.engine.insertEntity({
-    apiVersion: 'http-client.dist.app/v1alpha1',
-    kind: 'Gateway',
-    metadata: {
-      name: 'in-page',
-      namespace: opts.namespace,
-    },
-    spec: {
-      contextType: 'BrowserPage',
-      capabilities: {}, // No extra privileges
-    },
-    status: {
-      defaultHeaders: [{
-        name: 'user-agent',
-        value: navigator.userAgent,
-      }, {
-        name: 'origin',
-        value: location.origin,
-      }, {
-        name: 'sec-ch-ua-platform',
-        //@ts-expect-error not typed
-        value: navigator.userAgentData?.platform,
-      }, {
-        name: 'accept',
-        value: '*/*',
-        replaceable: true,
-      }],
-    },
-  }).catch(err => console.log('in-page already exists?', JSON.stringify(err)));
+  // TODO: generate typings from the http-client EntityDefinitions
+  let gatewayName = '';
+  if (Meteor.isServer) {
+    gatewayName = 'app-server',
+    await opts.engine.insertEntity({
+      apiVersion: 'http-client.dist.app/v1alpha1',
+      kind: 'Gateway',
+      metadata: {
+        name: gatewayName,
+        namespace: opts.namespace,
+        title: 'Server',
+      },
+      spec: {
+        contextType: 'BackendApp',
+        capabilities: {
+          observeNetworking: false, // TODO: implement
+          corsBypass: true,
+          setServerNameIndication: false, // TODO: implement
+          setUserAgentHeader: true,
+          setHostHeader: false, // TODO: implement
+        },
+      },
+      status: {
+        lastActive: new Date(),
+        defaultHeaders: [{
+          name: 'user-agent',
+          value: 'nodejs', // but not really
+          replaceable: true,
+        }, {
+          name: 'accept',
+          value: '*/*',
+          replaceable: true,
+        }],
+      },
+    }).catch(err => console.log('app-server already exists?', JSON.stringify(err)));
+  } else {
+    gatewayName = 'in-page';
+    await opts.engine.insertEntity({
+      apiVersion: 'http-client.dist.app/v1alpha1',
+      kind: 'Gateway',
+      metadata: {
+        name: gatewayName,
+        namespace: opts.namespace,
+        title: 'Browser',
+      },
+      spec: {
+        contextType: 'BrowserPage',
+        capabilities: {}, // No extra privileges
+      },
+      status: {
+        lastActive: new Date(),
+        defaultHeaders: [{
+          name: 'user-agent',
+          value: navigator.userAgent,
+        }, {
+          name: 'origin',
+          value: location.origin,
+        }, {
+          name: 'sec-ch-ua-platform',
+          //@ts-expect-error not typed
+          value: navigator.userAgentData?.platform,
+        }, {
+          name: 'accept',
+          value: '*/*',
+          replaceable: true,
+        }],
+      },
+    }).catch(err => console.log('in-page already exists?', JSON.stringify(err)));
+  }
 
   opts.engine.streamEntities(
     'http-client.dist.app/v1alpha1', 'HttpExchange',
@@ -49,9 +90,13 @@ export async function startHttpClientOperator(opts: {
       async write(evt) {
         if (evt.kind !== 'Creation') return;
         if (evt.snapshot.status) return;
-        if (!evt.snapshot.spec.request.url.startsWith('https://')) return;
-        const targetLabel = evt.snapshot.metadata.labels;
-        console.log({targetLabel});
+
+        // Ignore requests targetting other Gateways
+        if (evt.snapshot.spec.gatewayName !== gatewayName) return;
+        // Browser scripts can't generally access insecure content
+        if (Meteor.isClient) {
+          if (!evt.snapshot.spec.request.url.startsWith('https://')) return;
+        }
 
         await opts.engine.mutateEntity(
           'http-client.dist.app/v1alpha1', 'HttpExchange',
