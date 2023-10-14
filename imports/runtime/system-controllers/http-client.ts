@@ -1,4 +1,8 @@
 import { EntityEngine } from "/imports/engine/EntityEngine";
+import { Headers, fetch } from "meteor/fetch";
+
+import * as webStreams from "web-streams-polyfill/ponyfill";
+const WritableStream = globalThis.WritableStream ?? webStreams.WritableStream;
 
 export async function startHttpClientOperator(opts: {
   engine: EntityEngine,

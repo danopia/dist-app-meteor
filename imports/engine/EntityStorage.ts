@@ -10,6 +10,9 @@ import { DDP } from "meteor/ddp";
 import { Tracker } from "meteor/tracker";
 import { ReactiveMap } from "../lib/reactive-map";
 
+import * as webStreams from "web-streams-polyfill/ponyfill";
+const TransformStream = globalThis.TransformStream ?? webStreams.TransformStream;
+
 export interface EntityStorage {
   insertEntity<T extends ArbitraryEntity>(entity: T): void | Promise<void>;
   listAllEntities(): ArbitraryEntity[];
