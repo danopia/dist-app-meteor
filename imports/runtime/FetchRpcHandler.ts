@@ -247,7 +247,7 @@ export class FetchRpcHandler {
     //   }
     // }
 
-    return makeTextResponse(404, `TODO: this catalog api isn't real`);
+    return makeTextResponse(404, `TODO: this catalog api is not real`);
   }
 
   // async handleInner(req: Request): Promise<Response> {
