@@ -1,3 +1,4 @@
+import { Tracker } from "meteor/tracker";
 import { ArbitraryEntity } from "../entities/core";
 import { EntityEngine } from "./EntityEngine";
 
@@ -44,6 +45,26 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
     return this.engine.getEntity<Tself>(
       this.coords.apiVersion, this.coords.apiKind,
       this.coords.namespace, this.coords.name);
+  }
+
+  /** Tracker-Fenced alternative to get() which waits for a resource to show up */
+  getAsync(signal?: AbortSignal) {
+    const initial = this.get();
+    if (initial) return initial;
+    signal?.throwIfAborted();
+    return new Promise((ok, reject) => {
+      const computation = Tracker.autorun(computation => {
+        const snapshot = this.get();
+        if (snapshot) {
+          ok(snapshot);
+          computation.stop();
+        }
+      });
+      signal?.addEventListener('abort', event => {
+        reject(new Error(`getAsync aborted: ${event}`));
+        computation.stop();
+      });
+    })
   }
 
   async insertNeighbor<Tother extends ArbitraryEntity>(

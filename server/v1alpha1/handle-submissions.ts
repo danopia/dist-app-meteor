@@ -34,30 +34,28 @@ export async function handleCapCall(userId: string | null, entity: ArbitraryEnti
   const appInstallationNames = entity.spec.appInstallationRef
     .split('/').map(x => decodeURIComponent(x));
 
-  const appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', appInstallationNames[0], appInstallationNames[1]);
+  const hAppInstallation = runtime.getEntityHandle<AppInstallationEntity>(
+    'profile.dist.app/v1alpha1', 'AppInstallation',
+    appInstallationNames[0], appInstallationNames[1]);
+  const appInstallation = hAppInstallation.get();
   if (!appInstallation)
     throw new Meteor.Error(`no-entity`, `AppInstallation not found.`);
   const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
   // TODO: seems to be arriving double-encoded?
-  let apiBinding = runtime.getEntity<ApiBindingEntity>(
-    'manifest.dist.app/v1alpha1', 'ApiBinding',
-    appNamespace, decodeURIComponent(entity.spec.cap.apiBindingRef.split('/')[1]));
-  if (!apiBinding) {
-    // TODO: remove this data race when entities aren't downloaded yet
-    await new Promise(ok => setTimeout(ok, 2000));
-    apiBinding = runtime.getEntity<ApiBindingEntity>(
+  let apiBinding = runtime
+    .getEntityHandle<ApiBindingEntity>(
       'manifest.dist.app/v1alpha1', 'ApiBinding',
-      appNamespace, decodeURIComponent(entity.spec.cap.apiBindingRef.split('/')[1]));
-    if (!apiBinding) throw new Meteor.Error(`no-entity`,
-      `ApiBinding not found.`);
-  }
+      appNamespace, decodeURIComponent(entity.spec.cap.apiBindingRef.split('/')[1]))
+    .getAsync(AbortSignal.timeout(10_000));
+  if (!apiBinding) throw new Meteor.Error(`no-entity`,
+    `ApiBinding not found.`);
 
   const apiCredentialNames = entity.spec.cap.apiCredentialRef
     ?.split('/').map(x => decodeURIComponent(x));
   const apiCredential = apiCredentialNames
-    ? runtime.getEntity<ApiCredentialEntity>(
+    ? runtime.getEntityHandle<ApiCredentialEntity>(
       'profile.dist.app/v1alpha1', 'ApiCredential',
-      apiCredentialNames[0], apiCredentialNames[1])
+      apiCredentialNames[0], apiCredentialNames[1]).get()
     : null;
   if (entity.spec.cap.apiCredentialRef && !apiCredential) throw new Meteor.Error(`no-entity`,
     `Referenced ApiCredential not found.`);

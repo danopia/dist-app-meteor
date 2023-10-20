@@ -45,11 +45,7 @@ export async function startManifestRuntimeOperator(opts: {
     async loadFunc(apiName: string) {
 
       const hApi = opts.engine.getEntityHandle<ApiEntity>('manifest.dist.app/v1alpha1', 'Api', 'src', apiName);
-      let api = hApi.get();
-      if (!api) {
-        await new Promise(ok => setTimeout(ok, 1000));
-        api = hApi.get();
-      }
+      let api = await hApi.getAsync(AbortSignal.timeout(10_000));
       if (!api) {
         throw new Error(`API didn't show up`);
       }
