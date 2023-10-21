@@ -12,6 +12,7 @@ import { networkIconSvg } from '/imports/svgs/network-icon';
 import { BrandingPanel } from '../tray/BrandingPanel';
 import { SimpleGlyphIcon } from '../widgets/SimpleGlyphIcon';
 import { AppIcon } from '../widgets/AppIcon';
+import { MonitoringPanel } from '../tray/MonitoringPanel';
 
 export const WelcomeSplash = () => {
 
@@ -46,6 +47,7 @@ export const WelcomeSplash = () => {
 
         <div style={{flex: 1}} />
 
+        <MonitoringPanel />
         <ConnectionsPanel />
         <LogoutPanel />
 

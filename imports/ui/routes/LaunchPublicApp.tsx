@@ -15,6 +15,7 @@ import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 import { CatalogBindingEntity } from '/imports/entities/manifest';
 import { MeteorEntityStorage } from '/imports/engine/EntityStorage';
+import { MonitoringPanel } from '../tray/MonitoringPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -190,6 +191,7 @@ export const LaunchPublicApp = (props: {
           <BrandingPanel iconSpec={appListing?.spec.icon} />
           <FramesPanel hWorkspace={hWorkspace} />
           <div style={{flex: 1}} />
+          <MonitoringPanel />
           <ConnectionsPanel />
           <LogoutPanel />
         </ul>

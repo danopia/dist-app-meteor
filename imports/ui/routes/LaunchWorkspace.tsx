@@ -16,6 +16,7 @@ import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
 import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 
 import '../ViewportSwitcher.css';
+import { MonitoringPanel } from '../tray/MonitoringPanel';
 
 export const LaunchWorkspace = (props: {
   profileId?: string;
@@ -295,8 +296,8 @@ export const LaunchWorkspace = (props: {
 
             <div style={{flex: 1}} />
 
+            <MonitoringPanel />
             <ConnectionsPanel />
-
             <LogoutPanel />
 
           </ul>

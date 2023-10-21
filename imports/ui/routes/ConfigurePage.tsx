@@ -7,6 +7,7 @@ import { CatalogsCollection } from '/imports/db/catalogs';
 import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 import { ConnectionsPanel } from '/imports/ui/tray/ConnectionsPanel';
 import { LogoutPanel } from '/imports/ui/tray/LogoutPanel';
+import { MonitoringPanel } from '../tray/MonitoringPanel';
 
 export const ConfigurePage = () => {
 
@@ -30,6 +31,7 @@ export const ConfigurePage = () => {
 
         <div style={{flex: 1}} />
 
+        <MonitoringPanel />
         <ConnectionsPanel />
         <LogoutPanel />
 
