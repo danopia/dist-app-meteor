@@ -59,7 +59,7 @@ export const TelemetryWindow = (props: {
             }}>
             <div className="folder-name" onClick={() => setCurrentTraceId(trace._id)}>
               <div style={{display: 'flex', justifyContent: 'space-between' }}>
-                <div className="sub name">{trace.resourceNames.map(x => frameMap.get(x)?.metadata.title ?? x)}</div>
+                <div className="sub name">{trace.resourceNames?.map(x => frameMap.get(x)?.metadata.title ?? x).join(', ') || 'Unknown'}</div>
                 <div>{new Date(trace.startMicroseconds / 1000).toLocaleTimeString([],{})}</div>
               </div>
               <div className="name">{trace.rootSpan?.operationName ?? 'unknown'}</div>
@@ -152,7 +152,7 @@ const TraceDisplay = (props: {
     <div>
       <h2>{trace?.operationNames}</h2>
     </div>
-    <div>hi!</div>
+    <div>{(trace.endMicroseconds-trace.startMicroseconds)/1000}ms</div>
     {rootSpan ? (
       <table style={{ width: '100%' }}>
         <thead>

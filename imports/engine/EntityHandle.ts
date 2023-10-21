@@ -1,6 +1,11 @@
 import { Tracker } from "meteor/tracker";
 import { ArbitraryEntity } from "../entities/core";
 import { EntityEngine } from "./EntityEngine";
+import { LogicTracer } from "../lib/tracing";
+
+const tracer = new LogicTracer({
+  name: 'dist.app/EntityHandle',
+});
 
 export class EntityHandle<Tself extends ArbitraryEntity> {
   constructor(
@@ -48,9 +53,10 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
   }
 
   /** Tracker-Fenced alternative to get() which waits for a resource to show up */
+  @tracer.InternalSpan
   getAsync(signal?: AbortSignal) {
     const initial = this.get();
-    if (initial) return initial;
+    if (initial) return Promise.resolve(initial);
     signal?.throwIfAborted();
     return new Promise((ok, reject) => {
       const computation = Tracker.autorun(computation => {

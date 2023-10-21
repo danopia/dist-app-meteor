@@ -4,6 +4,7 @@ import { ApiEntity } from "/imports/entities/manifest";
 import { RestCallEntity, RestConnectionEntity } from "/imports/entities/manifest-runtime";
 import { parse } from "yaml";
 import { AsyncCache, AsyncKeyedCache } from "../async-cache";
+import { context, propagation } from "@opentelemetry/api";
 
 export async function startManifestRuntimeOperator(opts: {
   engine: EntityEngine,
@@ -132,6 +133,12 @@ export async function startManifestRuntimeOperator(opts: {
         if (evt.kind !== 'Creation') return;
         const restCall = evt.snapshot as RestCallEntity;
 
+        const baggage = JSON.parse(restCall.metadata.annotations?.['otel/baggage'] ?? '{}');
+        const traceCtx = propagation.extract(context.active(), baggage, {
+          get(h,k) { return h[k]; },
+          keys(h) { return Object.keys(h); },
+        });
+
         const restConnection = opts.engine
           .getEntityHandle<RestConnectionEntity>(
             'manifest-runtime.dist.app/v1alpha1', 'RestConnection',
@@ -139,7 +146,7 @@ export async function startManifestRuntimeOperator(opts: {
           .get();
         if (!restConnection) throw new Error(`connection not found`);
 
-        const api = await apiCache.get(restConnection.spec.apiName);
+        const api = await context.with(traceCtx, () => apiCache.get(restConnection.spec.apiName));
 
         const operation = api.operations.find(x => x.operationId == restCall.spec.operationId);
         if (!operation) throw new Error(`Operation not found`);
@@ -173,7 +180,6 @@ export async function startManifestRuntimeOperator(opts: {
         // });
 
         if (operation.method !== 'get') throw new Error(`TODO: non-GET operation`);
-        console.log({operation})
 
         const url = new URL(operation.path, restConnection.status?.selectedEndpoint);
         const givenParams = new Set(Object.keys(restCall.spec.parameters));
@@ -203,10 +209,10 @@ export async function startManifestRuntimeOperator(opts: {
         if (givenParams.size > 0) {
           throw new Error(`Received extra unrecognized params: ${JSON.stringify([...givenParams])}`);
         }
-        console.log(url.toString());
+        // console.log(url.toString());
 
         const sentAt = new Date();
-        await opts.engine.mutateEntity<RestCallEntity>(
+        await context.with(traceCtx, () => opts.engine.mutateEntity<RestCallEntity>(
           'manifest-runtime.dist.app/v1alpha1', 'RestCall',
           restCall.metadata.namespace, restCall.metadata.name,
           cb => {
@@ -214,17 +220,18 @@ export async function startManifestRuntimeOperator(opts: {
               phase: 'Inflight',
               sentAt, // TODO: rename startedAt
             };
-          });
+          }));
 
         try {
-          const resp = await fetch(url, {
-            method: 'GET',
-          });
+          const resp = await context.with(traceCtx, () =>
+            fetch(url, {
+              method: 'GET',
+            }));
           console.log('HTTP', resp.status, 'from', operation.method, url.toString());
 
           const data = await resp.text();
 
-          await opts.engine.mutateEntity<RestCallEntity>(
+          await context.with(traceCtx, () =>opts.engine.mutateEntity<RestCallEntity>(
             'manifest-runtime.dist.app/v1alpha1', 'RestCall',
             restCall.metadata.namespace, restCall.metadata.name,
             cb => {
@@ -237,12 +244,12 @@ export async function startManifestRuntimeOperator(opts: {
                   data,
                 },
               };
-            });
+            }));
 
         } catch (thrown) {
           const err = thrown as Error;
 
-          await opts.engine.mutateEntity<RestCallEntity>(
+          await context.with(traceCtx, () => opts.engine.mutateEntity<RestCallEntity>(
             'manifest-runtime.dist.app/v1alpha1', 'RestCall',
             restCall.metadata.namespace, restCall.metadata.name,
             cb => {
@@ -254,7 +261,7 @@ export async function startManifestRuntimeOperator(opts: {
                   message: err.message,
                 },
               };
-            });
+            }));
 
         }
       }
