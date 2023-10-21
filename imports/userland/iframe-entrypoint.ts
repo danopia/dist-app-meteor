@@ -146,13 +146,14 @@ class DistApp {
     return token;
     // return new ApiBindingMount(this, apiBindingName, token);
   }
-  async fetch(req: RequestInfo | URL, opts?: RequestInit) {
+  async fetch(req: RequestInfo | URL, opts?: RequestInit, baggage?: unknown) {
     if (typeof req == 'string') {
       return await this.handleFetch({
         method: opts?.method || 'GET',
         url: req,
         headers: new Headers(opts?.headers),
         body: (opts?.body != null) ? await new Response(opts.body).text() : null,
+        baggage,
       });
     }
     const request = new Request(req, opts);
@@ -161,6 +162,7 @@ class DistApp {
       url: request.url,
       headers: request.headers,
       body: await request.text() || null,
+      baggage,
     });
   }
   async handleFetch(request: {
@@ -168,10 +170,13 @@ class DistApp {
     method: string;
     headers: Headers;
     body: string | Uint8Array | null;
+    baggage?: unknown;
   }) {
     const respPayload = await this.sendRpcForResult<FetchResponseEntity>({
       kind: 'FetchRequest',
       id: -1,
+      //@ts-expect-error: unstable API
+      baggage: request.baggage,
       spec: {
         url: request.url,
         method: request.method,

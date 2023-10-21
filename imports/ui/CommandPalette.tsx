@@ -9,6 +9,7 @@ import { CommandPaletteItem } from './CommandPaletteItem';
 import { launchNewIntent } from '/imports/runtime/workspace-actions';
 import { CommandEntity, WorkspaceEntity } from '../entities/runtime';
 import { EntityHandle } from '../engine/EntityHandle';
+import { traceAsyncFunc } from 'meteor/danopia:opentelemetry';
 
 export interface PaletteCommand {
   id?: string | number;
@@ -126,7 +127,8 @@ export const MyCommandPalette = (props: {
         renderCommand={CommandPaletteItem}
         onSelect={(selected: Partial<PaletteCommand>) => {
           if (selected.intent) {
-            launchNewIntent(props.hWorkspace, selected.intent);
+            traceAsyncFunc('launchNewIntent', () =>
+              launchNewIntent(props.hWorkspace, selected.intent!));
           }
         }}
       />
