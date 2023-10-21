@@ -11,7 +11,7 @@ import { compileIframeSrc } from '../lib/compile-iframe-src';
 import { Meteor } from 'meteor/meteor';
 import { EntityHandle } from '../engine/EntityHandle';
 import { runTaskCommand } from '../runtime/workspace-actions';
-import { traceCollector } from '../lib/telemetry-store';
+import { acceptTraceExport } from '../lib/telemetry-store';
 
 // TODO: rename AppWindow or IframeWindow, put in frames/
 export const IframeHost = (props: {
@@ -111,9 +111,11 @@ export const IframeHost = (props: {
     });
     // TODO: remove in favor of telemetry.v1alpha1.dist.app
     messageHost.addRpcListener<{}>('OtelExport', async ({rpc}) => {
-      console.log('OTLP payload from application:', rpc.spec);
-      if (rpc.spec.resourceSpans) traceCollector.acceptTraceExport(rpc.spec);
-      await Meteor.callAsync('OTLP/v1/traces', rpc.spec);
+      if (rpc.spec.resourceSpans) {
+        acceptTraceExport(rpc.spec);
+      } else {
+        await Meteor.callAsync('OTLP/v1/traces', rpc.spec);
+      }
     });
   }, [messageHost]);
 

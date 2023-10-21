@@ -107,67 +107,10 @@ class TraceCollector implements SpanExporter {
     });
   }
   async shutdown(): Promise<void> {}
-
-  acceptTraceExport(exportData: IExportTraceServiceRequest) {
-    for (const resource of exportData.resourceSpans ?? []) {
-      for (const scope of resource.scopeSpans ?? []) {
-        for (const span of scope.spans ?? []) {
-          this.spans.insert({
-            _id: `${span.traceId}-${span.spanId}`,
-            traceId: span.traceId,
-            spanId: span.spanId,
-            parentId: span.parentSpanId,
-
-            traceState: span.traceState ?? undefined,
-            operationName: span.name,
-            kind: span.kind,
-            timestampMicroseconds: span.startTimeUnixNano / 1000,
-            durationMicroseconds: (span.endTimeUnixNano - span.startTimeUnixNano) / 1000,
-            attributes: span.attributes.map(x => [x.key, x.value?.stringValue ?? 'BUG']),
-            status: span.status,
-            events: span.events.map(x => ({
-              name: x.name,
-              timeMicroseconds: x.timeUnixNano * 1000,
-              attributes: x.attributes.map(x => [x.key, x.value?.stringValue ?? 'BUG']),
-            })),
-            // links: span.links,
-          });
-          this.traces.upsert({
-            _id: span.traceId,
-          }, {
-            $min: {
-              startMicroseconds: span.startTimeUnixNano / 1000,
-            },
-            $max: {
-              endMicroseconds: span.endTimeUnixNano / 1000,
-            },
-            $inc: {
-              spanCount: 1,
-            },
-            $addToSet: {
-              // Only add resourceName if it's given
-              resourceNames: {
-                $each: resource.resource?.attributes.filter(x => x.key == 'resource.name').map(x => `${x.value}`) ?? [],
-              },
-              operationNames: span.name,
-            },
-            ...!span.parentSpanId ? {
-              $set: {
-                rootSpan: {
-                  spanId: span.spanId,
-                  operationName: span.name,
-                },
-              },
-            } : {},
-          });
-        }
-      }
-    }
-  }
 }
 
 import { SimpleSpanProcessor, SpanExporter } from '@opentelemetry/sdk-trace-web';
-import { AttributeValue, Context, Link, SpanKind, SpanStatus } from '@opentelemetry/api';
+import { AttributeValue, Attributes, Context, HrTime, Link, SpanKind, SpanStatus, TraceState } from '@opentelemetry/api';
 import { ExportResult, ExportResultCode, hrTimeToMicroseconds } from '@opentelemetry/core';
 import { Mongo } from 'meteor/mongo';
 import { Meteor } from 'meteor/meteor';
@@ -192,6 +135,60 @@ otelTracer.addSpanProcessor(new class RealtimeSpanProcessor extends SimpleSpanPr
   }
 }());
 
+export function acceptTraceExport(exportData: IExportTraceServiceRequest) {
+  const processor = otelTracer.getActiveSpanProcessor()
+  for (const resource of exportData.resourceSpans ?? []) {
+    for (const scope of resource.scopeSpans ?? []) {
+      for (const span of scope.spans ?? []) {
+        processor.onEnd({
+          spanContext: () => ({
+            traceId: span.traceId,
+            spanId: span.spanId,
+            traceFlags: 1,
+            // isRemote: false,
+            // traceState: span.traceState,
+          }),
+          name: span.name,
+          attributes: Object.fromEntries(span.attributes.map(y => [y.key, y.value.stringValue ?? undefined])),,
+          droppedAttributesCount: span.droppedAttributesCount,
+          droppedEventsCount: span.droppedEventsCount,
+          droppedLinksCount: span.droppedLinksCount,
+          startTime: nanosToHrTime(span.startTimeUnixNano),
+          endTime: nanosToHrTime(span.endTimeUnixNano),
+          duration: nanosToHrTime(span.endTimeUnixNano - span.startTimeUnixNano),
+          events: span.events.map(x => ({
+            name: x.name,
+            time: nanosToHrTime(x.timeUnixNano),
+            attributes: Object.fromEntries(x.attributes.map(y => [y.key, y.value.stringValue ?? undefined])),
+          })),
+          ended: true,
+          instrumentationLibrary: {
+            name: scope.scope?.name,
+            version: scope.scope?.version,
+          },
+          kind: span.kind,
+          links: span.links.map(x => ({
+            context: {
+              traceId: x.traceId,
+              spanId: x.spanId,
+              traceFlags: 1,
+              // isRemote: false,
+              // traceState: x.traceState,
+            },
+            attributes: Object.fromEntries(x.attributes.map(y => [y.key, y.value.stringValue ?? undefined])),
+            droppedAttributesCount: x.droppedAttributesCount,
+          })),
+          status: span.status,
+          parentSpanId: span.parentSpanId,
+          resource: {
+            attributes: Object.fromEntries(resource.resource?.attributes.map(y => [y.key, y.value.stringValue ?? undefined]) ?? []),
+          },
+        });
+      }
+    }
+  }
+}
+
 function deleteIrrelevantTraces() {
   const olderThan = (Date.now() - (60 * 1000)) * 1000;
   const traces = TraceCollection.find({
@@ -210,3 +207,11 @@ function deleteIrrelevantTraces() {
   console.debug(`Deleted`, traces.length, `old traces:`, deletedTraces, 'gone,', deletedSpans, 'spans`');
 }
 Meteor.setInterval(deleteIrrelevantTraces, 30_000);
+
+
+
+export function nanosToHrTime(epochNanos: number): HrTime {
+  const seconds = Math.trunc(epochNanos / 1_000_000_000);
+  const nanos = Math.round(epochNanos % 1_000_000_000);
+  return [seconds, nanos];
+}

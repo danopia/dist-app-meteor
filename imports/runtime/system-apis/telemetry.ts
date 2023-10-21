@@ -1,7 +1,7 @@
 import type { FetchRpcHandler } from "/imports/runtime/FetchRpcHandler";
 import type { FetchRequestEntity, FetchResponseEntity } from "/imports/entities/protocol";
 import { Meteor } from "meteor/meteor";
-import { traceCollector } from "/imports/lib/telemetry-store";
+import { acceptTraceExport } from "/imports/lib/telemetry-store";
 
 /**
  * # telemetry.v1alpha1.dist.app
@@ -18,14 +18,9 @@ export async function serveTelemetryApi(rpc: {
 
   if (rpc.path == 'otlp' && rpc.request.method == 'POST' && typeof rpc.request.body == 'string') {
     const payload = JSON.parse(rpc.request.body);
-    console.log('OTLP payload from application:', payload);
-
 
     if (payload.resourceSpans) {
-      traceCollector.acceptTraceExport(payload);
-      console.log('otlp todo', await Meteor.callAsync('OTLP/v1/traces', {
-        resourceSpans: payload.resourceSpans,
-      }));
+      acceptTraceExport(payload);
     }
 
     if (payload.resourceMetrics) {
