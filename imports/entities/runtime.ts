@@ -9,6 +9,7 @@ export interface WorkspaceEntity {
     frameMode?: 'windowing' | 'tabbed';
     windowOrder: Array<string>;
     savedSessionName?: string;
+    layerRenderKey?: string;
   };
 }
 

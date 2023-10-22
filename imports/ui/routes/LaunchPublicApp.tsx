@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 
 import { ActivityShell } from '/imports/ui/ActivityShell';
 import { EntityEngine } from '/imports/engine/EntityEngine';
-import { AppInstallationEntity, EntityCatalogEntity } from '/imports/entities/profile';
+import { AppInstallationEntity } from '/imports/entities/profile';
 import { WorkspaceEntity } from '/imports/entities/runtime';
 import { marketUrl } from '/imports/settings';
 import { RuntimeContext } from '/imports/ui/contexts';
@@ -16,6 +16,7 @@ import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 import { CatalogBindingEntity } from '/imports/entities/manifest';
 import { MeteorEntityStorage } from '/imports/engine/EntityStorage';
 import { MonitoringPanel } from '../tray/MonitoringPanel';
+import { CommandPanel } from '../tray/CommandPanel';
 
 export const LaunchPublicApp = (props: {
   appListingName: string;
@@ -189,6 +190,7 @@ export const LaunchPublicApp = (props: {
 
         <ul className="switcher-menu">
           <BrandingPanel iconSpec={appListing?.spec.icon} />
+          <CommandPanel hWorkspace={hWorkspace} />
           <FramesPanel hWorkspace={hWorkspace} />
           <div style={{flex: 1}} />
           <MonitoringPanel />

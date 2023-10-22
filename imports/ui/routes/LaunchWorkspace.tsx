@@ -1,5 +1,5 @@
 import { Meteor } from 'meteor/meteor';
-import React, { Fragment, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTracker, useSubscribe, useFind } from 'meteor/react-meteor-data';
 import { useNavigate } from 'raviger';
 
@@ -17,6 +17,7 @@ import { BrandingPanel } from '/imports/ui/tray/BrandingPanel';
 
 import '../ViewportSwitcher.css';
 import { MonitoringPanel } from '../tray/MonitoringPanel';
+import { CommandPanel } from '../tray/CommandPanel';
 
 export const LaunchWorkspace = (props: {
   profileId?: string;
@@ -265,27 +266,7 @@ export const LaunchWorkspace = (props: {
               ))}
             </select>
 
-            <li className="switcher-icon">
-              <button style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }} onClick={async () => {
-                  const workspaceName = `shell-${Math.random().toString(16).slice(2,6)}`;
-                  await engine.insertEntity<WorkspaceEntity>({
-                    apiVersion: 'runtime.dist.app/v1alpha1',
-                    kind: 'Workspace',
-                    metadata: {
-                      name: workspaceName,//'main',
-                      namespace: 'session',
-                    },
-                    spec: {
-                      windowOrder: [],
-                    },
-                  });
-                  navigate(`/profile/${profile._id}/workspace/${workspaceName}`);
-                }}>+</button>
-            </li>
+            <CommandPanel hWorkspace={workspace?.hWorkspace} />
 
             {workspace ? (
               <FramesPanel

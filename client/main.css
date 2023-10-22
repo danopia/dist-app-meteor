@@ -11,7 +11,7 @@ body.shell-workspace-floating {
 body.shell-workspace-floating #react-target, .activity-shell-parent {
   display: grid;
   height: 100vh;
-  grid-template-areas: "powerbar powerbar" "nav activity";
+  grid-template-areas: "powerbar activity" "nav activity";
   grid-template-rows: 2em 1fr;
   grid-template-columns: min-content 1fr;
   /* gap: 1em; */

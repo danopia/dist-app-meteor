@@ -14,7 +14,6 @@ export const ActivityShell = (props: {
   guest: boolean;
 }) => {
   // Layer key intended solely to make for easy UI recreations
-  const [floatingLayerKey, setFloatingLayerKey] = useState(Math.random());
   const workspaceName = props.workspaceName ?? "main";
 
   const runtime = useContext(RuntimeContext);
@@ -53,22 +52,9 @@ export const ActivityShell = (props: {
   // TODO: pass entity handles and APIs down, to parameterize namespace
   return (
     <>
-      <section className="shell-powerbar">
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <MyCommandPalette parentElement=".activity-shell-parent" hWorkspace={hWorkspace} />
-        </ErrorBoundary>
-        <select onChange={(evt) => runtime.mutateEntity<WorkspaceEntity>('runtime.dist.app/v1alpha1', 'Workspace', workspace.metadata.namespace, workspace.metadata.name, x => {
-            x.spec.frameMode = evt.currentTarget.value as 'windowing' | 'tabbed';
-          })} defaultValue={frameMode}>
-          <option value="windowing">windowing</option>
-          <option value="tabbed">tabbed</option>
-        </select>
-        <button onClick={() => setFloatingLayerKey(Math.random())}>Recreate windows</button>
-        <div style={{flex: 1}}></div>
-      </section>
       <div className="shell-backdrop" />
       {props.savedSessionName == workspace.spec.savedSessionName ? (
-        <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={floatingLayerKey}>
+        <div className={frameMode == 'tabbed' ? 'shell-grid-layer' : 'shell-floating-layer'} key={workspace.spec.layerRenderKey ?? 'none'}>
           {frames.map(task => (
             <ErrorBoundary key={task.metadata.name} FallbackComponent={ErrorFallback}>
               <FrameContainer

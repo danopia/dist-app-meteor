@@ -24,7 +24,7 @@ function command() {}
 
 export const MyCommandPalette = (props: {
   parentElement?: string;
-  hWorkspace: EntityHandle<WorkspaceEntity>;
+  hWorkspace?: EntityHandle<WorkspaceEntity>;
 }) => {
 
   const runtime = useContext(RuntimeContext);
@@ -114,6 +114,23 @@ export const MyCommandPalette = (props: {
     // },
   ];
 
+  const {hWorkspace} = props;
+  if (!hWorkspace) return (
+    <CommandPalette
+        closeOnSelect={true}
+        commands={[]}
+        // trigger={null}
+        reactModalParentSelector={props.parentElement ?? "#react-target"}
+        resetInputOnOpen={true}
+        options={{
+          keys: ['category', 'name', 'extraNames'] as Array<keyof PaletteCommand>,
+        }}
+        renderCommand={CommandPaletteItem}
+        onSelect={(selected: Partial<PaletteCommand>) => {
+        }}
+      />
+  )
+
   return (
     <CommandPalette
         closeOnSelect={true}
@@ -128,9 +145,32 @@ export const MyCommandPalette = (props: {
         onSelect={(selected: Partial<PaletteCommand>) => {
           if (selected.intent) {
             traceAsyncFunc('launchNewIntent', () =>
-              launchNewIntent(props.hWorkspace, selected.intent!));
+              launchNewIntent(hWorkspace, selected.intent!));
           }
         }}
       />
   );
 };
+
+
+{/* <li className="switcher-icon">
+  <button style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }} onClick={async () => {
+      const workspaceName = `shell-${Math.random().toString(16).slice(2,6)}`;
+      await engine.insertEntity<WorkspaceEntity>({
+        apiVersion: 'runtime.dist.app/v1alpha1',
+        kind: 'Workspace',
+        metadata: {
+          name: workspaceName,//'main',
+          namespace: 'session',
+        },
+        spec: {
+          windowOrder: [],
+        },
+      });
+      navigate(`/profile/${profile._id}/workspace/${workspaceName}`);
+    }}>+</button>
+</li> */}
