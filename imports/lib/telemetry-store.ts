@@ -190,10 +190,16 @@ export function acceptTraceExport(exportData: IExportTraceServiceRequest) {
 }
 
 function deleteIrrelevantTraces() {
-  const olderThan = (Date.now() - (60 * 1000)) * 1000;
+  const minuteAgo = (Date.now() - (60 * 1000)) * 1000;
+  const hourAgo = (Date.now() - (60 * 60 * 1000)) * 1000;
+
   const traces = TraceCollection.find({
-    resourceNames: [],
-    endMicroseconds: { $lt: olderThan },
+    $or: [{
+      resourceNames: [],
+      endMicroseconds: { $lt: minuteAgo },
+    }, {
+      endMicroseconds: { $lt: hourAgo },
+    }],
   }).fetch();
   const traceIds = traces.map(x => x._id);
 
