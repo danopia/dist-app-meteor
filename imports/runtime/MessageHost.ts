@@ -146,8 +146,8 @@ function globalMessageHandler(evt: MessageEvent) {
 
   const host = WindowMap.get(evt.source);
   if (host) {
-    console.log('refusing rebind for because it breaks things');
-    // host.rebindWindow(evt.source as Window);
+    // console.log('refusing rebind for because it breaks things');
+    host.rebindWindow(evt.source as Window);
   } else {
     console.log('refusing rebind for missing WindowMap');
   }

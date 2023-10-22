@@ -58,7 +58,7 @@ export class EntityHandle<Tself extends ArbitraryEntity> {
     const initial = this.get();
     if (initial) return Promise.resolve(initial);
     signal?.throwIfAborted();
-    return new Promise((ok, reject) => {
+    return new Promise<Tself>((ok, reject) => {
       const computation = Tracker.autorun(computation => {
         const snapshot = this.get();
         if (snapshot) {

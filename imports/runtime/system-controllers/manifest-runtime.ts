@@ -104,6 +104,11 @@ export async function startManifestRuntimeOperator(opts: {
           return;
         }
 
+        if (restConnection.spec.authentication?.requestSecuritySchemes) {
+          const schema = api.definition.components?.securitySchemes?.[restConnection.spec.authentication.requestSecuritySchemes[0]];
+          console.log(JSON.stringify(schema,null,2));
+        }
+
         alert('new unhandled RestConnection:\n'+JSON.stringify({
           restConnection,
           api,
