@@ -16,6 +16,8 @@ import { GridLoader } from "react-spinners";
 import { EntityHandle } from "../engine/EntityHandle";
 import { runTaskCommand } from "../runtime/workspace-actions";
 import { TelemetryWindow } from "./frames/TelemetryWindow";
+import { ActivityTaskTitle } from "./frames/ActivityTaskTitle";
+import { ActivityTaskWindow } from "./frames/ActivityTaskWindow";
 
 export const FrameContainer = (props: {
   zIndex?: number;
@@ -27,11 +29,6 @@ export const FrameContainer = (props: {
   // sessionCatalog: SessionCatalog,
 }) => {
   const frameEntity = props.frame;
-
-  const runtime = useContext(RuntimeContext);
-
-  // const frameEntity = useTracker(() => runtime.getEntity<FrameEntity>('runtime.dist.app/v1alpha1', 'Frame', props.sessionNamespace, props.frameName));
-  // if (!frameEntity) throw new Error(`No Frame entity`);
 
   const contentRaw = useTracker(() => {
     const ref = frameEntity.spec.contentRef;
@@ -96,53 +93,30 @@ export const FrameContainer = (props: {
           </div>
         );
       }
-      // content = useMemo(() => (
       content = (
-        <IntentWindow frame={frameEntity} command={contentRaw} workspaceName={props.workspaceName} hWorkspace={props.hWorkspace} onLifecycle={setLifecycle} />
+        <IntentWindow
+            frame={frameEntity}
+            command={contentRaw}
+            workspaceName={props.workspaceName}
+            hWorkspace={props.hWorkspace}
+            onLifecycle={setLifecycle}
+          />
       );
-      // ), [frameEntity, contentRaw, props.workspaceName, props.hWorkspace, setLifecycle]);
       break;
     }
 
     case "ActivityTask": {
-
-      const {app, activity} = useTracker(() => {
-        const appInstallation = runtime.getEntity<AppInstallationEntity>('profile.dist.app/v1alpha1', 'AppInstallation', contentRaw.spec.installationNamespace, contentRaw.spec.installationName);
-        if (!appInstallation) return {}; // throw new Error(`TODO: no appInstallation`);
-        const appNamespace = runtime.useRemoteNamespace(appInstallation.spec.appUri);
-
-        return {
-          app: runtime.listEntities<ApplicationEntity>('manifest.dist.app/v1alpha1', 'Application', appNamespace)[0],
-          activity: runtime.getEntity<ActivityEntity>('manifest.dist.app/v1alpha1', 'Activity', appNamespace, contentRaw.spec.activityName) ?? null,
-        };
-      });
-
-      if (!activity) {
-        content = (
-          <div style={{gridArea: 'activity'}}>
-            Hmm, activity not found: {contentRaw.spec.activityName} in {contentRaw.spec.installationNamespace}/{contentRaw.spec.installationName}.
-          </div>
-        );
-
-      } else {
-        title = (
-          <div className="window-title">
-            <AppIcon iconSpec={activity.spec.icon ?? app?.spec.icon ?? null}></AppIcon>
-            <span className="app-name">{activity.metadata.title}</span>
-          </div>
-        )
-
-        switch (activity.spec.implementation.type) {
-          case 'iframe': content = (
-            <IframeHost className="activity-contents-wrap" task={frameEntity} activityTask={contentRaw} activity={activity} hWorkspace={props.hWorkspace} onLifecycle={setLifecycle} />
-          ); break;
-          default: content = (
-            <div style={{gridArea: 'activity'}}>
-              TODO: other implementation types
-            </div>
-          ); break;
-        }
-      }
+      title = (
+        <ActivityTaskTitle activityTask={contentRaw} />
+      );
+      content = (
+        <ActivityTaskWindow
+            task={frameEntity}
+            activityTask={contentRaw}
+            hWorkspace={props.hWorkspace}
+            onLifecycle={setLifecycle}
+          />
+      );
       break;
     }
 
