@@ -33,14 +33,6 @@ class DistApp {
       .catch(err => console
         .error(err)));
 
-    window.addEventListener('unload', () => this
-      .sendRpc({
-        kind: 'Lifecycle',
-        spec: {
-          stage: 'unload',
-        },
-      }));
-
     fetchProtocols.set('dist-app:', (input, init) => this
       .fetch(input, init));
   }
@@ -246,45 +238,20 @@ class DistApp {
 //@ts-expect-error globalThis is untyped
 globalThis.DistApp = DistApp;
 
-function receiveMessagePort() {
-  return new Promise<MessagePort>((ok, reject) => {
-    function handleEvent(event: MessageEvent) {
-      if (event.origin !== "{ORIGIN}") return;
-      if (typeof event.data !== 'object' || !event.data) return;
-      if (typeof event.data.protocol !== 'string') return;
-
-      window.removeEventListener("message", handleEvent);
-      window.addEventListener("message", (secondEvent: MessageEvent) => {
-        if (secondEvent.origin !== "{ORIGIN}") return;
-        console.error("Received a second protocol initiation?? Reloading");
-        try {
-          const entity: LifecycleEntity = {
-            kind: 'Lifecycle',
-            spec: {
-              stage: 'recycle',
-            },
-          };
-          event.ports?.map(port => port.postMessage(entity)) ?? [];
-          if (port) reject(
-            new Error("Received protocol packet without a port"));
-        } finally {
-          window.location.reload();
-        }
-      }, false);
-
-      if (event.data.protocol !== 'protocol.dist.app/v1alpha1') reject(
-        new Error("Received unexpected protocol "+event.data.protocol));
-      const [port] = event.ports ?? [];
-      if (!port) reject(
-        new Error("Received protocol packet without a port"));
-      ok(port);
+async function receiveMessagePort() {
+  const { port1, port2 } = new MessageChannel();
+  await new Promise<void>(ok => {
+    if (document.readyState === 'complete') {
+      ok();
+    } else {
+      globalThis.addEventListener('load', () => ok());
+      console.log('app waited for load event');
     }
-    window.addEventListener("message", handleEvent, false);
-    // Let the host know we're waiting, in case we weren't the first frame
-    window.parent.postMessage({
-      'protocol': 'protocol.dist.app/v1alpha1',
-    }, '*');
   });
+  window.parent.postMessage({
+    protocol: 'protocol.dist.app/v1alpha2',
+  }, '*', [port2]);
+  return port1;
 }
 
 class ApiBindingMount {

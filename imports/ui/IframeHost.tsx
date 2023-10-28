@@ -1,17 +1,16 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { SyntheticEvent, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { ActivityEntity, IframeImplementationSpec } from '../entities/manifest';
-import { MessageHost } from '../runtime/MessageHost';
 import { RuntimeContext } from './contexts';
 import { ActivityTaskEntity, FrameEntity, WorkspaceEntity } from '../entities/runtime';
 import { useObjectURL } from '../lib/use-object-url';
-import * as protocol from '../entities/protocol';
 import { FetchRpcHandler } from '../runtime/FetchRpcHandler';
 import { compileIframeSrc } from '../lib/compile-iframe-src';
-import { Meteor } from 'meteor/meteor';
 import { EntityHandle } from '../engine/EntityHandle';
+import { ApiView } from '../portable/ApiView';
+import { AttributeMap, WindowMap } from '../portable/MessagePortServer';
 import { runTaskCommand } from '../runtime/workspace-actions';
-import { acceptTraceExport } from '../lib/telemetry-store';
+import { ProtocolRpcHandler } from '../portable/ProtocolRpcHandler';
 
 // TODO: rename AppWindow or IframeWindow, put in frames/
 export const IframeHost = (props: {
@@ -37,87 +36,35 @@ export const IframeHost = (props: {
 
   const fetchHandler = useMemo(() => new FetchRpcHandler(runtime, props.activityTask, props.activity, props.hWorkspace), [runtime, props.activityTask, props.activity, props.hWorkspace]);
 
-  const messageHost = useMemo(() => new MessageHost({
-    'distapp.frame.uid': props.task.metadata.uid,
-    'distapp.frame.name': props.task.metadata.name,
-    'resource.name': props.task.metadata.name,
-  }), [contentWindow, implementation]);
+  const [apiView] = useState(() => {
+    const view = new ApiView();
+    view.apiVersionImpls.set('protocol.dist.app/v1alpha2', new ProtocolRpcHandler(
+      setIframeKey,
+      props.onLifecycle,
+      launchIntent => runTaskCommand(props.hWorkspace, props.task, props.activityTask, {
+        type: 'launch-intent',
+        intent: launchIntent.spec,
+      }),
+      fetchHandler,
+    ));
+    return view;
+  });
+  useMemo(() => {
+    console.log('resetting iframe');
+    setIframeKey(Math.random());
+  }, [apiView]);
+
   useEffect(() => {
     if (contentWindow) {
       //@ts-expect-error TODO undocumented field
       if (props.activity.spec.implementation.disableCommunication) {
         props.onLifecycle('ready');
         console.log('WARN: Disabling communication with activity');
-        return;
+      } else {
+        props.onLifecycle('connecting');
       }
-      console.log('Initiating connection to iframe content');
-      messageHost.connectTo(contentWindow);
-      props.onLifecycle('connecting');
     }
-  }, [contentWindow]);
-  useEffect(() => {
-    messageHost.addRpcListener<protocol.LifecycleEntity>('Lifecycle', ({rpc}) => {
-      if (rpc.spec.stage == 'recycle') {
-        setIframeKey(Math.random());
-      } else if (rpc.spec.stage == 'unload') {
-        console.warn(`TODO: recycle the MessageHost and prepare for a new window`);
-      } else {
-        props.onLifecycle(rpc.spec.stage);
-      }
-    });
-    messageHost.addRpcListener<protocol.LaunchIntentEntity>('LaunchIntent', ({rpc}) => {
-      console.log('handling LaunchIntent', rpc);
-      runTaskCommand(props.hWorkspace, props.task, props.activityTask, {
-        type: 'launch-intent',
-        intent: rpc.spec,
-      });
-    });
-    messageHost.addRpcListener<protocol.FetchRequestEntity>('FetchRequest', async ({rpc, respondWith}) => {
-      try {
-        // TODO: cancellation if we shut down
-        const {bodyChunks, ...resp} = await fetchHandler.handle(rpc);
-        if (bodyChunks) {
-          // TODO: do something with this promise
-          respondWith(bodyChunks
-            .pipeThrough(new TransformStream<protocol.FetchBodyChunkEntity['spec'], protocol.FetchBodyChunkEntity | protocol.FetchResponseEntity>({
-              start(ctlr) {
-                ctlr.enqueue(resp);
-              },
-              transform(packet, ctlr) {
-                ctlr.enqueue({
-                  kind: 'FetchBodyChunk',
-                  spec: packet,
-                });
-              },
-            })));
-        } else {
-          respondWith(resp);
-        }
-      } catch (err) {
-        respondWith<protocol.FetchErrorEntity>({
-          kind: 'FetchError',
-          spec: {
-            message: `dist.app fetch error: ${(err as Error).message}`,
-          } });
-      }
-    });
-    // TODO: remove in favor of telemetry.v1alpha1.dist.app
-    messageHost.addRpcListener<protocol.WriteDebugEventEntity>('WriteDebugEvent', ({rpc}) => {
-      // TODO: record the debug events, probably in 'session' but perhaps as 'debug.dist.app' API
-      console.log({ WriteDebugEvent: rpc.spec });
-      if (rpc.spec.error) {
-        alert('A running dist.app encountered a script error:\n\n' + rpc.spec.error.stack);
-      }
-    });
-    // TODO: remove in favor of telemetry.v1alpha1.dist.app
-    messageHost.addRpcListener<{}>('OtelExport', async ({rpc}) => {
-      if (rpc.spec.resourceSpans) {
-        acceptTraceExport(rpc.spec);
-      } else {
-        await Meteor.callAsync('OTLP/v1/traces', rpc.spec);
-      }
-    });
-  }, [messageHost]);
+  }, [contentWindow, props.onLifecycle]);
 
   const frameSrc = useMemo(() => compileIframeSrc(implementation), [JSON.stringify(implementation)]);
   const frameBlob = useMemo(() => new Blob([frameSrc], {
@@ -127,6 +74,19 @@ export const IframeHost = (props: {
   const frameUrl = useObjectURL(frameBlob);
   useEffect(() => frameUrl.setObject(frameBlob), [frameBlob]);
 
+  const onLoad = useCallback((evt: SyntheticEvent<HTMLIFrameElement, Event>) => {
+    const {contentWindow} = evt.currentTarget;
+    if (contentWindow) {
+      WindowMap.set(contentWindow, apiView);
+      AttributeMap.set(contentWindow, {
+        'distapp.frame.uid': `${props.task.metadata.uid}`,
+        'distapp.frame.name': props.task.metadata.name,
+        'resource.name': props.task.metadata.name,
+      });
+    }
+    setContentWindow(contentWindow);
+  }, [setContentWindow, apiView]);
+
   if (implementation.source.type == 'internet-url') {
     const parsed = new URL(implementation.source.url);
     if (parsed.protocol !== 'https:') throw new Error(`Only HTTPS allowed`);
@@ -135,21 +95,14 @@ export const IframeHost = (props: {
           className={props.className}
           src={implementation.source.url}
           sandbox={implementation.sandboxing?.join(' ') ?? ""}
-          // csp={[
-          //   `default-src 'self'`,
-          //   `script-src 'self' 'unsafe-eval' 'unsafe-inline' ${(implementation.securityPolicy?.scriptSrc ?? []).join(' ')}`,
-          //   `style-src 'self' 'unsafe-inline'`,
-          //   `connect-src 'self' ${(implementation.securityPolicy?.connectSrc ?? []).join(' ')}`,
-          // ].join('; ')}
-          onLoad={evt => {
-            setContentWindow(evt.currentTarget.contentWindow);
-          }}
+          // CSP is to be provided by the server
+          onLoad={onLoad}
         />
     );
   }
 
   if (!frameUrl.objectURL) return (
-    <div className={props.className}></div>
+    <div className={props.className}>waiting for objectURL</div>
   );
   return (
     <iframe key={iframeKey}
@@ -157,13 +110,9 @@ export const IframeHost = (props: {
         src={frameUrl.objectURL}
         sandbox={implementation.sandboxing?.join(' ') ?? ""}
         csp={buildCsp(implementation)}
-        onLoad={evt => {
-          setContentWindow(evt.currentTarget.contentWindow);
-        }}
+        onLoad={onLoad}
       />
   );
-
-  throw new Error(`TODO: unimpl`);
 };
 
 function buildCsp(impl: IframeImplementationSpec) {

@@ -74,6 +74,8 @@ export interface ArbitraryEntity {
   apiVersion: string;
   kind: string;
   metadata: EntityMetadata;
+  spec?: {};
+  status?: {};
 }
 
 export type StreamEvent<T extends ArbitraryEntity> =

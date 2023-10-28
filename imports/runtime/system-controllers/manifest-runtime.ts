@@ -151,6 +151,9 @@ export async function startManifestRuntimeOperator(opts: {
           .get();
         if (!restConnection) throw new Error(`connection not found`);
 
+        if (!restConnection.status?.selectedEndpoint) throw new Error(
+          `No endpoint selected for ${restConnection.metadata.name}`);
+
         const api = await context.with(traceCtx, () => apiCache.get(restConnection.spec.apiName));
 
         const operation = api.operations.find(x => x.operationId == restCall.spec.operationId);

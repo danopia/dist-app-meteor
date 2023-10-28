@@ -56,7 +56,7 @@ export interface FetchRequestEntity {
   };
 }
 export interface FetchResponseEntity {
-  apiVersion?: "protocol.dist.app/v1alpha1";
+  apiVersion: "protocol.dist.app/v1alpha2";
   kind: "FetchResponse";
   metadata?: EntityMetadata;
   origId?: number;
