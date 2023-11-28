@@ -6,6 +6,8 @@ updates:
           interval: weekly
 
       groups:
+        opentelemetry:
+          patterns: ["@opentelemetry/*"]
         dev-deps:
           dependency-type: development
 
