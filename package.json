@@ -25,7 +25,7 @@
     "yaml": "^2"
   },
   "devDependencies": {
-    "@opentelemetry/auto-instrumentations-web": "^0.34",
+    "@opentelemetry/auto-instrumentations-web": "^0.35",
     "@swc/cli": "^0.1",
     "@swc/core": "^1",
     "@react-hook/debounce": "^4",
