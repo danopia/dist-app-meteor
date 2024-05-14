@@ -1,0 +1,99 @@
+name: Build
+on:
+  push: {}
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+
+    - uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::414064234042:role/gha-deployer
+        role-session-name: gha-run-${{ github.run_id }}
+        aws-region: eu-west-1
+
+    - uses: actions/checkout@v4
+
+    # some prior work on caching:
+    # https://github.com/meteor-actions/cache-build/blob/main/action.yml
+
+    - name: Read Meteor release
+      id: find-meteor
+      run: echo "release=$(cut -d@ -f2 < .meteor/release)" | tee -a "$GITHUB_OUTPUT"
+    - name: Cache Meteor ${{ steps.find-meteor.outputs.release }}
+      id: cache-meteor
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.meteor
+          /usr/local/bin/meteor
+        key: meteor/${{ steps.find-meteor.outputs.release }}-installation
+    - name: Setup Meteor ${{ steps.find-meteor.outputs.release }}
+      if: ${{ steps.cache-meteor.outputs.cache-hit != 'true' }}
+      uses: meteorengineer/setup-meteor@v2
+      with:
+        meteor-release: ${{ steps.find-meteor.outputs.release }}
+
+    - name: Cache NPM
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: npm-${{ github.ref }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          npm-${{ github.ref }}-
+          npm-
+
+    - name: Install NPM dependencies
+      run: meteor npm install
+
+    - name: Cache Meteor Local
+      uses: actions/cache@v4
+      with:
+        path: |
+          .meteor/local/resolver-result-cache.json
+          .meteor/local/plugin-cache
+          .meteor/local/isopacks
+          .meteor/local/bundler-cache/scanner
+        key: meteor/${{ steps.find-meteor.outputs.release }}-local-${{ github.ref }}-${{ github.sha }}
+        restore-keys: |
+          meteor/${{ steps.find-meteor.outputs.release }}-local-${{ github.ref }}-
+          meteor/${{ steps.find-meteor.outputs.release }}-local-
+
+    - name: Create temp directory
+      id: tempdir
+      run: echo "path=$(mktemp -d)" | tee -a "$GITHUB_OUTPUT"
+
+    - name: Build app bundles
+      env:
+        METEOR_DISABLE_OPTIMISTIC_CACHING: 1
+      run: meteor build --directory ${{ steps.tempdir.outputs.path }} --platforms web.browser
+
+    - name: Create manifest
+      working-directory: ${{ steps.tempdir.outputs.path }}/bundle/programs
+      run: >
+        echo '{"web.browser":{"hashes":{"js":"'$(basename web.browser/*.js .js)'","css":"'$(basename web.browser/*.css .css)'"},"html":'$(jq -cn --rawfile body web.browser/body.html --rawfile head web.browser/head.html '$ARGS.named')'},"server":'$(jq -c . < server/config.json)'}' | tee manifest.json | jq .
+
+    - name: Upload web.browser bundle to S3
+      working-directory: ${{ steps.tempdir.outputs.path }}/bundle/programs/web.browser
+      run: |
+        ls -lsh
+        buildPrefix=uber.danopia.net/meteor-bundles/dist-app-meteor/${{ github.sha }}/web.browser
+        aws s3 cp --content-type "application/javascript; charset=utf-8" \
+          *.js s3://$buildPrefix/app.js
+        aws s3 cp --content-type "text/css; charset=utf-8" \
+          *.css s3://$buildPrefix/app.css
+        echo https://$buildPrefix/app.js
+        echo https://$buildPrefix/app.css
+
+    - name: Upload manifest to S3
+      working-directory: ${{ steps.tempdir.outputs.path }}/bundle/programs
+      run: |
+        buildPrefix=uber.danopia.net/meteor-bundles/dist-app-meteor/${{ github.sha }}
+        aws s3 cp --content-type "application/json; charset=utf-8" \
+          manifest.json s3://$buildPrefix/manifest.json
+        echo https://$buildPrefix/manifest.json
