@@ -21,7 +21,7 @@
     "meteor-node-stubs": "^1",
     "node-abort-controller": "^3",
     "urlpattern-polyfill": "^8",
-    "web-streams-polyfill": "^3",
+    "web-streams-polyfill": "^4",
     "yaml": "^2"
   },
   "devDependencies": {
