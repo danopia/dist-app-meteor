@@ -5,7 +5,7 @@ import { ProfileDoc, ProfilesCollection } from "/imports/db/profiles";
 import { EntityEngine } from "/imports/engine/EntityEngine";
 import { startHttpClientOperator } from "/imports/runtime/system-controllers/http-client";
 import { AbortController } from "node-abort-controller";
-import { WritableStream } from "web-streams-polyfill/ponyfill";
+import { WritableStream } from "web-streams-polyfill";
 import { EntityCatalogEntity } from "/imports/entities/profile";
 
 class ProfileOperatorManager {
