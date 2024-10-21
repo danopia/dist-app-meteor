@@ -14,7 +14,7 @@
   "dependencies": {
     "@babel/runtime": "^7",
     "@opentelemetry/api": "^1",
-    "@opentelemetry/auto-instrumentations-node": "^0.50",
+    "@opentelemetry/auto-instrumentations-node": "^0.51",
     "@opentelemetry/instrumentation": "^0.53",
     "common-tags": "^1",
     "happy-eyeballs": "^0.0",
