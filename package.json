@@ -26,7 +26,7 @@
   },
   "devDependencies": {
     "@opentelemetry/auto-instrumentations-web": "^0.41",
-    "@swc/cli": "^0.4",
+    "@swc/cli": "^0.5",
     "@swc/core": "^1",
     "@react-hook/debounce": "^4",
     "@react-hook/resize-observer": "^2",
